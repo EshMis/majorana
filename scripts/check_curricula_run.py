@@ -48,6 +48,12 @@ from leona_notebooks.sandbox_program import (  # noqa: E402
 )
 from leona_notebooks.source import parse_source  # noqa: E402
 
+#: Everything in `GUARD_EXEMPT` is written relative to this, so an absolute root and a
+#: relative one produce the same answer. They did not before: `path.as_posix()` on an
+#: absolute root never matched a repository-relative key, and the two exempt notebooks
+#: came back as unexpected guard refusals. Greptile, PR 835.
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
 DEFAULT_ROOTS = ["curricula"]
 
 #: Notebooks the product's own safety guard refuses, so this gate cannot run them. Keyed by
@@ -65,6 +71,16 @@ GUARD_EXEMPT: dict[str, str] = {
 #: Per notebook. The contract's own ceiling is 120 s and the slowest of the 25 takes ~4 s,
 #: so this is a hang detector rather than a budget.
 TIMEOUT_S = 120
+
+
+def _key(path: Path) -> str:
+    """The `GUARD_EXEMPT` key for a notebook, however its root was spelled."""
+    try:
+        return path.resolve().relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        # Outside the repository — a self-test tempdir. Fall back to the path as given,
+        # so an exemption can still be expressed for it.
+        return path.as_posix()
 
 
 def _notebooks(roots: list[str]) -> list[Path]:
@@ -91,7 +107,7 @@ def check(roots: list[str]) -> tuple[list[str], int, int]:
             0,
         )
     for path in notebooks:
-        key = path.as_posix()
+        key = _key(path)
         try:
             spec = parse_source(path.read_text(encoding="utf-8"))
         except (OSError, ValueError) as exc:
@@ -118,7 +134,13 @@ def check(roots: list[str]) -> tuple[list[str], int, int]:
             continue
         report = execute_in_local_sandbox(spec, timeout_s=TIMEOUT_S)
         executed += 1
-        failures = [c for c in report.cells if c.status == "error"]
+        # A cell tagged `raises-exception` is MEANT to raise — the authoring guide
+        # documents it, and the runner deliberately records `status="error"` for it while
+        # leaving `report.ok` true and carrying on. Counting those would have failed the
+        # gate on the documented pattern; no curriculum uses it today, so the false
+        # positive was latent rather than visible. Greptile, PR 835.
+        intentional = {cell.id for cell in spec.cells if "raises-exception" in (cell.tags or [])}
+        failures = [c for c in report.cells if c.status == "error" and c.id not in intentional]
         if failures or not report.ok:
             detail = "; ".join(
                 f"{c.id}: {c.error.ename}: {(c.error.evalue or '')[:120]}"
@@ -167,8 +189,14 @@ def _self_test() -> int:
 
     if run({"ok.nb.py": good}):
         failures.append(f"a working notebook was reported as a problem: {run({'ok.nb.py': good})}")
-    if not any("raised" in p for p in run({"bad.nb.py": raises})):
+    # Not just "was it caught" — the message must NAME the failing cell. Excusing every
+    # cell as intentional still fails the run through `report.ok`, so a check for the word
+    # "raised" alone stays green while the report loses the one detail a reader needs.
+    raised_problems = run({"bad.nb.py": raises})
+    if not any("raised" in p for p in raised_problems):
         failures.append("a notebook whose cell raises was NOT caught")
+    elif not any("deliberate" in p or "AssertionError" in p for p in raised_problems):
+        failures.append(f"a raising cell was caught but not NAMED in the report: {raised_problems}")
     if not any("safety guard" in p for p in run({"r.nb.py": refused})):
         failures.append("a notebook the guard refuses was NOT caught as unrun")
     if run({"r.nb.py": refused}, exempt={"r.nb.py": "on purpose"}):
@@ -179,6 +207,29 @@ def _self_test() -> int:
     with tempfile.TemporaryDirectory() as empty:
         if not check([empty])[0]:
             failures.append("a run that discovered ZERO notebooks reported success")
+
+    # A cell that is MEANT to raise must not fail the gate. `report.ok` stays true for it,
+    # so this arm and the "a raising cell is caught" arm above differ only by the tag —
+    # which is the whole distinction being tested.
+    intentional = (
+        "# ---\n# slug: i\n# title: I\n# ---\n\n"
+        "# %% role=setup\nx = 1\n\n"
+        '# %% role=run tags=["raises-exception"]\nraise ValueError("on purpose")\n'
+    )
+    if run({"i.nb.py": intentional}):
+        failures.append(
+            "a cell tagged raises-exception was reported as a failure: "
+            f"{run({'i.nb.py': intentional})}"
+        )
+
+    # An ABSOLUTE root must honour the repository-relative exemptions. Pointed at the
+    # certification directory, whose two notebooks are both exempt, so it executes nothing
+    # and costs no time — and with the key bug it reports two unexpected guard refusals.
+    certification = (REPO_ROOT / "curricula/qiskit-study-group/certification").resolve()
+    if certification.is_dir():
+        absolute_problems = check([str(certification)])[0]
+        if absolute_problems:
+            failures.append(f"an absolute root did not match the exemptions: {absolute_problems}")
 
     if failures:
         print("check_curricula_run self-test FAILED:")
