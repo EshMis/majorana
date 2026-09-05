@@ -9,8 +9,13 @@ find out would have been a reader partway through week 4.
 
 They execute through `execute_in_local_sandbox` — the product's own path minus the
 Firecracker boundary, which is the same runner `check_graders.py` uses. So this adds no new
-execution surface: the static guard runs exactly as it does in production, and a notebook
-this gate can run is a notebook the product could run.
+execution surface: the static guard runs exactly as it does in production.
+
+**It does not follow that a notebook this gate runs is one the product could run**, and an
+earlier draft of this file said so. The gate deliberately allows more memory than a tenant
+gets (see `MEMORY_MB`), because the curricula are never executed by the product at all.
+What a green run means is narrower and is the thing worth having: the course's code still
+works against the installed qiskit.
 
 Measured: 23 notebooks in 56 s.
 
@@ -72,6 +77,25 @@ GUARD_EXEMPT: dict[str, str] = {
 #: so this is a hang detector rather than a budget.
 TIMEOUT_S = 120
 
+#: Address space per notebook, and deliberately ABOVE the product's 2048 MB default.
+#:
+#: This gate exists to catch a qiskit release breaking the course, not to prove a
+#: curriculum fits a tenant's sandbox — the curricula are never executed by the product
+#: (nothing imports them into the database; they are compiled to `.ipynb` and run on the
+#: reader's own machine). At 2048 MB, four of them fail on a CI runner with
+#: `OpenBLAS: Memory allocation still failed` and `can't start new thread`, because
+#: transpilation and BLAS reserve per-core buffers and thread stacks out of the same
+#: address space. Those are facts about the runner's core count, not about the course.
+#:
+#: **A local run on macOS proves nothing about this number.** `setrlimit(RLIMIT_AS)` is
+#: REFUSED there — `ValueError: current limit exceeds maximum limit` — and the sandbox's
+#: bootstrap swallows it, so a Mac applies no memory cap at all while reporting success.
+#: All 25 pass locally at any setting. Only CI, on Linux, actually measures this.
+#: 4096 is `majorana_sandbox.spec.MAX_MEMORY_MB`, a hard ceiling the sandbox package owns
+#: and treats as a security control. This asks for the most the sandbox will ever grant and
+#: does not touch that constant.
+MEMORY_MB = 4096
+
 
 def _key(path: Path) -> str:
     """The `GUARD_EXEMPT` key for a notebook, however its root was spelled."""
@@ -132,7 +156,7 @@ def check(roots: list[str]) -> tuple[list[str], int, int]:
                 "ACCEPTS it — delete the entry so it is actually run."
             )
             continue
-        report = execute_in_local_sandbox(spec, timeout_s=TIMEOUT_S)
+        report = execute_in_local_sandbox(spec, timeout_s=TIMEOUT_S, memory_mb=MEMORY_MB)
         executed += 1
         # A cell tagged `raises-exception` is MEANT to raise — the authoring guide
         # documents it, and the runner deliberately records `status="error"` for it while
