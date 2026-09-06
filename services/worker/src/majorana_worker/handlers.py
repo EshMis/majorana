@@ -95,6 +95,8 @@ from majorana_api.jobs import (
 )
 from majorana_api.orm import ImportJob, User
 from majorana_api.qapp_validation import (
+    QappUsabilityWarning,
+    check_qapp_usability,
     normalize_qapp_schema,
     validate_qapp_inputs,
     validate_qapp_ui_document,
@@ -814,6 +816,16 @@ async def _handle_qapp_generation(
         previous_candidate: str | None = None
         generated: _GeneratedQapp | None = None
         repair_kind = "full"
+        #: A usability finding buys ONE repair for the whole generation, not one per
+        #: attempt. The budget is 12 attempts, and these rules have never been measured
+        #: against real generated output — no live generation has run since the provider
+        #: was exhausted — so a rule that misfires on an idiomatic app would otherwise
+        #: spend eleven extra paid calls arguing with a model that has nothing to fix.
+        #: One chance to act on the feedback, then the Qapp is created regardless.
+        usability_repair_spent = False
+        #: The last candidate that passed every check except usability. Deep-copied,
+        #: because `generated` is rebound and mutated on each attempt.
+        usability_fallback: _GeneratedQapp | None = None
         for attempt in range(1, _QAPP_GENERATION_ATTEMPTS + 1):
             if repair_kind == "ui":
                 response_model: type[BaseModel] = _QappUiRepair
@@ -982,8 +994,75 @@ async def _handle_qapp_generation(
                 except (TypeError, ValueError):
                     repair_kind = "contract"
                     raise
+                # Usability LAST, after everything that decides whether the Qapp works.
+                #
+                # The position is the guarantee, not a matter of taste. These rules ask
+                # whether a visitor can use the app — an input with no control, a run with
+                # no failure path, placeholder copy — and they have never been measured
+                # against real generated output, because no live generation has run since
+                # the provider was exhausted. An unmeasured rule must not be able to
+                # destroy a Qapp somebody waited for, and the owner settled the same
+                # tradeoff for the range smoke in ai-ops 180: "only warn the creator,
+                # publish either way."
+                #
+                # Running it here means the candidate in hand has already passed the
+                # schema, the guard, the sandbox smoke and the output contract — so it is
+                # safe to KEEP as `usability_fallback` and publish if nothing better
+                # arrives. An earlier draft ran this check before the smoke run, which
+                # made the fallback a candidate nobody had executed, and let a usability
+                # finding push the generation into a repair round that could then fail on
+                # its own — a check that promised never to be fatal, causing a failure.
+                try:
+                    check_qapp_usability(generated.ui_document, generated.input_schema)
+                except QappUsabilityWarning as usability:
+                    # `attempt < _QAPP_GENERATION_ATTEMPTS` is the difference between the
+                    # guarantee holding and merely appearing to. Asking for a repair on
+                    # the LAST attempt means the raise below reaches
+                    # `if attempt == _QAPP_GENERATION_ATTEMPTS: raise` — and the fallback
+                    # branch above it deliberately ignores a usability warning, so the
+                    # error propagates and the whole generation is rolled back. A fully
+                    # validated Qapp, destroyed by the check that promises it never will
+                    # be, in the one path where no attempt remains to undo it.
+                    # Greptile, PR 837. There is nothing to gain by asking with no
+                    # attempt left to answer.
+                    if not usability_repair_spent and attempt < _QAPP_GENERATION_ATTEMPTS:
+                        usability_repair_spent = True
+                        usability_fallback = generated.model_copy(deep=True)
+                        repair_kind = "ui"
+                        raise
+                    log.info(
+                        "Qapp for run %s published with an unrepaired usability finding "
+                        "(one repair already spent, attempt %d): %s",
+                        ctx.run_id,
+                        attempt,
+                        usability,
+                    )
                 break
             except ValueError as exc:
+                if usability_fallback is not None and not isinstance(exc, QappUsabilityWarning):
+                    # The usability repair was a BONUS attempt on a candidate that had
+                    # already passed everything else, and it did not produce something
+                    # better. Take what we had, immediately — not at attempt 12.
+                    #
+                    # `not isinstance(exc, QappUsabilityWarning)` is load-bearing: the
+                    # warning that SETS the fallback arrives here too, and without this
+                    # the branch fired on it and broke out before the repair was ever
+                    # requested. The gate would have detected the defect and then declined
+                    # to ask the model to fix it — a bonus attempt that never happened,
+                    # and green tests either way, since the Qapp still published.
+                    #
+                    # The difference is eleven paid model calls. Falling back only at
+                    # exhaustion made the loop argue with the model for the whole budget
+                    # first: measured at 12 requests where the generation needs 2. A
+                    # bonus attempt that can cost eleven more is not a bonus.
+                    log.info(
+                        "Qapp for run %s keeping the pre-repair candidate after an "
+                        "unrepaired usability finding: %s",
+                        ctx.run_id,
+                        exc,
+                    )
+                    generated = usability_fallback
+                    break
                 if attempt == _QAPP_GENERATION_ATTEMPTS:
                     raise
                 feedback = _qapp_repair_feedback(exc)

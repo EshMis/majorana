@@ -7,6 +7,8 @@ from majorana_contracts import PublicQapp
 
 from majorana_api.auth import qapp_deps
 from majorana_api.qapp_validation import (
+    QappUsabilityWarning,
+    check_qapp_usability,
     MAX_NUMERIC_MAGNITUDE,
     normalize_qapp_schema,
     validate_qapp_inputs,
@@ -686,3 +688,80 @@ def test_a_stored_range_smoke_is_read_by_presence_not_by_truthiness():
         assert resource.range_smoke is not None, (
             f"{corrupt!r} is a non-NULL stored value and was reported as 'nobody asked'"
         )
+
+
+# ------------------------------------------------ is the generated app usable (not just safe)
+#
+# `validate_qapp_ui_document` is a security filter and says so. Nothing checked whether the
+# generated app WORKS, though the generation prompt promises "a useful responsive interface,
+# accessible labels, keyboard support, clear busy/error/result states, and no placeholder
+# copy". A promise in a prompt is a hope; a visitor meets whatever came back.
+
+_HONEST_QAPP = (
+    "<!doctype html><html><body>"
+    "<label for='shots'>Shots</label><input id='shots' type='number' value='100'>"
+    "<button type='button' id='run'>Run</button><output id='out'></output>"
+    "<script>run.onclick=async()=>{out.textContent='Running…';"
+    "try{const r=await window.qapp.run({shots:Number(shots.value)});out.textContent=r.summary}"
+    "catch(e){out.textContent='That run failed: '+e.message}}</script>"
+    "</body></html>"
+)
+_SHOTS_SCHEMA = {"type": "object", "properties": {"shots": {"type": "integer"}}}
+
+
+def test_usability_check_accepts_an_ordinary_honest_app():
+    """The control, and the one that decides whether the rest is worth having.
+
+    Every rejection buys a paid `ui` repair, so a rule that fires on idiomatic output
+    costs money on every honest Qapp — the argument the security guard's own docstring
+    makes about adding patterns speculatively. This app is deliberately plain.
+    """
+    check_qapp_usability(_HONEST_QAPP, _SHOTS_SCHEMA)
+
+
+def test_a_declared_input_with_no_control_is_rejected():
+    """An app that ships a knob its own interface cannot reach.
+
+    The schema says a visitor may set `depth`; the document never names it, so there is
+    no control for it and every run uses whatever the program assumes. Not a matter of
+    polish — the declared interface is a lie.
+    """
+    with pytest.raises(QappUsabilityWarning, match="never lets anyone set"):
+        check_qapp_usability(
+            _HONEST_QAPP,
+            {"type": "object", "properties": {"shots": {}, "depth": {"type": "integer"}}},
+        )
+
+
+def test_a_run_with_no_failure_path_is_rejected():
+    """`window.qapp.run` returns a Promise; without a rejection handler a failed run
+    leaves the interface on "Running…" forever, and the visitor cannot tell a slow
+    circuit from a dead one."""
+    no_catch = _HONEST_QAPP.replace("try{", "").replace(
+        "catch(e){out.textContent='That run failed: '+e.message}", ""
+    )
+    with pytest.raises(QappUsabilityWarning, match="without handling a failed run"):
+        check_qapp_usability(no_catch, _SHOTS_SCHEMA)
+
+
+def test_placeholder_copy_is_rejected_but_the_placeholder_ATTRIBUTE_is_not():
+    """The rule must not fire on `placeholder=`, which every honest text input has.
+
+    Matching the bare word would have made this rule reject the idiomatic case while
+    catching the real one — the exact shape of an expensive false positive.
+    """
+    with pytest.raises(QappUsabilityWarning, match="placeholder copy"):
+        check_qapp_usability(_HONEST_QAPP.replace("Shots", "Lorem ipsum"), _SHOTS_SCHEMA)
+    check_qapp_usability(
+        _HONEST_QAPP.replace("<input id='shots'", "<input placeholder='e.g. 1024' id='shots'"),
+        _SHOTS_SCHEMA,
+    )
+
+
+def test_a_usability_finding_is_a_ValueError_so_it_earns_a_repair():
+    """It travels the generation loop's existing rejection path, which keys on ValueError.
+
+    Its own type is what lets the handler treat it as non-fatal at attempt exhaustion; if
+    it stopped being a ValueError it would silently stop earning a repair instead.
+    """
+    assert issubclass(QappUsabilityWarning, ValueError)
