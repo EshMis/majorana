@@ -151,6 +151,23 @@ jobs:
           packages/py/frameworks
           services/worker/tests/test_circuit_lowering.py
           -q
+      # Every curriculum notebook, actually executed. Nothing ran these before: CI read
+      # their answer keys as text and never their code, so a qiskit release renaming a
+      # method would have left the whole study group broken with every check green, and
+      # the first to find out would have been a reader partway through week 4.
+      #
+      # `--all-extras` for the same reason as the step above — the base sync leaves the
+      # SDKs out, and without qiskit this would pass by executing nothing that matters.
+      # It goes through `execute_in_local_sandbox`, the same runner `check_graders.py`
+      # uses, so no new execution surface: the static guard applies exactly as in
+      # production. Measured at 23 notebooks in 56 s; the two the guard refuses are
+      # exempted BY NAME and the exemption fails if it ever stops being needed.
+      - name: the curriculum notebooks still run
+        env:
+          MAJORANA_REQUIRE_SDKS: "1"
+        run: |
+          uv run --all-extras python scripts/check_curricula_run.py --self-test
+          uv run --all-extras python scripts/check_curricula_run.py
       - name: openapi.json is current
         run: uv run python -m majorana_contracts.export --check
       # A notebook grader that passes against the unfilled stub marks every reader
