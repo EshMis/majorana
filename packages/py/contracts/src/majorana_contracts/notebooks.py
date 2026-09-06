@@ -75,6 +75,18 @@ class CellRole(StrEnum):
     NOTE = "note"
 
 
+#: Roles whose whole content is the thing a learner must not see before they try.
+#: A `solution` code cell is redacted by swapping in its stub; an `answer` cell has no
+#: such half — its secret is its own prose — so it is removed outright.
+#:
+#: Defined here rather than in `leona_notebooks.spec` (which re-exports it) because BOTH
+#: redactions have to read one list. They did not: `NotebookSpec.for_learner()`, on the
+#: browser path, did not know this set existed, while the `.ipynb` compiler's challenge
+#: build did — so the same notebook was redacted two different ways depending on which
+#: door it left by, and the workspace door left `role=answer` in place.
+SOLUTION_ONLY_ROLES: frozenset[CellRole] = frozenset({CellRole.SOLUTION, CellRole.ANSWER})
+
+
 class Audience(_Model):
     level: Literal["newcomer", "engineer", "student", "researcher"] = "engineer"
     assumes: list[str] = Field(default_factory=list)
@@ -375,21 +387,33 @@ class NotebookSpec(_Model):
             index += 1
 
     def for_learner(self) -> NotebookSpec:
-        """The build a reader receives: no graders, no answer keys, stubs in place.
+        """The build a reader receives: no graders, no answer keys, no answers, stubs in place.
 
-        Three redactions, and each one is the difference between a graded notebook
-        and a notebook that merely looks graded:
+        Four redactions, and each one is the difference between a graded notebook and a
+        notebook that merely looks graded:
 
         * `check` is dropped — it holds the assertions, and often the answer with them.
         * `answer` is replaced by `answer_prompt`, which carries the options but not
           which one is right.
         * a `solution` cell's `source` is replaced by its `stub`, so the reader gets
-          the placeholder to fill in rather than the finished code.
+          the placeholder to fill in rather than the finished code, and its role becomes
+          `exercise` — what the cell now IS.
+        * a cell whose role is in `SOLUTION_ONLY_ROLES` and which carries no stub to put
+          in its place is **removed**. `role=answer` is the case that matters: its secret
+          is not in a field but in its own prose, so nulling fields does nothing to it.
+
+        That last one was absent for as long as this method existed, and
+        `leaks_answer_key()` could not see it either — see that method's note. Both were
+        written by reading the *fields* `for_learner` writes rather than by asking how a
+        secret can be represented, and a `role=answer` markdown cell represents it as
+        text.
 
         Returns a copy; the authored spec is never mutated.
         """
         cells: list[Cell] = []
         for cell in self.cells:
+            if cell.role in SOLUTION_ONLY_ROLES and not (cell.is_code and cell.stub is not None):
+                continue
             data = cell.model_dump()
             data["check"] = None
             if cell.answer is not None:
@@ -399,8 +423,18 @@ class NotebookSpec(_Model):
                     options=list(getattr(cell.answer, "options", []) or []),
                     unit=getattr(cell.answer, "unit", "") or "",
                 ).model_dump()
-            if cell.role == CellRole.SOLUTION and cell.stub is not None:
+            if cell.role in SOLUTION_ONLY_ROLES and cell.stub is not None:
+                # `in SOLUTION_ONLY_ROLES`, not `== SOLUTION`. The guard above keeps any
+                # cell of these roles that has a stub, and this branch replaced the source
+                # of only one of them — so a quiz whose answer is a CODE cell with a stub
+                # (which `NotebookKind.QUIZ` explicitly permits: "a role=answer cell,
+                # markdown or code") was kept AND left unredacted. Greptile, PR 836.
+                #
+                # Two conditions for one set is the same defect this method was rewritten
+                # to remove, reintroduced four lines below the docstring that says so.
                 data["source"] = cell.stub
+                data["stub"] = None
+                data["role"] = CellRole.EXERCISE.value
             cells.append(Cell.model_validate(data))
         return self.model_copy(update={"cells": cells})
 
@@ -410,17 +444,31 @@ class NotebookSpec(_Model):
         Written to be called ON a learner build, as the assertion that `for_learner()`
         did its job — a redaction nothing checks is a redaction that silently stops
         happening the first time a field is added to `Cell`.
+
+        **Its arms are enumerated from how a secret can be REPRESENTED, not from the
+        fields `for_learner()` happens to write**, because those are the same list only
+        by luck and were not: until 2026-09-05 this returned `[]` for a spec whose
+        `role=answer` cell said "the answer is H" in plain markdown. The guard had been
+        derived from the implementation, so it inherited exactly the implementation's
+        blind spot and mutation-tested green. Four representations:
+
+        1. a hidden grader (`check`) — assertions, usually with the answer in them;
+        2. a structured key (`answer`);
+        3. an unredacted solution — a `solution` cell whose source is not its stub;
+        4. **prose** — any surviving cell in `SOLUTION_ONLY_ROLES`, whose secret is the
+           cell itself.
         """
         leaked: list[str] = []
         for cell in self.cells:
             if cell.check is not None or cell.answer is not None:
                 leaked.append(cell.id)
-            elif (
-                cell.role == CellRole.SOLUTION
-                and cell.stub is not None
-                and cell.source != cell.stub
-            ):
-                leaked.append(cell.id)
+            elif cell.role in SOLUTION_ONLY_ROLES:
+                # A surviving solution/answer cell. For a code solution the stub swap is
+                # the redaction, so it leaks only if the source is still the real thing;
+                # `for_learner` relabels those to `exercise`, so reaching here at all
+                # means the cell was not redacted.
+                if not (cell.is_code and cell.stub is not None and cell.source == cell.stub):
+                    leaked.append(cell.id)
         return leaked
 
     def graded_cells(self) -> list[Cell]:
@@ -691,6 +739,12 @@ class NotebookStarter(_ResourceBase):
     kind: NotebookKind
     title: str
     brief: str
+    #: The audience this starter is written for. Defaults to `engineer` — the default of
+    #: `Audience.level` — so a client built before this field keeps working and every
+    #: existing starter keeps its meaning. It exists because the starters the product
+    #: offered were all newcomer-to-intermediate, which made the far end of the range
+    #: (a research-grade notebook) something a reader had to know to ask for.
+    level: Literal["newcomer", "engineer", "student", "researcher"] = "engineer"
 
 
 class NotebookTemplates(_ResourceBase):
@@ -771,6 +825,33 @@ class GradeAttemptResponse(_ResourceBase):
     #: How many cells this attempt will be graded on, so a client can render the
     #: right number of pending rows instead of guessing from its own copy of the spec.
     graded_cells: int
+
+
+class NotebookGradesSnapshot(_ResourceBase):
+    """The score a reader last got on this notebook, restored when they come back.
+
+    Owner ruling ai-ops 260, option 1: a learner's score is kept. Before this it lived
+    only in the browser tab that watched the grading run's event stream and was gone the
+    moment the tab closed — so a reader who returned to a notebook they had already
+    worked through saw an ungraded one, and re-running every exercise was the only way to
+    see where they had got to.
+
+    `version_seq` is here rather than left implicit because a score belongs to the
+    version it was earned on. A notebook revised since means the reader's verdicts are
+    about cells that may no longer exist, and a client that renders them against the
+    current version without saying so is showing a stale pass as a current one.
+    """
+
+    #: The version the attempt was graded against, which need not be the current one.
+    version_seq: int
+    stale: bool = False
+    grades: GradeReport
+    passed: int = Field(ge=0)
+    failed: int = Field(ge=0)
+    attempted: int = Field(ge=0)
+    #: Why nothing could be graded, when that is the answer — a guard refusal, a sandbox
+    #: note. Empty on an ordinary wrong answer.
+    note: str = ""
 
 
 class ImportNotebookRequest(_ResourceBase):

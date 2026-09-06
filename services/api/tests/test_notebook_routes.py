@@ -10,6 +10,7 @@ the client, not what a repository function does internally (that is
 """
 
 import datetime as dt
+import json as json_module
 import uuid as uuid_module
 from types import SimpleNamespace
 
@@ -313,7 +314,344 @@ async def test_export_compiles_from_spec_when_no_executed_copy_exists(client, mo
 
     assert response.status_code == 200
     body = response.json()
-    assert body["cells"][0]["source"] == "# hi"
+    # A downloaded notebook now opens with what to install. Without it the first thing a
+    # reader meets outside our sandbox is `ModuleNotFoundError` on the first import, and
+    # the version requirement was recorded only in `metadata.leona`, which no Jupyter,
+    # JupyterLab or VS Code UI shows anybody.
+    assert body["cells"][0]["id"] == "leona-setup-note"
+    assert "pip install" in body["cells"][0]["source"]
+    assert body["cells"][1]["source"] == "# hi"
+
+
+async def test_a_quiz_downloads_without_its_answers(client, scope_identity, monkeypatch):
+    """The download button on a quiz used to hand over the answer key.
+
+    `build_for_kind` existed and only the CLI called it; every path a real user could
+    reach took `to_ipynb`'s `build="full"` default, so the file a reader downloaded to
+    ATTEMPT the quiz contained the answers. Asserted here, at the route, because that is
+    where a user touches it — the compiler's own redaction was correct throughout and
+    tested, which is exactly why nothing caught this.
+    """
+    scope, _identity = scope_identity
+    notebook = _notebook_row(slug="q", owner_user_id=scope.user_id)
+    spec = {
+        "schema_version": 1,
+        "slug": "q",
+        "title": "A quiz",
+        "kind": "quiz",
+        "cells": [
+            {"id": "c01", "kind": "markdown", "role": "objective", "source": "## Quiz"},
+            {"id": "c02", "kind": "markdown", "role": "question", "source": "Which gate?"},
+            {"id": "c03", "kind": "markdown", "role": "answer", "source": "Hadamard."},
+            {"id": "c04", "kind": "markdown", "role": "summary", "source": "Done."},
+        ],
+    }
+    version = _version_row(notebook_id=notebook.id, seq=1, status="ready", ipynb=None, spec=spec)
+
+    async def fake_get_notebook(_scope, _session, _notebook_id):
+        return notebook
+
+    async def fake_get_version_by_seq(_scope, _session, _notebook_id, _seq):
+        return version
+
+    monkeypatch.setattr(notebooks_repo, "get_notebook", fake_get_notebook)
+    monkeypatch.setattr(notebooks_repo, "get_version_by_seq", fake_get_version_by_seq)
+
+    async with client as c:
+        reader = await c.get(f"/v1/notebooks/{notebook.id}/versions/1/export.ipynb")
+        author = await c.get(f"/v1/notebooks/{notebook.id}/versions/1/export.ipynb?build=solution")
+
+    assert reader.status_code == 200
+    assert "Hadamard" not in reader.text
+    assert [c["id"] for c in reader.json()["cells"]] == [
+        "leona-setup-note",
+        "c01",
+        "c02",
+        "c04",
+    ]
+    # The control: asking for the solution build still returns it, so the assertion above
+    # is about the redaction and not about a route that lost the cell some other way.
+    assert author.status_code == 200
+    assert "Hadamard" in author.text
+
+
+async def test_a_lesson_downloads_whole(client, scope_identity, monkeypatch):
+    """The negative control for the rule above: only a challenge or a quiz is redacted.
+
+    Without this, making every download redacted would pass the quiz test and quietly
+    strip the worked examples out of every lesson — the failure that looks like success.
+    """
+    scope, _identity = scope_identity
+    notebook = _notebook_row(slug="l", owner_user_id=scope.user_id)
+    spec = {
+        "schema_version": 1,
+        "slug": "l",
+        "title": "A lesson",
+        "kind": "lesson",
+        "cells": [
+            {"id": "c01", "kind": "markdown", "role": "objective", "source": "## Lesson"},
+            {
+                "id": "c02",
+                "kind": "code",
+                "role": "solution",
+                "source": "worked = 42",
+                "stub": "worked = None\n",
+            },
+            {"id": "c03", "kind": "markdown", "role": "summary", "source": "Done."},
+        ],
+    }
+    version = _version_row(notebook_id=notebook.id, seq=1, status="ready", ipynb=None, spec=spec)
+
+    async def fake_get_notebook(_scope, _session, _notebook_id):
+        return notebook
+
+    async def fake_get_version_by_seq(_scope, _session, _notebook_id, _seq):
+        return version
+
+    monkeypatch.setattr(notebooks_repo, "get_notebook", fake_get_notebook)
+    monkeypatch.setattr(notebooks_repo, "get_version_by_seq", fake_get_version_by_seq)
+
+    async with client as c:
+        response = await c.get(f"/v1/notebooks/{notebook.id}/versions/1/export.ipynb")
+
+    assert response.status_code == 200
+    assert "worked = 42" in response.text
+
+
+# ------------------------------------------------------- who may see the answers (ai-ops#260)
+
+
+_QUIZ_SPEC = {
+    "schema_version": 1,
+    "slug": "q",
+    "title": "A quiz",
+    "kind": "quiz",
+    "cells": [
+        {"id": "c01", "kind": "markdown", "role": "objective", "source": "## Quiz"},
+        {
+            "id": "c02",
+            "kind": "markdown",
+            "role": "question",
+            "source": "Which gate creates superposition?",
+            "answer": {"kind": "choice", "options": ["X", "H"], "correct": 1},
+        },
+        {"id": "c03", "kind": "markdown", "role": "answer", "source": "The Hadamard gate."},
+        {"id": "c04", "kind": "markdown", "role": "summary", "source": "Done."},
+    ],
+}
+
+
+def _wire_quiz(monkeypatch, notebook):
+    version = _version_row(
+        notebook_id=notebook.id,
+        seq=1,
+        status="ready",
+        spec=_QUIZ_SPEC,
+        source="# %% [markdown] role=answer\n# The Hadamard gate.\n",
+        ipynb={"cells": [{"cell_type": "markdown", "source": "The Hadamard gate."}], "nbformat": 4},
+    )
+
+    async def fake_get_notebook(_scope, _session, _notebook_id):
+        return notebook
+
+    async def fake_get_version_by_seq(_scope, _session, _notebook_id, _seq):
+        return version
+
+    monkeypatch.setattr(notebooks_repo, "get_notebook", fake_get_notebook)
+    monkeypatch.setattr(notebooks_repo, "get_version_by_seq", fake_get_version_by_seq)
+    return version
+
+
+async def test_the_author_of_a_notebook_still_sees_its_answers(client, scope_identity, monkeypatch):
+    scope, _identity = scope_identity
+    _wire_quiz(monkeypatch, _notebook_row(slug="q", owner_user_id=scope.user_id))
+
+    async with client as c:
+        response = await c.get(f"/v1/notebooks/{uuid_module.uuid4()}/versions/1")
+
+    assert response.status_code == 200
+    assert "Hadamard" in response.text, "the person who wrote the quiz must still see it"
+    assert response.json()["spec"]["cells"][2]["role"] == "answer"
+
+
+async def test_another_member_of_the_workspace_does_not_see_the_answers(
+    client, scope_identity, monkeypatch
+):
+    """Owner ruling ai-ops#260, option 1 — only the creator sees the answers.
+
+    Before this, `for_learner()` had no production caller: every member of the workspace
+    received the raw spec, and so did anyone with the network tab open. The three
+    assertions below are three separate carriers of the same secret, and redacting one
+    while leaving the others is what a spec-only fix would have done.
+    """
+    _wire_quiz(monkeypatch, _notebook_row(slug="q", owner_user_id=uuid_module.uuid4()))
+
+    async with client as c:
+        response = await c.get(f"/v1/notebooks/{uuid_module.uuid4()}/versions/1")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert [cell["id"] for cell in body["spec"]["cells"]] == ["c01", "c02", "c04"]
+    assert body["spec"]["cells"][1]["answer"] is None
+    assert body["spec"]["cells"][1]["answer_prompt"]["options"] == ["X", "H"]
+    assert "Hadamard" not in body["source"], "the .nb.py source carries the answer too"
+    assert "Hadamard" not in json_module.dumps(body["ipynb"]), "so does the stored compile"
+
+
+async def test_a_non_author_cannot_ask_for_the_solution_build(client, monkeypatch):
+    """`?build=solution` was the redaction's back door, open to anyone in the workspace.
+
+    The version route was fixed and the export route, one function below it, took the
+    build straight from the query string — so a colleague got the unredacted notebook for
+    the price of a parameter. Greptile caught it on PR 836.
+
+    Refused rather than quietly downgraded: they asked for a specific thing and are
+    entitled to know they did not get it.
+    """
+    notebook = _notebook_row(slug="q", owner_user_id=uuid_module.uuid4())  # someone else's
+    _wire_quiz(monkeypatch, notebook)
+
+    async with client as c:
+        response = await c.get(
+            f"/v1/notebooks/{notebook.id}/versions/1/export.ipynb?build=solution"
+        )
+
+    assert response.status_code == 403
+    assert response.json()["reason"] == "notebook_solutions_are_the_authors"
+    assert "Hadamard" not in response.text
+
+
+async def test_a_non_author_downloading_a_LESSON_still_gets_it_redacted(client, monkeypatch):
+    """Deciding by kind alone leaves every graded lesson downloadable in full.
+
+    `build_for_kind` answers "what is this notebook FOR", so a lesson compiles whole —
+    right for its author, wrong for a colleague, because the ruling is about answers and
+    a lesson carries `role=answer` and stubbed `role=solution` cells exactly as a quiz
+    does. The same defect in a different costume, and it survives a fix aimed only at the
+    `?build=solution` parameter.
+    """
+    notebook = _notebook_row(slug="l", owner_user_id=uuid_module.uuid4())
+    spec = {
+        "schema_version": 1,
+        "slug": "l",
+        "title": "A graded lesson",
+        "kind": "lesson",
+        "cells": [
+            {"id": "c01", "kind": "markdown", "role": "objective", "source": "## Lesson"},
+            {
+                "id": "c02",
+                "kind": "code",
+                "role": "solution",
+                "source": "worked = 42",
+                "stub": "worked = None\n",
+            },
+            {"id": "c03", "kind": "markdown", "role": "answer", "source": "It is Hadamard."},
+            {"id": "c04", "kind": "markdown", "role": "summary", "source": "Done."},
+        ],
+    }
+    version = _version_row(notebook_id=notebook.id, seq=1, status="ready", ipynb=None, spec=spec)
+
+    async def fake_get_notebook(_scope, _session, _notebook_id):
+        return notebook
+
+    async def fake_get_version_by_seq(_scope, _session, _notebook_id, _seq):
+        return version
+
+    monkeypatch.setattr(notebooks_repo, "get_notebook", fake_get_notebook)
+    monkeypatch.setattr(notebooks_repo, "get_version_by_seq", fake_get_version_by_seq)
+
+    async with client as c:
+        response = await c.get(f"/v1/notebooks/{notebook.id}/versions/1/export.ipynb")
+
+    assert response.status_code == 200
+    assert "worked = 42" not in response.text
+    assert "It is Hadamard" not in response.text
+    # The control: the cell is still THERE as a slot to type in, not silently deleted.
+    assert "worked = None" in response.text
+
+
+# ------------------------------------------------ a learner's score is kept (ai-ops 260)
+
+
+def _wire_grades(monkeypatch, notebook, found):
+    async def fake_get_notebook(_scope, _session, _notebook_id):
+        return notebook
+
+    async def fake_latest(_scope, _session, _notebook_id):
+        return found
+
+    monkeypatch.setattr(notebooks_repo, "get_notebook", fake_get_notebook)
+    monkeypatch.setattr(notebooks_repo, "latest_grades_for_reader", fake_latest)
+
+
+def _grades_payload(version, **overrides):
+    payload = {
+        "version_id": str(version.id),
+        "grades": {"notebook_slug": "n", "cells": []},
+        "passed": 4,
+        "failed": 1,
+        "attempted": 5,
+        "note": "",
+    }
+    payload.update(overrides)
+    return payload
+
+
+async def test_a_reader_gets_their_last_score_back(client, monkeypatch):
+    """Owner ruling ai-ops 260, option 1 — the score survives closing the tab.
+
+    It always could have: grading writes `notebook.grades` to `run_events` and
+    `RepoEventSink` validates it before persisting. Nothing ever read it back, so the
+    score existed in the database and not in the product.
+    """
+    notebook = _notebook_row(slug="n")
+    version = _version_row(notebook_id=notebook.id, seq=3, status="ready")
+    notebook.current_version_id = version.id
+    _wire_grades(monkeypatch, notebook, (version, _grades_payload(version)))
+
+    async with client as c:
+        response = await c.get(f"/v1/notebooks/{notebook.id}/grades")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert (body["passed"], body["failed"], body["attempted"]) == (4, 1, 5)
+    assert body["version_seq"] == 3
+    assert body["stale"] is False
+
+
+async def test_a_score_earned_on_an_older_version_comes_back_marked_stale(client, monkeypatch):
+    """Returned, not dropped — but a client must be able to say which version it is for.
+
+    Rendering an old pass against rewritten cells silently is the failure this prevents:
+    the reader believes they have already done work the current version now asks for.
+    """
+    notebook = _notebook_row(slug="n")
+    graded = _version_row(notebook_id=notebook.id, seq=1, status="ready")
+    notebook.current_version_id = uuid_module.uuid4()  # a later version is current
+    _wire_grades(monkeypatch, notebook, (graded, _grades_payload(graded)))
+
+    async with client as c:
+        response = await c.get(f"/v1/notebooks/{notebook.id}/grades")
+
+    assert response.status_code == 200
+    assert response.json()["stale"] is True
+
+
+async def test_a_reader_with_no_attempt_gets_null_rather_than_an_invented_zero(client, monkeypatch):
+    """`null`, not `0 of 0`.
+
+    A zero score is a claim that the reader tried and got nothing right. "Has not tried"
+    and "tried and got nothing right" are different facts about a learner, and a client
+    that cannot tell them apart greets a first-time reader with a failed scorecard.
+    """
+    notebook = _notebook_row(slug="n")
+    _wire_grades(monkeypatch, notebook, None)
+
+    async with client as c:
+        response = await c.get(f"/v1/notebooks/{notebook.id}/grades")
+
+    assert response.status_code == 200
+    assert response.json() is None
 
 
 # -------------------------------------------------------------------------- import

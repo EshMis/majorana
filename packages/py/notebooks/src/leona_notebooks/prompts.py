@@ -123,6 +123,56 @@ Use `tags=["raises-exception"]` only on a cell that is meant to fail. Markdown m
 Do not number cells; do not add ids. Never write an API token, email address or file path into a cell.
 """
 
+# --------------------------------------------------------------------------- the audience
+
+#: How to WRITE for each audience, as opposed to what the notebook must structurally
+#: contain (`templates._LEVEL_RULES`, which is checkable and enforced). The two are
+#: separate on purpose: the rules are what we can fail a draft for, and this is the
+#: judgement the rules cannot express.
+#:
+#: Before this existed, `Audience.level` reached the model only as one word inside a JSON
+#: blob, so "newcomer" and "researcher" produced the same notebook in a different tone.
+AUDIENCE_GUIDANCE: dict[str, str] = {
+    "newcomer": (
+        "Someone who can write Python and has never met quantum computing. Assume nothing: "
+        "the first time a term appears — qubit, superposition, amplitude, measurement, "
+        "shots — define it in one plain sentence before using it. Prefer one idea per cell "
+        "and repeat each idea in a second, slightly different setting before moving on; a "
+        "beginner learns from the second encounter, not the first. Use the analogy that was "
+        "asked for, then say exactly where it stops being true, because an analogy nobody "
+        "retires becomes a misconception. Never write a line of code the surrounding prose "
+        "has not already accounted for, and never leave a printed number unexplained. "
+        "Mathematics only where it is the shortest honest explanation."
+    ),
+    "student": (
+        "Someone taking a course, who has seen the linear algebra and wants to connect it to "
+        "running code. Show the expression and then the circuit that realises it, in that "
+        "order. Make them predict and then commit to an answer before running — a student "
+        "who reads the output first learns nothing from it. Every exercise gets a real check "
+        "with a message saying what was expected, and hints go one step at a time rather "
+        "than collapsing to the answer."
+    ),
+    "engineer": (
+        "A working software engineer evaluating whether this is usable. Lead with the "
+        "runnable thing and keep the theory to what is needed to read it. Be concrete about "
+        "versions, APIs and what breaks: a deprecated call, a bit-order convention, a result "
+        "object whose shape is not obvious. Say what the code costs — qubits, shots, "
+        "wall-clock — and where it stops scaling."
+    ),
+    "researcher": (
+        "Someone who may build on this and will check it. Write for a reader who will "
+        "disagree: state the claim, the evidence, and the conditions under which it holds. "
+        "Cite the specific paper and the specific place in it — never a bare author-year for "
+        "a claim the paper makes in passing, and never a citation you have not read in the "
+        "seed material. Seed everything and say what the seed controls. Report the "
+        "uncertainty beside every number: shot noise, sample size, fit error. Include the "
+        "control, not just the arm — a result with nothing to compare against is a "
+        "measurement, not a finding. End by saying what the notebook does NOT establish; "
+        "that paragraph is the one a researcher reads first. No analogies."
+    ),
+}
+
+
 # --------------------------------------------------------------------------- outline stage
 
 
@@ -202,7 +252,7 @@ def render_outline_user_prompt(
         "brief": brief,
         "kind_hint": kind.value,
         "kind_meaning": KIND_DESCRIPTIONS[kind],
-        "structure_requirements": structure_for(kind),
+        "structure_requirements": structure_for(kind, (audience or Audience()).level),
         "audience": (audience or Audience()).model_dump(),
         "style": (style or Style()).model_dump(),
         "framework": (framework or Framework()).model_dump(),
@@ -251,7 +301,9 @@ def render_draft_user_prompt(
     parts = [
         "BRIEF (the reader's own words):\n" + brief,
         "OUTLINE (JSON):\n" + outline.model_dump_json(indent=2),
-        "STRUCTURE REQUIREMENTS:\n- " + "\n- ".join(structure_for(outline.kind)),
+        "STRUCTURE REQUIREMENTS:\n- "
+        + "\n- ".join(structure_for(outline.kind, outline.audience.level)),
+        "WHO THIS IS FOR:\n" + AUDIENCE_GUIDANCE[outline.audience.level],
         "FRAMEWORK FACTS:\n" + facts,
         allowed_imports_text(),
         "OUTPUT FORMAT:\n" + SOURCE_FORMAT_SPEC,

@@ -349,6 +349,20 @@ async def generate(
                     "brief": request.brief,
                     "seeds": list(request.seeds),
                     "references": candidate.references or list(outline.references),
+                    # The audience and style come from the REQUEST (via the outline the
+                    # planner returned), never from the draft. `parse_source` reads
+                    # neither out of the `.nb.py` header — there is no `audience:` key in
+                    # that format — so a parsed candidate always carries
+                    # `Audience(level="engineer")`, whatever the reader asked for.
+                    #
+                    # Without this the level-specific structure rules would be dead in
+                    # the pipeline: `check_structure` reads the level off the spec, would
+                    # always have read "engineer", and `engineer` is deliberately the one
+                    # level with no rules. A newcomer's course would have been checked
+                    # against nothing extra and the whole audience dimension would have
+                    # run zero times while every test of it passed.
+                    "audience": outline.audience,
+                    "style": outline.style,
                 }
             )
             candidate = _ensure_seed_run_cell(candidate, request.seed_run_cell)

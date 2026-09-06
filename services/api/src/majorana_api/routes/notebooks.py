@@ -16,12 +16,14 @@ import hashlib
 import json
 import re
 import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 import majorana_contracts as contracts
 from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import JSONResponse
 from leona_notebooks import from_ipynb, to_ipynb
+from leona_notebooks.ipynb import Build as NotebookBuild
+from leona_notebooks.ipynb import build_for_kind
 from leona_notebooks.courses import COURSE_STARTERS
 from leona_notebooks.authoring import (
     AuthoringInputError,
@@ -29,7 +31,12 @@ from leona_notebooks.authoring import (
     spec_from_author_request,
 )
 from leona_notebooks.source import render_source
-from leona_notebooks.templates import KIND_DESCRIPTIONS, STARTER_BRIEFS, structure_for
+from leona_notebooks.templates import (
+    KIND_DESCRIPTIONS,
+    RESEARCH_BRIEFS,
+    STARTER_BRIEFS,
+    structure_for,
+)
 from majorana_contracts.enums import Framework, RunMode
 
 from ..auth.deps import CurrentIdentity, CurrentScope, DbSession, get_settings
@@ -260,14 +267,18 @@ async def notebook_templates(scope: CurrentScope) -> contracts.NotebookTemplates
         )
         for kind, description in KIND_DESCRIPTIONS.items()
     ]
+    # Both lists, in one `starters` array: the split between "first circuit" and
+    # "reproduce a paper's ansatz" is the audience, which the `level` field carries, not
+    # a separate endpoint the client would have to know to call.
     starters = [
         contracts.NotebookStarter(
             id=starter["id"],
             kind=contracts.NotebookKind(starter["kind"]),
             title=starter["title"],
             brief=starter["brief"],
+            level=starter.get("level", "engineer"),
         )
-        for starter in STARTER_BRIEFS
+        for starter in (*STARTER_BRIEFS, *RESEARCH_BRIEFS)
     ]
     course_starters = [
         contracts.NotebookStarter(
@@ -429,22 +440,110 @@ async def list_notebook_versions(
 async def get_notebook_version(
     notebook_id: uuid.UUID, seq: int, scope: CurrentScope, session: DbSession
 ) -> contracts.NotebookVersion:
+    """One version, redacted for everyone but the person who made the notebook.
+
+    Owner ruling ai-ops#260: *"a shared notebook arrives with the answers stripped, and
+    only the person who created it sees them."* This is the route that decides it. Until
+    now it returned the raw spec to every member of the workspace — `for_learner()`
+    existed and had no production caller at all — so a colleague opening someone's quiz
+    read the answer key straight out of the response, and so did anyone with the
+    browser's network tab open.
+
+    Three fields carry the answer, not one, which is the whole reason this is written out
+    rather than done in a line:
+
+    * `spec` — the `answer` keys and the hidden `check` graders;
+    * `source` — the `.nb.py` text those were authored in, `check="..."` and
+      `answer={...}` markers included, verbatim;
+    * `ipynb` — the stored compile, which is the `full` build.
+
+    Redacting only the first would have looked right in a diff and in a test that asserts
+    on `spec`, while the same secret went out twice beside it.
+    """
+    notebook = await notebooks_repo.get_notebook(scope, session, notebook_id)
     version = await notebooks_repo.get_version_by_seq(scope, session, notebook_id, seq)
     resource = notebooks_repo.version_to_resource(version, full=True)
     assert isinstance(resource, contracts.NotebookVersion)  # full=True always returns this
-    return resource
+    if scope.user_id == notebook.owner_user_id:
+        return resource
+    learner = resource.spec.for_learner() if resource.spec is not None else None
+    return resource.model_copy(
+        update={
+            "spec": learner,
+            "source": render_source(learner) if learner is not None else "",
+            "ipynb": to_ipynb(learner, build=build_for_kind(learner.kind), report=resource.report)
+            if learner is not None
+            else None,
+        }
+    )
 
 
 @router.get("/notebooks/{notebook_id}/versions/{seq}/export.ipynb")
 async def export_notebook_version(
-    notebook_id: uuid.UUID, seq: int, scope: CurrentScope, session: DbSession
+    notebook_id: uuid.UUID,
+    seq: int,
+    scope: CurrentScope,
+    session: DbSession,
+    build: Literal["reader", "solution"] = "reader",
 ) -> JSONResponse:
+    """The `.ipynb` download.
+
+    **Which build, and why it is decided here.** The stored `version.ipynb` is the
+    author's complete copy — every solution, every answer — because that is what the
+    workspace renders and what a revision reads. Serving it as the download meant the
+    button on a quiz handed over the answer key: `build_for_kind` existed, and only the
+    CLI called it, so no path a real user could reach ever produced a redacted file.
+
+    So the decision is made at the boundary rather than at write time. `reader` (the
+    default) is the copy the notebook's kind implies — a challenge or a quiz redacted,
+    everything else whole — and `solution` is the explicit ask for the complete one.
+
+    **`solution` is the author's ask, and only the author's** (owner ruling ai-ops 260,
+    option 1). The first version of this route took the parameter from anyone, which
+    handed a non-owner the unredacted build for the price of a query string and undid the
+    redaction on the route one function above. Greptile caught it on PR 836. A non-owner
+    is refused rather than quietly downgraded: they asked for a specific thing and are
+    entitled to know they did not get it.
+
+    **And a non-owner gets the learner build whatever the kind.** `build_for_kind` answers
+    "what is this notebook FOR", which is why a lesson compiles whole — but the ruling is
+    about answers, not about kinds, and a lesson may carry `role=solution` cells with
+    stubs and `role=answer` cells just as a quiz does. Deciding by kind alone would have
+    left every graded lesson downloadable in full by a colleague, which is the same defect
+    in a different costume.
+    """
     notebook = await notebooks_repo.get_notebook(scope, session, notebook_id)
     version = await notebooks_repo.get_version_by_seq(scope, session, notebook_id, seq)
-    if version.ipynb is not None:
+    is_author = scope.user_id == notebook.owner_user_id
+    if build == "solution" and not is_author:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "Only the person who created this notebook can download it with its answers.",
+                "reason": "notebook_solutions_are_the_authors",
+            },
+        )
+    spec = contracts.NotebookSpec.model_validate(version.spec) if version.spec is not None else None
+    if not is_author:
+        # `challenge` is the FILE redaction — the same one `for_learner()` performs, plus
+        # a typing slot where a solution cell had no stub, which a downloaded notebook
+        # needs and a browser build does not. Applied whatever the kind, so it does not
+        # depend on `build_for_kind`.
+        wanted: NotebookBuild = "challenge"
+    elif build == "solution":
+        wanted = "full"
+    else:
+        wanted = build_for_kind(spec.kind) if spec is not None else "full"
+    if spec is not None:
+        report = (
+            contracts.ExecutionReport.model_validate(version.report)
+            if version.report is not None
+            else None
+        )
+        ipynb = to_ipynb(spec, build=wanted, report=report, preamble=True)
+    elif version.ipynb is not None:
+        # An imported notebook: bytes the reader gave us, with no spec to recompile from.
         ipynb = version.ipynb
-    elif version.spec is not None:
-        ipynb = to_ipynb(contracts.NotebookSpec.model_validate(version.spec))
     else:
         raise HTTPException(
             status_code=404,
@@ -453,7 +552,8 @@ async def export_notebook_version(
                 "reason": "notebook_version_not_compiled",
             },
         )
-    filename = f"{notebook.slug}-v{version.seq}.ipynb"
+    suffix = "-solutions" if wanted != "challenge" and build == "solution" else ""
+    filename = f"{notebook.slug}-v{version.seq}{suffix}.ipynb"
     return JSONResponse(
         content=ipynb,
         media_type="application/x-ipynb+json",
@@ -699,6 +799,50 @@ async def grade_notebook_attempt(
         run_id=run.id,
     )
     return contracts.GradeAttemptResponse(run_id=run.id, graded_cells=len(graded))
+
+
+@router.get(
+    "/notebooks/{notebook_id}/grades",
+    response_model=contracts.NotebookGradesSnapshot | None,
+)
+async def get_notebook_grades(
+    notebook_id: uuid.UUID, scope: CurrentScope, session: DbSession
+) -> contracts.NotebookGradesSnapshot | None:
+    """This reader's own last score on this notebook, or `null` if they have none.
+
+    Owner ruling ai-ops 260, option 1 — the score is kept, and this is where a reader
+    gets it back. It reads the `notebook.grades` events that grading already writes to
+    `run_events` rather than a table of its own: the verdict was durable from the first
+    day grading shipped and simply had no reader, so a learner who closed the tab lost a
+    score that was sitting in the database the whole time.
+
+    Filtered to the requesting user, not just the workspace. A colleague's pass on the
+    same notebook is not this reader's score, and showing it would be worse than showing
+    nothing — they would believe they had already done the work.
+
+    `stale` is set when the graded version is no longer the current one. The verdicts are
+    still returned, because "you scored 4 of 5 on the previous version" is useful and
+    silently dropping it is not, but a client must be able to say so rather than render a
+    pass against cells that have since been rewritten.
+
+    `null` rather than a zeroed snapshot when there is no attempt. "Has not tried" and
+    "tried and got nothing right" are different facts about a learner, and a client that
+    cannot tell them apart greets a first-time reader with a failed scorecard.
+    """
+    notebook = await notebooks_repo.get_notebook(scope, session, notebook_id)
+    found = await notebooks_repo.latest_grades_for_reader(scope, session, notebook_id)
+    if found is None:
+        return None
+    version, payload = found
+    return contracts.NotebookGradesSnapshot(
+        version_seq=version.seq,
+        stale=notebook.current_version_id != version.id,
+        grades=contracts.GradeReport.model_validate(payload.get("grades") or {}),
+        passed=int(payload.get("passed") or 0),
+        failed=int(payload.get("failed") or 0),
+        attempted=int(payload.get("attempted") or 0),
+        note=str(payload.get("note") or ""),
+    )
 
 
 @router.get("/notebooks/{notebook_id}/turns", response_model=contracts.NotebookTurnList)

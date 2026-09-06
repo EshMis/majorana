@@ -20,11 +20,12 @@ from typing import Any
 import majorana_contracts as contracts
 from majorana_contracts import Scope
 from majorana_contracts.enums import Visibility
-from sqlalchemy import func, select
+from sqlalchemy import cast, func, select
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..ids import uuid7
-from ..orm import Notebook, NotebookTurn, NotebookVersion
+from ..orm import Notebook, NotebookTurn, NotebookVersion, Run, RunEvent
 from ._base import NotFoundError, require_write, touched_now
 from .audit import record_audit
 
@@ -418,6 +419,56 @@ async def list_turns(
 
 
 # ---------------------------------------------------------------------------- resources
+
+
+async def latest_grades_for_reader(
+    scope: Scope, session: AsyncSession, notebook_id: uuid.UUID
+) -> tuple[NotebookVersion, dict[str, Any]] | None:
+    """The most recent verdicts THIS reader received on this notebook, or None.
+
+    Owner ruling ai-ops 260, option 1: *"Keep each learner's score so they can come back
+    to it."* This is that, and it needs no new table — the score was already durable and
+    merely unreachable. Grading emits `notebook.grades`, `RepoEventSink` validates it
+    against the contracts union and writes it to `run_events`, and it then existed only
+    for whoever happened to be watching the stream: closing the tab lost the score, and
+    reopening the notebook showed an ungraded one.
+
+    **Scoped three ways, and all three are load-bearing.** `Run.workspace_id` is the
+    tenancy boundary every query in this layer applies. `Run.user_id` is the ruling — one
+    learner's score is theirs, and a workspace-only filter would hand a reader whichever
+    colleague graded the notebook last. The join to `NotebookVersion` is what makes the
+    answer about THIS notebook rather than the reader's most recent grading run anywhere.
+
+    It is one statement rather than two for a reason worth keeping: the first draft
+    fetched this notebook's version ids and then queried the events, and it returned
+    early when there were no versions — so a test asserting on the emitted SQL saw no
+    query at all, and the scoping clauses were unassertable. One statement has no branch
+    to hide in.
+
+    Ordered by `Run.created_at` then `RunEvent.seq`: two attempts starting in the same
+    second are separated by the event sequence, which is monotonic within a run.
+    """
+    stmt = (
+        select(RunEvent.payload, NotebookVersion)
+        .join(Run, RunEvent.run_id == Run.id)
+        .join(
+            NotebookVersion,
+            NotebookVersion.id == cast(RunEvent.payload["version_id"].astext, PGUUID),
+        )
+        .where(
+            RunEvent.type == "notebook.grades",
+            Run.workspace_id == scope.workspace_id,
+            Run.user_id == scope.user_id,
+            NotebookVersion.notebook_id == notebook_id,
+        )
+        .order_by(Run.created_at.desc(), RunEvent.seq.desc())
+        .limit(1)
+    )
+    row = (await session.execute(stmt)).first()
+    if row is None:
+        return None
+    payload, version = row
+    return version, (payload if isinstance(payload, dict) else {})
 
 
 def to_resource(notebook: Notebook, latest_version: NotebookVersion) -> contracts.Notebook:
