@@ -648,6 +648,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     gradeSummary: (passed: number, attempted: number) => string;
     gradeUngradable: (count: number) => string;
     gradeFromOlderVersion: (seq: number) => string;
+    downloadWithSolutions: string;
 
     edit: string;
     editExit: string;
@@ -1467,6 +1468,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     gradeFromOlderVersion: (seq) =>
       `This score is from version ${seq}, which has since been revised — some of these `
       + `exercises may have changed.`,
+    downloadWithSolutions: "Download with answers",
 
     edit: "Edit",
     editExit: "Done editing",
@@ -2275,6 +2277,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     gradeUngradable: (count) => `${count} 問は採点できませんでした。どちらにも数えていません。`,
     gradeFromOlderVersion: (seq) =>
       `この結果はバージョン ${seq} のものです。その後改訂されているため、問題が変わっている可能性があります。`,
+    downloadWithSolutions: "解答付きでダウンロード",
 
     edit: "編集",
     editExit: "編集を終える",

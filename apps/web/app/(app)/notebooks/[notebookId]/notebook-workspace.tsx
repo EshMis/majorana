@@ -26,6 +26,7 @@ import {
   type CellEdit,
 } from "../../../../lib/notebook-editing";
 import { notebookExportFilename } from "../../../../lib/notebook-export";
+import { canDownloadSolutions } from "../../../../lib/notebook-download";
 import { gradeSummary, hasGradesToShow, passRate } from "../../../../lib/notebook-grades";
 import { hasMasteryToShow, notebookMastery } from "../../../../lib/notebook-mastery";
 import { errorTracebackText, notebookCellViews, notebookStatusPill } from "../../../../lib/notebook-view";
@@ -99,6 +100,10 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   //: A ref rather than state: the restore callback needs the value at the moment it
   //: settles, and a state read there would be the value captured when it was created.
   const liveGradesSeen = useRef(false);
+  //: The signed-in user's id, for the one question this page asks of it: is the viewer
+  //: the notebook's author? `null` until `/api/me` answers, which means the solutions
+  //: button appears a moment late rather than appearing wrongly and then vanishing.
+  const [viewerId, setViewerId] = useState<string | null>(null);
   //: The notebook currently on screen, readable from a callback that was created for a
   //: previous one. `notebookId` itself is captured per render and is therefore the same
   //: value inside a stale callback and outside it.
@@ -197,6 +202,24 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
    * scored 4/5 on the previous version" is worth knowing — but the strip says so, so a
    * pass is never rendered against cells that have since been rewritten.
    */
+  // Once per mount, not per notebook: who is looking does not change when they open a
+  // different notebook, and refetching it on every navigation would make the solutions
+  // button flicker away and back.
+  useEffect(() => {
+    let active = true;
+    void fetch("/api/me", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: unknown) => {
+        if (!active || !isRecord(payload)) return;
+        const id = payload.user_id;
+        if (typeof id === "string") setViewerId(id);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
   function loadGrades() {
     // Which notebook this restore is for, compared later against a REF holding the one
     // currently open. The first version of this captured `notebookId` into a const and
@@ -572,6 +595,8 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   // question from what ran. `lib/notebook-grades.ts` owns the counting rule that
   // makes it honest — `ungradable` cells stay out of the denominator, because a
   // grader that could not run has established nothing about the reader.
+  const isAuthorOfARedactedNotebook = canDownloadSolutions(notebook, viewerId);
+
   const summary = gradeSummary(gradeReport);
   const rate = passRate(summary);
   const gradeSummaryStrip = hasGradesToShow(summary) ? (
@@ -834,18 +859,34 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
     }
   }
 
-  async function downloadVersion() {
+  /**
+   * Download this version. `solutions` asks for the author's complete copy.
+   *
+   * The reader's copy of a challenge or a quiz is redacted — that is the point, and it
+   * is decided on the server. But the author needs a way to get their own answer key
+   * out of the product, and adding the redaction without adding this took a capability
+   * away from the person who wrote the notebook: their download used to contain
+   * everything and afterwards there was no route to it from the interface at all.
+   */
+  async function downloadVersion(solutions = false) {
     if (!notebook || !version || downloading) return;
     setDownloading(true);
     setActionError(null);
     try {
       const response = await fetch(
-        `/api/notebooks/${encodeURIComponent(notebookId)}/versions/${version.seq}/export`,
+        `/api/notebooks/${encodeURIComponent(notebookId)}/versions/${version.seq}/export` +
+          (solutions ? "?build=solution" : ""),
         { cache: "no-store" },
       );
       if (!response.ok) throw new Error(copy.downloadFailed);
       const blob = await response.blob();
-      download(blob, notebookExportFilename(notebook.slug, version.seq));
+      download(
+        blob,
+        notebookExportFilename(
+          solutions ? `${notebook.slug}-solutions` : notebook.slug,
+          version.seq,
+        ),
+      );
     } catch (cause) {
       setActionError(cause instanceof Error ? cause.message : copy.downloadFailed);
     } finally {
@@ -976,6 +1017,16 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
                 </label>
               ) : null}
             </>
+          ) : null}
+          {isAuthorOfARedactedNotebook ? (
+            <button
+              className="mj-secondary-button"
+              type="button"
+              disabled={!version?.ipynb || downloading}
+              onClick={() => void downloadVersion(true)}
+            >
+              {downloading ? copy.creating : copy.downloadWithSolutions}
+            </button>
           ) : null}
           <button
             className="mj-secondary-button"
