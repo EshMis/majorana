@@ -16,8 +16,12 @@ The security gate is **not** `plans/security-baseline.md` — that path does not
 file it names is superseded, in `.../plans/attic/`, describing a Supabase/Firebase stack this
 project never built.
 
-Current phase: `~/Documents/Projects/Majorana/memory/NEXT.md`, or
-`~/Developer/ai-ops/desk/DESK.md` when that path reads as `Operation not permitted`
-(`~/Documents` is TCC-protected; some sessions can stat it but not read it).
+Current phase: `~/Developer/leona/memory/NEXT.md`. The owner's queue is
+`~/Developer/ai-ops/desk/DESK.md`.
+
+Both resolve into `~/Developer` and are readable from every session type. The
+`~/Documents/Projects/Majorana/...` form this line used to name is a TCC-protected compat
+symlink — an SSH-launched or sandboxed session can `stat` it but not read it, which surfaces
+as `Operation not permitted` and looks like a missing file. Do not rewrite either path back.
 
 `dev` is production — see AGENTS.md § Branching before merging anything.

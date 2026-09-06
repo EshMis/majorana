@@ -104,6 +104,12 @@ browser/compiler caches.
 - A rollback is a hosted deployment rollback or a forward fix; do not rewrite
   shared migration history.
 
-For Codex sessions, use the repo `AGENTS.md` and `CODEX_ONBOARDING.md` as the
-startup contract. Claude remains the review/merge coordinator for cross-boundary
-changes, while the local branch and PR are the handoff surface.
+Every agent — Claude, Codex or another — uses the same startup contract: the repo
+`AGENTS.md`, then the `AGENTS.md` of each package it touches. There is no per-agent lane
+and no separate Codex onboarding document (`CODEX_ONBOARDING.md` was referenced here for
+some time and exists nowhere). The local branch and PR are the handoff surface.
+
+For a cross-boundary change, review and merge coordination belongs to the **orchestrating
+session or the owner** — a restriction on the role, not on any agent by name, so an
+orchestrating Codex session has exactly the standing an orchestrating Claude session has.
+A subagent may not merge a blast-radius path on its own authority whichever agent it is.
