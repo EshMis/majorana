@@ -563,3 +563,57 @@ async def test_the_answer_audit_runs_even_when_the_notebook_does_not_execute() -
     assert outcome.answers is not None
     assert [v.verdict for v in outcome.answers.verdicts] == ["cannot-fail"]
     assert all(cell.answer is None for cell in outcome.spec.cells)
+
+
+# ----------------------------------------- the audience reaches the gate (or it does nothing)
+
+
+async def test_the_requested_audience_reaches_the_structure_gate() -> None:
+    """The level-specific rules are dead unless the CANDIDATE carries the level.
+
+    `check_structure` reads `spec.audience.level`, and the spec it reads is the one
+    `parse_source` built from the model's draft. The `.nb.py` header format has no
+    `audience:` key at all, so a parsed candidate always carries the default,
+    `Audience(level="engineer")` — and `engineer` is deliberately the one level with no
+    extra rules. Without the pipeline copying the outline's audience onto the candidate,
+    a newcomer's course would be checked against nothing beyond its kind, every unit test
+    of the level rules would still pass, and the whole audience dimension would run zero
+    times in production.
+
+    Asserted through the pipeline's own feedback, because that is the only place the
+    effect is observable: a failing rule becomes the text handed back to the model on its
+    retry. The expected strings are taken FROM the rule set rather than typed out — a
+    hand-copied sentence would make this test fail when a rule is reworded, which teaches
+    the next reader to loosen the assertion rather than to look.
+    """
+    from leona_notebooks.prompts import NotebookOutline
+    from leona_notebooks.templates import _LEVEL_RULES
+
+    newcomer_only = {rule.text for rule in _LEVEL_RULES["newcomer"]} - {
+        rule.text for rule in _LEVEL_RULES["engineer"]
+    }
+    assert newcomer_only, "the newcomer level has no rules of its own; this test proves nothing"
+
+    class NewcomerPorts(ScriptedPorts):
+        async def outline(self, request):
+            self.calls.append("outline")
+            return NotebookOutline.model_validate(
+                {**OUTLINE.model_dump(), "audience": {"level": "newcomer"}}
+            )
+
+    ports = NewcomerPorts(drafts=[LESSON, LESSON])
+    await generate(
+        ports, GenerationRequest(brief="teach me a coin", audience={"level": "newcomer"})
+    )
+    failures = {detail for stage, status, detail in ports.events if status == "failed"}
+    assert failures & newcomer_only, (
+        "no newcomer-only rule reached the gate, so the draft was checked as an engineer "
+        f"notebook. failures seen: {sorted(failures)}"
+    )
+
+    # The control: the SAME draft asked for at the default level must not trip any of
+    # those rules, or the assertion above is about the fixture rather than the level.
+    default_ports = ScriptedPorts(drafts=[LESSON, LESSON])
+    await generate(default_ports, GenerationRequest(brief="teach me a coin"))
+    default_failures = {d for _s, status, d in default_ports.events if status == "failed"}
+    assert not (default_failures & newcomer_only)
