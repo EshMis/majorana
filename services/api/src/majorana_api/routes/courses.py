@@ -436,12 +436,20 @@ async def export_course(course_id: uuid.UUID, scope: CurrentScope, session: DbSe
     # `export_course_zip` compiles every notebook and builds an archive — CPU work
     # with no await in it, so it runs off the event loop rather than stalling every
     # other request on this worker for the duration.
+    # Owner ruling ai-ops 260, option 1: only the person who created it sees the answers.
+    # A course is a bundle of notebooks and the same rule binds — `builds_for` writes the
+    # answer-free notebook in place AND a full copy of every challenge and quiz under
+    # `solutions/`, so without this any member of the workspace downloaded the whole
+    # answer key in a zip. The notebook export route was fixed first; this is the same
+    # door one room over, and it is the reason to enumerate the siblings of a defect
+    # rather than only the instance that was reported.
     blob = await run_in_threadpool(
         export_course_zip,
         plan,
         specs,  # type: ignore[arg-type]
         slug=course.slug,
         framework=contracts.NotebookFramework.model_validate(course.framework or {}),
+        include_solutions=scope.user_id == course.owner_user_id,
     )
     return Response(
         content=blob,

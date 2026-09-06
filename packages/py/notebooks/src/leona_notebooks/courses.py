@@ -435,6 +435,7 @@ def export_course_zip(
     *,
     slug: str = "course",
     framework: Framework | None = None,
+    include_solutions: bool = True,
 ) -> bytes:
     """Build the course through `build_curriculum` (never executing) and zip it.
 
@@ -453,7 +454,9 @@ def export_course_zip(
             target = source_root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(text, encoding="utf-8")
-        manifest = build_curriculum(source_root, out_root, execute=False)
+        manifest = build_curriculum(
+            source_root, out_root, execute=False, include_solutions=include_solutions
+        )
         # `build_curriculum` deliberately does NOT copy `curriculum.yaml` into the
         # build — for the hand-authored Quanmatic curriculum it is the build's input,
         # not part of the deliverable. A downloaded course is different: the yaml IS

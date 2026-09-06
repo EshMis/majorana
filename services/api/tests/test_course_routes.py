@@ -625,6 +625,107 @@ async def test_export_streams_a_zip_named_for_the_course(client, monkeypatch):
     assert notebook["nbformat"] == 4
 
 
+QUIZ_SOURCE = """\
+# ---
+# title: Week 1 quiz
+# kind: quiz
+# ---
+
+# %% [markdown] role=objective
+# ## Check what you learned
+
+# %% [markdown] role=question
+# Which gate creates a superposition?
+
+# %% [markdown] role=answer
+# The Hadamard gate, obviously.
+
+# %% [markdown] role=question
+# What does measuring collapse?
+
+# %% [markdown] role=answer
+# The superposition, into one basis state.
+
+# %% [markdown] role=question
+# How many shots did we use?
+
+# %% [markdown] role=answer
+# One thousand.
+
+# %% [markdown] role=summary
+# Done.
+"""
+
+
+def _course_with_a_quiz(monkeypatch, *, owner_user_id):
+    """A one-module course whose module is a quiz with real answer cells."""
+    from leona_notebooks.source import parse_source
+
+    course, modules = _two_module_course(monkeypatch, owner_user_id=owner_user_id)
+    versions = {}
+    for module in modules:
+        module.notebook_id = uuid_module.uuid4()
+        versions[module.notebook_id] = _version_row(
+            notebook_id=module.notebook_id,
+            status="ready",
+            spec=parse_source(QUIZ_SOURCE, slug=module.slug).model_dump(mode="json"),
+        )
+
+    async def latest(_scope, _session, notebook_ids):
+        return {nid: versions[nid] for nid in notebook_ids}
+
+    async def fake_current_version(_scope, _session, notebook_id):
+        return versions[notebook_id]
+
+    monkeypatch.setattr(courses_repo, "_latest_versions", latest)
+    monkeypatch.setattr(notebooks_repo, "get_current_version", fake_current_version)
+    return course
+
+
+async def test_the_author_downloads_a_course_with_its_solutions(
+    client, scope_identity, monkeypatch
+):
+    """`solutions/` is the point of a course export for the person who made it."""
+    scope, _identity = scope_identity
+    course = _course_with_a_quiz(monkeypatch, owner_user_id=scope.user_id)
+
+    async with client as c:
+        response = await c.get(f"/v1/courses/{course.id}/export.zip")
+
+    assert response.status_code == 200, response.text
+    with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        names = archive.namelist()
+        blob = b"".join(archive.read(n) for n in names if n.endswith(".ipynb"))
+    assert any(n.startswith("solutions/") for n in names)
+    assert b"The Hadamard gate, obviously." in blob
+
+
+async def test_another_member_downloads_the_course_without_the_answer_key(client, monkeypatch):
+    """Owner ruling ai-ops 260, option 1, applied to the course export.
+
+    `builds_for` writes the answer-free notebook in place AND a full copy of every
+    challenge and quiz under `solutions/`, so before this any member of the workspace
+    downloaded the entire answer key in a zip. The notebook export route was fixed
+    first; this is the same door one room over, which is the reason to enumerate the
+    siblings of a defect rather than only the instance that was reported.
+    """
+    course = _course_with_a_quiz(monkeypatch, owner_user_id=uuid_module.uuid4())
+
+    async with client as c:
+        response = await c.get(f"/v1/courses/{course.id}/export.zip")
+
+    assert response.status_code == 200, response.text
+    with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        names = archive.namelist()
+        blob = b"".join(archive.read(n) for n in names if n.endswith(".ipynb"))
+    assert not any(n.startswith("solutions/") for n in names), names
+    assert b"The Hadamard gate, obviously." not in blob
+    # The control: the course is still a usable download, not an empty zip. Without this
+    # the assertions above would pass on a route that had simply stopped working.
+    assert any(n.endswith(".ipynb") for n in names), names
+    assert b"Which gate creates a superposition?" in blob
+
+
 async def test_export_of_a_module_with_no_compiled_notebook_is_409(client, monkeypatch):
     course, modules = _two_module_course(monkeypatch)
     versions = {}
