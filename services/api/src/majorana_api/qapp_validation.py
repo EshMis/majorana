@@ -268,3 +268,121 @@ def validate_qapp_inputs(schema: dict[str, Any], inputs: dict[str, Any]) -> None
                     definition.get("maxLength", 4000)
                 ):
                     raise ValueError(f"Qapp input {name} has an invalid length")
+
+
+# --------------------------------------------------------------------- is it usable at all
+
+#: Copy a model leaves behind when it stops writing and starts filling space. Matched as
+#: whole phrases, case-folded. Deliberately NOT the bare word "placeholder": `placeholder=`
+#: is a legitimate HTML attribute and every honest Qapp with a text input has one.
+_PLACEHOLDER_PHRASES = (
+    "lorem ipsum",
+    "your text here",
+    "coming soon",
+    "todo:",
+    "insert description",
+    "add content here",
+    "placeholder text",
+)
+
+#: Either spelling of a rejection handler: a Promise settled with `.catch(...)`, or an
+#: await inside `try {` / `catch (`.
+#:
+#: **Known gap, and why it is left open.** The two-argument `promise.then(ok, err)` form
+#: also handles a rejection and matches neither pattern, so an app written that way is
+#: reported as having no failure path. That is a false positive — and it costs exactly one
+#: targeted `ui` repair, after which the Qapp is created regardless, because
+#: `QappUsabilityWarning` is never fatal. Detecting the two-argument form means telling it
+#: from the one-argument form inside a regex, which is the kind of rule that misfires on
+#: honest output in ways nobody predicts. A bounded, visible cost beats an unbounded,
+#: invisible one.
+_ERROR_HANDLING_PATTERNS = (
+    re.compile(r"\.catch\s*\(", re.IGNORECASE),
+    re.compile(r"\bcatch\s*[({]", re.IGNORECASE),
+)
+
+_QAPP_RUN_CALL = re.compile(r"window\s*\.\s*qapp\s*\.\s*run\s*\(", re.IGNORECASE)
+
+
+class QappUsabilityWarning(ValueError):
+    """A Qapp that works but is broken for a visitor. **Never fatal.**
+
+    A `ValueError` subclass so it travels the generation loop's existing rejection path
+    and earns a targeted `ui` repair like any other deterministic rejection — but the
+    handler lets it through when the attempt budget runs out, where a plain `ValueError`
+    fails the whole generation.
+
+    That asymmetry is the point, and it follows the owner's own ruling on the analogous
+    question (ai-ops 180, the range smoke): *"Smoke at both ends but only warn the
+    creator, publish either way."* These rules are about whether an app is usable, not
+    whether it is safe, and they have never been measured against real generated output —
+    no live generation has run since the provider was exhausted. A gate whose false
+    positives cannot be measured must not be able to destroy a Qapp somebody waited for.
+    """
+
+
+def check_qapp_usability(document: str, input_schema: dict[str, Any]) -> None:
+    """Reject a Qapp that is BROKEN for a visitor, not one that is merely unpolished.
+
+    `validate_qapp_ui_document` above is a security filter and says so. Nothing checked
+    whether the generated app *works*, even though the generation prompt makes five
+    promises about exactly that — "a useful responsive interface, accessible labels,
+    keyboard support, clear busy/error/result states, and no placeholder copy". A promise
+    in a prompt is a hope; a visitor meets whatever came back.
+
+    **Why only these three.** A rejection here sends the generation back for a `ui` repair,
+    which is another paid model call (`handlers.py`), so a rule that fires on idiomatic
+    output costs money on every honest Qapp — the same argument the security guard's
+    docstring makes about adding patterns speculatively, and it binds harder here because
+    these rules are about taste rather than safety. So each of the three is a defect a
+    visitor would call a bug, not a preference:
+
+    1. **A declared input with no control.** If `input_schema` declares `shots` and the
+       document never names it, there is no way to set it: the app ships a knob its own
+       interface cannot reach, and every run uses whatever default the program assumes.
+    2. **No error path.** `window.qapp.run` returns a Promise. Without a rejection handler
+       a failed run leaves the interface on "running" forever — the visitor cannot tell a
+       slow circuit from a dead one, and the only recovery is a reload.
+    3. **Placeholder copy.** "Lorem ipsum" shipped to a visitor is the model having filled
+       space rather than written the app.
+
+    Accessibility and keyboard support are deliberately NOT here. Both are real promises
+    and neither is checkable without parsing the document and making judgement calls this
+    function has no business making — and the `ui_document` budget is 6,000 characters, so
+    a rule demanding more markup fights the size limit the same generation is held to. The
+    honest position is that those two are unverified, which is why this docstring says so
+    rather than a comment implying they are covered.
+
+    Raises `ValueError` with a message written to be handed straight to the repair model.
+    """
+    folded = document.casefold()
+
+    for phrase in _PLACEHOLDER_PHRASES:
+        if phrase in folded:
+            raise QappUsabilityWarning(
+                f"Qapp UI document contains placeholder copy ({phrase!r}). Write the real "
+                "interface text for this app; a visitor sees this document unchanged."
+            )
+
+    properties = input_schema.get("properties") if isinstance(input_schema, dict) else None
+    if isinstance(properties, dict):
+        # The name must appear SOMEWHERE — as the key passed to `window.qapp.run`, as an
+        # element id, or as a data attribute the collector reads. A document that never
+        # spells it cannot be sending it.
+        unreachable = sorted(name for name in properties if name not in document)
+        if unreachable:
+            listed = ", ".join(unreachable)
+            raise QappUsabilityWarning(
+                f"Qapp UI document declares input(s) it never lets anyone set: {listed}. "
+                "Add a labelled control for each declared input, or remove it from "
+                "input_schema if the app does not use it."
+            )
+
+    if _QAPP_RUN_CALL.search(document) and not any(
+        pattern.search(document) for pattern in _ERROR_HANDLING_PATTERNS
+    ):
+        raise QappUsabilityWarning(
+            "Qapp UI document calls window.qapp.run without handling a failed run. Add a "
+            "catch that clears the busy state and shows the visitor an error message; "
+            "without one a failed run leaves the interface running forever."
+        )
