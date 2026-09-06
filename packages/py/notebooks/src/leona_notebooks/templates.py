@@ -310,6 +310,31 @@ def _states_its_mathematics(spec: NotebookSpec) -> bool:
     return spec.style.math_level != "none"
 
 
+def _every_solution_answers_a_preceding_exercise(spec: NotebookSpec) -> bool:
+    """Each `role=solution` cell has its own `role=exercise` cell earlier in the notebook.
+
+    The SOLUTION rule's prose has promised this since it was written — "each is preceded
+    by the exercise it answers" — while its predicate was `_has_role(CellRole.SOLUTION)`,
+    which is satisfied by a notebook that is nothing but solutions in a row. This module's
+    own docstring is the reason that matters: every requirement here is "both a sentence
+    in the prompt and a predicate", written side by side "so they cannot drift apart
+    unnoticed". They drifted, and the sentence is the half the model is given.
+
+    Distinct exercises, not merely one somewhere before: three solutions after a single
+    exercise is a solution notebook that has stopped saying which answer belongs to which
+    question, which is exactly what the ordering was for.
+    """
+    unmatched = 0
+    for cell in spec.cells:
+        if cell.role == CellRole.EXERCISE:
+            unmatched += 1
+        elif cell.role == CellRole.SOLUTION:
+            if unmatched == 0:
+                return False
+            unmatched -= 1
+    return True
+
+
 _COMMON: tuple[StructureRule, ...] = (
     StructureRule(
         "The first cell is a markdown cell with role=objective saying what the reader will build or learn.",
@@ -376,7 +401,10 @@ _RULES: dict[NotebookKind, tuple[StructureRule, ...]] = {
         *_COMMON,
         StructureRule(
             "Solutions are role=solution code cells; each is preceded by the exercise it answers.",
-            _has_role(CellRole.SOLUTION),
+            lambda spec: (
+                _has_role(CellRole.SOLUTION)(spec)
+                and _every_solution_answers_a_preceding_exercise(spec)
+            ),
         ),
     ),
     NotebookKind.WALKTHROUGH: (

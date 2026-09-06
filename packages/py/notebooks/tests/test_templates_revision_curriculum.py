@@ -407,3 +407,45 @@ def test_a_research_notebook_must_cite_and_must_interpret_its_last_result() -> N
 
     uncited = ends_on_a_number.model_copy(update={"references": []})
     assert any("cited" in f for f in check_structure(uncited))
+
+
+def test_the_solution_rule_checks_the_ordering_its_prose_promises() -> None:
+    """Prose and predicate, back in step.
+
+    The rule has said "each is preceded by the exercise it answers" since it was written,
+    while its check was `_has_role(SOLUTION)` — satisfied by a notebook that is nothing
+    but solutions in a row. This module's docstring is why that matters: every
+    requirement is meant to be "both a sentence in the prompt and a predicate", written
+    side by side "so they cannot drift apart unnoticed". The sentence is the half the
+    model is given, so the drift taught the generator a rule nothing enforced.
+    """
+    from majorana_contracts.notebooks import Cell, CellRole, NotebookSpec
+
+    def solution_notebook(*roles: CellRole) -> NotebookSpec:
+        cells = [Cell(id="obj", kind="markdown", role=CellRole.OBJECTIVE, source="## Answers")]
+        for index, role in enumerate(roles):
+            cells.append(
+                Cell(
+                    id=f"c{index:02d}",
+                    kind="code" if role is CellRole.SOLUTION else "markdown",
+                    role=role,
+                    source="x = 1" if role is CellRole.SOLUTION else "Do the thing.",
+                )
+            )
+        cells.append(Cell(id="sum", kind="markdown", role=CellRole.SUMMARY, source="Done."))
+        return NotebookSpec(slug="s", title="Solutions", kind="solution", cells=cells)
+
+    paired = solution_notebook(
+        CellRole.EXERCISE, CellRole.SOLUTION, CellRole.EXERCISE, CellRole.SOLUTION
+    )
+    assert not [f for f in check_structure(paired) if "preceded by the exercise" in f]
+
+    # A solution with nothing before it to answer.
+    orphan = solution_notebook(CellRole.SOLUTION, CellRole.EXERCISE)
+    assert [f for f in check_structure(orphan) if "preceded by the exercise" in f]
+
+    # Two solutions sharing one exercise: the notebook has stopped saying which answer
+    # belongs to which question, which is what the ordering was for. `_has_role` alone
+    # passes this, which is how the drift stayed invisible.
+    doubled = solution_notebook(CellRole.EXERCISE, CellRole.SOLUTION, CellRole.SOLUTION)
+    assert [f for f in check_structure(doubled) if "preceded by the exercise" in f]
