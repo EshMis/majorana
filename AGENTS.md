@@ -51,22 +51,24 @@ the package you're touching, not the whole tree.
 
 ## Fresh-session bootstrap (mandatory)
 
-Before substantive work in a fresh standalone Codex session, read these sources in order:
+Before substantive work in a fresh standalone session — Claude, Codex or any other agent,
+the list is the same for all of them — read these sources in order:
 
-1. `~/Documents/AGENTS.md` (AI-OS map, safety rules, session protocol).
-2. `~/Documents/Projects/_ops/WORKFLOW.md` §3 and
-   `~/Documents/Projects/_ops/CODEX_ONBOARDING.md` (Claude/Codex handoff and Codex environment).
-3. `~/Documents/Projects/Majorana/memory/START_NEXT.md` if present; process
+1. `~/Developer/CLAUDE.md` (the tree protocol: map, session protocol, coordination, rules).
+   This repo is a nested Git root, so it is **not** discovered automatically by either
+   agent; read it explicitly.
+2. `~/Developer/ops/WORKFLOW.md` §3.
+3. `~/Developer/leona/memory/START_NEXT.md` if present; process
    its Owner Inbox first, then read `STATUS.md` and `NEXT.md`.
 4. `~/Developer/ai-ops/desk/leona/plans/roadmap/00-INDEX.md` (the stage map) and
    `~/Developer/ai-ops/desk/leona/plans/leona-block-repository-roadmap.md`.
 5. The nested `AGENTS.md` for every package you will touch.
 
-**If items 1–3 fail with `Operation not permitted`, that is expected and is not your bug.**
-`~/Documents` is an iCloud/TCC-protected container: SSH-launched and some sandboxed sessions
-can `stat` those files but cannot read them (verified 2026-08-14 — all four read as EPERM
-while `ls -l` on each succeeded, which makes the failure look like a missing file rather
-than a denied read). Item 4 is unaffected because it resolves into `~/Developer`.
+**Every path above resolves into `~/Developer`, which is readable from every session type.**
+That is the point of the 2026-08-29 consolidation. Do not "helpfully" rewrite any of them to
+the `~/Documents/Projects/...` compat symlinks: those are TCC-protected, and an SSH-launched
+or sandboxed session can `stat` them but not read them — which surfaces as `Operation not
+permitted` and looks like a missing file rather than a denied read (verified 2026-08-14).
 
 **Do not conclude the files are missing, moved, or stale — you cannot see them, which is a
 different fact.** The remedy, if you are at the machine: give
@@ -85,13 +87,11 @@ Then report exactly five short lines covering current phase/revision, active pic
 lane boundary, highest risk or plan gap, and intended next action. After that, proceed
 with the user's bounded request unless it requires an owner decision or ask-first action.
 
-Codex's standing lane is non-UI: pressure-test plans; inspect and improve `evals/` and
-`packages/py/{llm,frameworks,openqasm,contracts,verification,sandbox,estimation}`; own Lane B
-framework-native circuit execution, optional QASM interchange, and Python test coverage.
-Do not build or restyle `apps/web` or `packages/ts/ui`
-unless Eshaan explicitly overrides the lane. Use `feature/*` branches for repo changes;
-Claude reviews and merges. Never push, merge, perform destructive work, or touch
-credentials/secrets without the required owner approval.
+There is no per-agent lane. Claude and Codex have the same privileges here, in every part
+of the tree — `apps/web` and `packages/ts/ui` included — and the same duties (ruled by
+Eshaan 2026-09-06; the former non-UI Codex lane is withdrawn). Use `feature/*` branches for
+repo changes. Never push, merge, perform destructive work, or touch credentials/secrets
+without the required owner approval — that rule binds every agent equally.
 
 ## What this repo is
 
@@ -122,7 +122,10 @@ with no sources, is untracked, has no `pyproject.toml`, and nothing imports `maj
 ## Hard rules
 
 1. **Blast-radius files** (see `.github/CODEOWNERS`) — migrations, contracts, sandbox,
-   workflows, auth: never merged on subagent/Codex authority; orchestrator/owner reviews.
+   workflows, auth: never merged on a subagent's own authority, whichever agent it is;
+   the orchestrating session or the owner reviews. This is a restriction on the ROLE, not
+   on any agent by name — an orchestrating Codex session has exactly the standing an
+   orchestrating Claude session has.
 2. **Authz invariant:** repository-layer functions take `Scope` as first arg and apply
    workspace scoping themselves. The sole exception is `repos/system.py` for pre-Scope
    identity bootstrap and workspace-neutral control-plane jobs; it may never expose
@@ -166,14 +169,13 @@ uv run ruff check . && uv run ruff format --check .
 
 ## Session protocol
 
-Read `~/Documents/Projects/Majorana/memory/{STATUS,NEXT}.md` before starting; update them
-plus `~/Documents/Projects/Majorana/memory/DECISIONS.md` and
-`~/Documents/Projects/_ops/SESSION_LOG.md` when done; end with the continuation prompt
+Read `~/Developer/leona/memory/{STATUS,NEXT}.md` before starting; update them plus
+`~/Developer/leona/memory/DECISIONS.md` when done; end with the continuation prompt
 template from `~/Developer/ai-ops/desk/leona/plans/rebuild/09-agent-operating-model.md` §5.
 
-The four `~/Documents` paths are subject to the same EPERM caveat as the bootstrap block
-above. When they are unreadable, record the session against the ops layer instead —
-`~/Developer/ai-ops/desk/decisions/Leona.md` for decisions and
-`python3 ~/Developer/ai-ops/desk/desk.py handoff <lane> --scaffold` for the session record —
-rather than skipping the write, which is what leaves the next session reconstructing your
-lane second-hand.
+Record the session with `python3 ~/Developer/ops/handoff.py add --project Leona`, which
+appends one new file per session and so can never clobber a concurrent session's entry.
+`_ops/SESSION_LOG.md` is **gone** — it belonged to the `ops.py` handoff store retired on
+2026-08-29, and nothing has written it since. Decisions still go to
+`~/Developer/ai-ops/desk/decisions/Leona.md`. Do the write rather than skipping it —
+skipping is what leaves the next session reconstructing your lane second-hand.
