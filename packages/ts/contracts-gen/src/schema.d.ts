@@ -2449,6 +2449,12 @@ export interface components {
             /** Id */
             id: string;
             kind: components["schemas"]["NotebookKind"];
+            /**
+             * Level
+             * @default engineer
+             * @enum {string}
+             */
+            level: "newcomer" | "engineer" | "student" | "researcher";
             /** Title */
             title: string;
         };

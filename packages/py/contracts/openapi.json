@@ -4832,6 +4832,17 @@
           "kind": {
             "$ref": "#/components/schemas/NotebookKind"
           },
+          "level": {
+            "default": "engineer",
+            "enum": [
+              "newcomer",
+              "engineer",
+              "student",
+              "researcher"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
           "title": {
             "title": "Title",
             "type": "string"

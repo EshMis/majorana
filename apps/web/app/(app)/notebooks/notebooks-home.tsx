@@ -15,6 +15,7 @@ type Notebook = components["schemas"]["Notebook"];
 type NotebookList = components["schemas"]["NotebookList"];
 type NotebookTemplates = components["schemas"]["NotebookTemplates"];
 type NotebookKind = components["schemas"]["NotebookKind"];
+type NotebookStarter = components["schemas"]["NotebookStarter"];
 type AudienceLevel = components["schemas"]["Audience"]["level"];
 type MathLevel = components["schemas"]["Style"]["math_level"];
 type CreateNotebookResponse = components["schemas"]["CreateNotebookResponse"];
@@ -161,9 +162,28 @@ export function NotebooksHome({ locale = "en", seedSlug = "" }: { locale?: Publi
     return items.filter((item) => item.title.toLocaleLowerCase(locale).includes(needle));
   }, [items, locale, query]);
 
-  function applyStarter(starterBrief: string, starterKind: NotebookKind) {
-    setBrief(starterBrief);
-    setKind(starterKind);
+  /**
+   * Apply a starter as a whole REQUEST, not just as text in the box.
+   *
+   * A starter carries the audience it was written for, and the audience is what decides
+   * the notebook's structure (`templates._LEVEL_RULES` on the server). Filling the brief
+   * and leaving the level at `engineer` would send "reproduce a paper's ansatz" as an
+   * engineer request and produce something that reads like documentation — and the
+   * researcher rules require the mathematics to be stated, so a starter that left
+   * `math_level` at `none` would generate a draft its own structure check then fails.
+   */
+  function applyStarter(starter: NotebookStarter) {
+    setBrief(starter.brief);
+    setKind(starter.kind);
+    const starterLevel = (starter.level ?? "engineer") as AudienceLevel;
+    setLevel(starterLevel);
+    if (starterLevel === "researcher") {
+      setMathLevel("full");
+      setAnalogies(false);
+    } else if (starterLevel === "newcomer") {
+      setMathLevel("minimal");
+      setAnalogies(true);
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -288,10 +308,15 @@ export function NotebooksHome({ locale = "en", seedSlug = "" }: { locale?: Publi
                     key={starter.id}
                     type="button"
                     className="mj-notebooks-starter-chip"
-                    onClick={() => applyStarter(starter.brief, starter.kind)}
+                    onClick={() => applyStarter(starter)}
                   >
                     <strong>{starter.title}</strong>
-                    <span className="mj-mono-muted">{copy.kindOption[starter.kind]}</span>
+                    <span className="mj-mono-muted">
+                      {copy.kindOption[starter.kind]}
+                      {starter.level && starter.level !== "engineer"
+                        ? ` · ${copy.audienceLevelOption[starter.level as AudienceLevel]}`
+                        : ""}
+                    </span>
                   </button>
                 ))}
               </div>

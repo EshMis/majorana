@@ -271,3 +271,139 @@ def test_build_never_copies_an_environment(tmp_path: Path) -> None:
     copied = {str(p.relative_to(manifest.out_dir)) for p in manifest.copied}
     assert copied == {"README.md", "week01_x/README.md"}
     assert not (tmp_path / "out" / ".venv").exists()
+
+
+# ------------------------------------------------------- what each audience is owed
+#
+# `Audience.level` was carried on every spec, dumped into the outline prompt as JSON,
+# and reached no rule, no prompt branch and no check anywhere. A notebook asked for a
+# newcomer and one asked for a researcher were held to byte-identical requirements.
+
+
+def _spec_at(level: str, **overrides):
+    from majorana_contracts.notebooks import Audience, Cell, CellRole, NotebookSpec
+
+    cells = overrides.pop(
+        "cells",
+        [
+            Cell(id="c01", kind="markdown", role=CellRole.OBJECTIVE, source="## Go"),
+            Cell(id="c02", kind="code", role=CellRole.RUN, source="x = 1"),
+            Cell(id="c03", kind="markdown", role=CellRole.SUMMARY, source="Done."),
+        ],
+    )
+    return NotebookSpec(
+        slug="s",
+        title="S",
+        kind="scratch",
+        audience=Audience(level=level),
+        cells=cells,
+        **overrides,
+    )
+
+
+def test_the_level_actually_changes_the_requirements() -> None:
+    """The whole point. Before this, all four returned the same list."""
+    from leona_notebooks.spec import NotebookKind
+
+    by_level = {
+        level: set(structure_for(NotebookKind.LESSON, level))
+        for level in ("newcomer", "student", "engineer", "researcher")
+    }
+    assert by_level["newcomer"] != by_level["researcher"]
+    assert by_level["newcomer"] > by_level["engineer"]
+    assert by_level["researcher"] > by_level["engineer"]
+    # `engineer` is the default every pre-existing notebook carries, so it must add
+    # nothing — otherwise this change retroactively fails content that was correct.
+    assert by_level["engineer"] == set(structure_for(NotebookKind.LESSON))
+
+
+def test_every_level_the_contract_allows_has_rules_and_guidance() -> None:
+    """A level added to the contract and nowhere else is a KeyError at request time.
+
+    `render_draft_user_prompt` indexes `AUDIENCE_GUIDANCE` by the level directly, so the
+    failure would be a 500 on generation rather than a worse notebook — and it would
+    happen in the worker, not here, unless something ties the three lists together.
+    """
+    import typing
+
+    from majorana_contracts.notebooks import Audience
+
+    from leona_notebooks.prompts import AUDIENCE_GUIDANCE
+    from leona_notebooks.templates import _LEVEL_RULES
+
+    declared = set(typing.get_args(Audience.model_fields["level"].annotation))
+    assert declared == set(AUDIENCE_GUIDANCE), "a level with no writing guidance"
+    assert declared == set(_LEVEL_RULES), "a level with no structure rules entry"
+
+
+def test_a_newcomer_notebook_must_explain_at_least_as_much_as_it_runs() -> None:
+    from majorana_contracts.notebooks import Cell, CellRole
+
+    code_heavy = _spec_at(
+        "newcomer",
+        cells=[
+            Cell(id="c01", kind="markdown", role=CellRole.OBJECTIVE, source="## Go"),
+            Cell(id="c02", kind="code", role=CellRole.RUN, source="a = 1"),
+            Cell(id="c03", kind="code", role=CellRole.MODIFY, source="b = 2"),
+            Cell(id="c04", kind="code", role=CellRole.OBSERVE, source="c = 3"),
+            Cell(id="c05", kind="markdown", role=CellRole.SUMMARY, source="Done."),
+        ],
+    )
+    failures = check_structure(code_heavy)
+    assert any("as many markdown cells as code cells" in f for f in failures)
+    assert any("No two code cells run back to back" in f for f in failures)
+    # The same notebook at the default level is not held to either.
+    assert (
+        check_structure(code_heavy.model_copy(update={"audience": _spec_at("engineer").audience}))
+        == []
+    )
+
+
+def test_a_research_notebook_must_seed_its_sampling() -> None:
+    """Reproducibility, checked on the AST rather than on the word 'seed'.
+
+    The negative control matters more than the positive one here: the same notebook with
+    `seed=42` added must pass, or the rule is just 'contains no sampler'.
+    """
+    from majorana_contracts.notebooks import Cell, CellRole, Reference
+
+    def at(source: str):
+        return _spec_at(
+            "researcher",
+            references=[Reference(title="A paper", year=2024)],
+            cells=[
+                Cell(id="c01", kind="markdown", role=CellRole.OBJECTIVE, source="## Go"),
+                Cell(id="c02", kind="code", role=CellRole.RUN, source=source),
+                Cell(id="c03", kind="markdown", role=CellRole.EXPLAIN, source="It means X."),
+                Cell(id="c04", kind="markdown", role=CellRole.REFERENCES, source="- A paper"),
+            ],
+        )
+
+    unseeded = "sampler = StatevectorSampler()"
+    seeded = "sampler = StatevectorSampler(seed=42)"
+    assert any("explicit seed" in f for f in check_structure(at(unseeded)))
+    assert check_structure(at(seeded)) == []
+    # ...and a numpy RNG seeded positionally counts, which is how numpy spells it.
+    assert check_structure(at("rng = default_rng(7)")) == []
+    assert any("explicit seed" in f for f in check_structure(at("rng = default_rng()")))
+
+
+def test_a_research_notebook_must_cite_and_must_interpret_its_last_result() -> None:
+    from majorana_contracts.notebooks import Cell, CellRole, Reference
+
+    ends_on_a_number = _spec_at(
+        "researcher",
+        references=[Reference(title="A paper", year=2024)],
+        cells=[
+            Cell(id="c01", kind="markdown", role=CellRole.OBJECTIVE, source="## Go"),
+            Cell(id="c02", kind="markdown", role=CellRole.REFERENCES, source="- A paper"),
+            Cell(id="c03", kind="code", role=CellRole.RUN, source="value = 1"),
+            Cell(id="c04", kind="markdown", role=CellRole.OBSERVE, source="It printed 1."),
+        ],
+    )
+    failures = check_structure(ends_on_a_number)
+    # `observe` is not `explain`: describing what appeared is not saying what it means.
+    assert any("interpreted after it is produced" in f for f in failures)
+
+    uncited = ends_on_a_number.model_copy(update={"references": []})
+    assert any("cited" in f for f in check_structure(uncited))

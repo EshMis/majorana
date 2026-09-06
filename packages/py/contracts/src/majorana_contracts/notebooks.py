@@ -731,6 +731,12 @@ class NotebookStarter(_ResourceBase):
     kind: NotebookKind
     title: str
     brief: str
+    #: The audience this starter is written for. Defaults to `engineer` — the default of
+    #: `Audience.level` — so a client built before this field keeps working and every
+    #: existing starter keeps its meaning. It exists because the starters the product
+    #: offered were all newcomer-to-intermediate, which made the far end of the range
+    #: (a research-grade notebook) something a reader had to know to ask for.
+    level: Literal["newcomer", "engineer", "student", "researcher"] = "engineer"
 
 
 class NotebookTemplates(_ResourceBase):

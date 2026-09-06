@@ -31,7 +31,12 @@ from leona_notebooks.authoring import (
     spec_from_author_request,
 )
 from leona_notebooks.source import render_source
-from leona_notebooks.templates import KIND_DESCRIPTIONS, STARTER_BRIEFS, structure_for
+from leona_notebooks.templates import (
+    KIND_DESCRIPTIONS,
+    RESEARCH_BRIEFS,
+    STARTER_BRIEFS,
+    structure_for,
+)
 from majorana_contracts.enums import Framework, RunMode
 
 from ..auth.deps import CurrentIdentity, CurrentScope, DbSession, get_settings
@@ -262,14 +267,18 @@ async def notebook_templates(scope: CurrentScope) -> contracts.NotebookTemplates
         )
         for kind, description in KIND_DESCRIPTIONS.items()
     ]
+    # Both lists, in one `starters` array: the split between "first circuit" and
+    # "reproduce a paper's ansatz" is the audience, which the `level` field carries, not
+    # a separate endpoint the client would have to know to call.
     starters = [
         contracts.NotebookStarter(
             id=starter["id"],
             kind=contracts.NotebookKind(starter["kind"]),
             title=starter["title"],
             brief=starter["brief"],
+            level=starter.get("level", "engineer"),
         )
-        for starter in STARTER_BRIEFS
+        for starter in (*STARTER_BRIEFS, *RESEARCH_BRIEFS)
     ]
     course_starters = [
         contracts.NotebookStarter(
