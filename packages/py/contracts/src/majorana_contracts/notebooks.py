@@ -423,7 +423,15 @@ class NotebookSpec(_Model):
                     options=list(getattr(cell.answer, "options", []) or []),
                     unit=getattr(cell.answer, "unit", "") or "",
                 ).model_dump()
-            if cell.role == CellRole.SOLUTION and cell.stub is not None:
+            if cell.role in SOLUTION_ONLY_ROLES and cell.stub is not None:
+                # `in SOLUTION_ONLY_ROLES`, not `== SOLUTION`. The guard above keeps any
+                # cell of these roles that has a stub, and this branch replaced the source
+                # of only one of them — so a quiz whose answer is a CODE cell with a stub
+                # (which `NotebookKind.QUIZ` explicitly permits: "a role=answer cell,
+                # markdown or code") was kept AND left unredacted. Greptile, PR 836.
+                #
+                # Two conditions for one set is the same defect this method was rewritten
+                # to remove, reintroduced four lines below the docstring that says so.
                 data["source"] = cell.stub
                 data["stub"] = None
                 data["role"] = CellRole.EXERCISE.value

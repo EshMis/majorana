@@ -99,6 +99,10 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   //: A ref rather than state: the restore callback needs the value at the moment it
   //: settles, and a state read there would be the value captured when it was created.
   const liveGradesSeen = useRef(false);
+  //: The notebook currently on screen, readable from a callback that was created for a
+  //: previous one. `notebookId` itself is captured per render and is therefore the same
+  //: value inside a stale callback and outside it.
+  const openNotebookId = useRef(notebookId);
   /** Cells whose attempt is in the sandbox right now — one at a time, because the
    * reader submits one cell at a time and a second attempt supersedes the first. */
   const [gradingCellIds, setGradingCellIds] = useState<ReadonlySet<string>>(new Set());
@@ -194,8 +198,12 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
    * pass is never rendered against cells that have since been rewritten.
    */
   function loadGrades() {
-    // Which notebook this restore is for. An in-flight fetch outlives a switch to
-    // another notebook, and its result must not land on the new one's page.
+    // Which notebook this restore is for, compared later against a REF holding the one
+    // currently open. The first version of this captured `notebookId` into a const and
+    // compared it with `notebookId` — both reads of the same closure variable, so the
+    // comparison was `A !== A` and the guard was a tautology that could never fire.
+    // Greptile, PR 836. A ref is the only thing in scope whose value changes when the
+    // reader navigates; every other binding here is frozen at the render that made it.
     const forNotebook = notebookId;
     fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/grades`, { cache: "no-store" })
       .then(async (response) => {
@@ -209,7 +217,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
         // Greptile caught it on PR 836. `liveGradesSeen` is set the moment the stream
         // applies a verdict, and this defers to it permanently: a restore is only ever
         // interesting before the first live result of the session.
-        if (forNotebook !== notebookId || liveGradesSeen.current) return;
+        if (forNotebook !== openNotebookId.current || liveGradesSeen.current) return;
         if (payload === null) {
           setGrades({});
           setGradeReport(null);
@@ -263,6 +271,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
     setFocusedCellId(null);
     setStaleGradeSeq(null);
     liveGradesSeen.current = false;
+    openNotebookId.current = notebookId;
     loadNotebook();
     loadVersions();
     loadTurns();

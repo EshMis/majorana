@@ -239,6 +239,46 @@ def test_leaks_answer_key_reports_the_prose_answer_cell() -> None:
     assert spec.for_learner().leaks_answer_key() == []
 
 
+def test_an_answer_that_is_a_CODE_cell_with_a_stub_is_redacted_too() -> None:
+    """`NotebookKind.QUIZ` permits "a role=answer cell, markdown or code".
+
+    The removal guard keeps any cell of these roles that carries a stub — correct, a stub
+    is a typing slot the reader needs — and the replacement branch below it then handled
+    only `role=solution`. So this one shape was kept AND left unredacted: the authored
+    answer reached both the workspace and the downloaded challenge. Greptile, PR 836.
+
+    Two conditions written for one set, four lines below a docstring about the cost of two
+    implementations of one redaction.
+    """
+    from majorana_contracts.notebooks import Cell, NotebookSpec
+
+    spec = NotebookSpec(
+        slug="code-answer",
+        title="Code answer",
+        kind="quiz",
+        cells=[
+            Cell(id="obj", kind="markdown", role=CellRole.OBJECTIVE, source="## Quiz"),
+            Cell(
+                id="a1",
+                kind="code",
+                role=CellRole.ANSWER,
+                source="answer = 42  # the value they were asked for",
+                stub="answer = None\n",
+            ),
+            Cell(id="sum", kind="markdown", role=CellRole.SUMMARY, source="Done."),
+        ],
+    )
+    learner = spec.for_learner()
+    assert [cell.source for cell in learner.cells if cell.id == "a1"] == ["answer = None\n"]
+    assert learner.leaks_answer_key() == []
+    # The control: the guard says so about the unredacted spec, or it is asserting nothing.
+    assert spec.leaks_answer_key() == ["a1"]
+    # And the file build agrees, since it is defined in terms of the same function.
+    assert [c.source for c in cells_for_build(spec, "challenge") if c.id == "a1"] == [
+        "answer = None\n"
+    ]
+
+
 def test_the_two_redactions_agree_cell_for_cell() -> None:
     """The browser build and the file build are one implementation, and stay one.
 
