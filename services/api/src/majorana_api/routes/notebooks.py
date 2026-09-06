@@ -16,12 +16,14 @@ import hashlib
 import json
 import re
 import uuid
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 import majorana_contracts as contracts
 from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import JSONResponse
 from leona_notebooks import from_ipynb, to_ipynb
+from leona_notebooks.ipynb import Build as NotebookBuild
+from leona_notebooks.ipynb import build_for_kind
 from leona_notebooks.courses import COURSE_STARTERS
 from leona_notebooks.authoring import (
     AuthoringInputError,
@@ -429,22 +431,84 @@ async def list_notebook_versions(
 async def get_notebook_version(
     notebook_id: uuid.UUID, seq: int, scope: CurrentScope, session: DbSession
 ) -> contracts.NotebookVersion:
+    """One version, redacted for everyone but the person who made the notebook.
+
+    Owner ruling ai-ops#260: *"a shared notebook arrives with the answers stripped, and
+    only the person who created it sees them."* This is the route that decides it. Until
+    now it returned the raw spec to every member of the workspace — `for_learner()`
+    existed and had no production caller at all — so a colleague opening someone's quiz
+    read the answer key straight out of the response, and so did anyone with the
+    browser's network tab open.
+
+    Three fields carry the answer, not one, which is the whole reason this is written out
+    rather than done in a line:
+
+    * `spec` — the `answer` keys and the hidden `check` graders;
+    * `source` — the `.nb.py` text those were authored in, `check="..."` and
+      `answer={...}` markers included, verbatim;
+    * `ipynb` — the stored compile, which is the `full` build.
+
+    Redacting only the first would have looked right in a diff and in a test that asserts
+    on `spec`, while the same secret went out twice beside it.
+    """
+    notebook = await notebooks_repo.get_notebook(scope, session, notebook_id)
     version = await notebooks_repo.get_version_by_seq(scope, session, notebook_id, seq)
     resource = notebooks_repo.version_to_resource(version, full=True)
     assert isinstance(resource, contracts.NotebookVersion)  # full=True always returns this
-    return resource
+    if scope.user_id == notebook.owner_user_id:
+        return resource
+    learner = resource.spec.for_learner() if resource.spec is not None else None
+    return resource.model_copy(
+        update={
+            "spec": learner,
+            "source": render_source(learner) if learner is not None else "",
+            "ipynb": to_ipynb(learner, build=build_for_kind(learner.kind), report=resource.report)
+            if learner is not None
+            else None,
+        }
+    )
 
 
 @router.get("/notebooks/{notebook_id}/versions/{seq}/export.ipynb")
 async def export_notebook_version(
-    notebook_id: uuid.UUID, seq: int, scope: CurrentScope, session: DbSession
+    notebook_id: uuid.UUID,
+    seq: int,
+    scope: CurrentScope,
+    session: DbSession,
+    build: Literal["reader", "solution"] = "reader",
 ) -> JSONResponse:
+    """The `.ipynb` download.
+
+    **Which build, and why it is decided here.** The stored `version.ipynb` is the
+    author's complete copy — every solution, every answer — because that is what the
+    workspace renders and what a revision reads. Serving it as the download meant the
+    button on a quiz handed over the answer key: `build_for_kind` existed, and only the
+    CLI called it, so no path a real user could reach ever produced a redacted file.
+
+    So the decision is made at the boundary rather than at write time. `reader` (the
+    default) is the copy the notebook's kind implies — a challenge or a quiz redacted,
+    everything else whole — and `solution` is the explicit ask for the complete one. The
+    stored bytes are reused only where they are already right, which is also the only
+    case where the run's outputs are worth keeping.
+    """
     notebook = await notebooks_repo.get_notebook(scope, session, notebook_id)
     version = await notebooks_repo.get_version_by_seq(scope, session, notebook_id, seq)
-    if version.ipynb is not None:
+    spec = contracts.NotebookSpec.model_validate(version.spec) if version.spec is not None else None
+    wanted: NotebookBuild = (
+        "full"
+        if build == "solution"
+        else (build_for_kind(spec.kind) if spec is not None else "full")
+    )
+    if spec is not None:
+        report = (
+            contracts.ExecutionReport.model_validate(version.report)
+            if version.report is not None
+            else None
+        )
+        ipynb = to_ipynb(spec, build=wanted, report=report, preamble=True)
+    elif version.ipynb is not None:
+        # An imported notebook: bytes the reader gave us, with no spec to recompile from.
         ipynb = version.ipynb
-    elif version.spec is not None:
-        ipynb = to_ipynb(contracts.NotebookSpec.model_validate(version.spec))
     else:
         raise HTTPException(
             status_code=404,
@@ -453,7 +517,8 @@ async def export_notebook_version(
                 "reason": "notebook_version_not_compiled",
             },
         )
-    filename = f"{notebook.slug}-v{version.seq}.ipynb"
+    suffix = "-solutions" if wanted != "challenge" and build == "solution" else ""
+    filename = f"{notebook.slug}-v{version.seq}{suffix}.ipynb"
     return JSONResponse(
         content=ipynb,
         media_type="application/x-ipynb+json",

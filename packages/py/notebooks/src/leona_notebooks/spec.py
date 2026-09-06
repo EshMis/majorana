@@ -21,6 +21,9 @@ from majorana_contracts.notebooks import (
     Style,
 )
 from majorana_contracts.notebooks import (
+    SOLUTION_ONLY_ROLES as SOLUTION_ONLY_ROLES,
+)
+from majorana_contracts.notebooks import (
     NotebookFramework as Framework,
 )
 
@@ -40,9 +43,6 @@ __all__ = [
     "Style",
     "assign_cell_ids",
 ]
-
-#: Roles that only the solution build may show.
-SOLUTION_ONLY_ROLES: frozenset[CellRole] = frozenset({CellRole.SOLUTION, CellRole.ANSWER})
 
 #: The learning loop, in order. `templates` checks a lesson section against it.
 LEARNING_LOOP: tuple[CellRole, ...] = (

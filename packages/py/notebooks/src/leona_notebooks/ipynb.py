@@ -35,25 +35,31 @@ GENERATOR = "leona-notebooks"
 
 
 def cells_for_build(spec: NotebookSpec, build: Build) -> list[Cell]:
-    """The cells a build shows, with solution code replaced by its stub for `challenge`."""
+    """The cells a build shows, with solution code replaced by its stub for `challenge`.
+
+    The challenge build **is** `NotebookSpec.for_learner()`, not a second implementation
+    of it. It used to be one, and the two drifted in the way two copies of a redaction
+    always drift: this one knew `role=answer` cells had to go and the other did not, so a
+    quiz downloaded as a file was redacted while the same quiz read in the browser was
+    not. One caller-visible difference remains and is deliberate — a `solution` code cell
+    with NO stub still becomes `DEFAULT_STUB` here, because a downloaded notebook needs a
+    cell where the reader types, whereas the browser build can simply drop it.
+    """
     if build != "challenge":
         return list(spec.cells)
+    learner = {cell.id: cell for cell in spec.for_learner().cells}
     out: list[Cell] = []
     for cell in spec.cells:
-        if cell.role in SOLUTION_ONLY_ROLES:
-            if cell.kind == "code":
-                out.append(
-                    cell.model_copy(
-                        update={
-                            "source": cell.stub if cell.stub is not None else DEFAULT_STUB,
-                            "stub": None,
-                            "role": CellRole.EXERCISE,
-                        }
-                    )
+        redacted = learner.get(cell.id)
+        if redacted is not None:
+            out.append(redacted)
+        elif cell.role in SOLUTION_ONLY_ROLES and cell.kind == "code":
+            # Dropped by `for_learner` for want of a stub; a file build needs the slot.
+            out.append(
+                cell.model_copy(
+                    update={"source": DEFAULT_STUB, "stub": None, "role": CellRole.EXERCISE}
                 )
-            # solution/answer markdown is simply not shown
-            continue
-        out.append(cell)
+            )
     return out
 
 
@@ -115,12 +121,67 @@ def _outputs_for(result: CellResult | None) -> list[dict[str, Any]]:
     return outputs
 
 
+def build_for_kind(kind: NotebookKind) -> Build:
+    """Which build a notebook of this kind is *for a reader*.
+
+    A challenge and a quiz exist to be attempted, so the reader's copy is the redacted
+    one; everything else is meant to be read whole. This lived only inside the CLI while
+    every path a real user could reach — the worker, the export route, the draft save —
+    took the `build="full"` default, so the download button on a quiz handed over the
+    answers. It is a function rather than a line in each caller so there is one answer.
+    """
+    return "challenge" if kind in {NotebookKind.CHALLENGE, NotebookKind.QUIZ} else "full"
+
+
+def setup_preamble(spec: NotebookSpec) -> dict[str, Any]:
+    """A first markdown cell saying what to install before anything else will run.
+
+    Only for a notebook that is LEAVING the product. Inside the sandbox the packages are
+    already there; on a reader's own machine the first code cell is `from qiskit import
+    ...` and the first thing they see is `ModuleNotFoundError`, with nothing anywhere in
+    the file naming what to install or which version. The requirement was recorded — in
+    `metadata.leona.framework` — but no Jupyter, JupyterLab or VS Code UI shows a private
+    metadata namespace to anyone.
+
+    Markdown rather than a `%pip install` cell on purpose: a pip cell that runs on open
+    would fight the reader's own environment (conda, uv, a locked project venv), and a
+    cell that fails is worse than a sentence that tells them what to do.
+    """
+    fw = spec.framework
+    requirement = f"{fw.name}{fw.version}" if fw.version else fw.name
+    lines = [
+        f"### Before you run this: `{requirement}`",
+        "",
+        f"This notebook was written against **{fw.name} `{fw.version or 'any'}`**. In the "
+        "environment you want to run it in:",
+        "",
+        "```",
+        f'pip install "{requirement}"'
+        + (" matplotlib pylatexenc" if spec.style.visualizations else ""),
+        "```",
+        "",
+        "Then pick that environment as the notebook's kernel. A different major version of "
+        "the framework will fail on the first import rather than partway through, which is "
+        "the failure you want.",
+    ]
+    return {
+        "id": "leona-setup-note",
+        "cell_type": "markdown",
+        "metadata": {
+            "leona": {"id": "leona-setup-note", "role": "note", "execute": False},
+            "tags": ["note", "leona-export-preamble"],
+        },
+        "source": "\n".join(lines),
+    }
+
+
 def to_ipynb(
     spec: NotebookSpec,
     *,
     build: Build = "full",
     report: ExecutionReport | None = None,
     include_outputs: bool = True,
+    preamble: bool = False,
 ) -> dict[str, Any]:
     """Compile a spec to an nbformat v4.5 notebook dict.
 
@@ -128,11 +189,24 @@ def to_ipynb(
     execute_result, error) — the stored "executed" copy a viewer renders and a reader
     downloads. Without one, or with `include_outputs=False`, outputs are empty, which is
     the only form ever committed to a repository.
+
+    `preamble=True` prepends `setup_preamble()` — for a file being downloaded, never for
+    one stored or re-imported, since it is not a cell of the spec and would come back as
+    one through `from_ipynb`.
     """
     results = report.by_id() if (report is not None and include_outputs) else {}
+    # A redacted cell must not carry the outputs of the cell it replaced. The stub keeps
+    # the authored cell's `id`, and outputs are looked up BY id, so without this a
+    # challenge build renders `# Your code here` with the finished solution's printed
+    # answer sitting directly beneath it — the whole exercise, given away by a field
+    # nobody thought of as content. Keyed on the source actually differing rather than on
+    # the role, so any future redaction is covered the moment it changes a cell.
+    authored = {cell.id: cell.source for cell in spec.cells}
     cells: list[dict[str, Any]] = []
     execution_count = 0
     for cell in cells_for_build(spec, build):
+        if cell.source != authored.get(cell.id, cell.source):
+            results.pop(cell.id, None)
         metadata: dict[str, Any] = {
             "leona": {
                 "id": cell.id,
@@ -167,6 +241,8 @@ def to_ipynb(
                 "outputs": _outputs_for(result),
             }
         )
+    if preamble:
+        cells.insert(0, setup_preamble(spec))
     language = "python"
     notebook = {
         "nbformat": 4,
