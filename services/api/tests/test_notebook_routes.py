@@ -323,7 +323,7 @@ async def test_export_compiles_from_spec_when_no_executed_copy_exists(client, mo
     assert body["cells"][1]["source"] == "# hi"
 
 
-async def test_a_quiz_downloads_without_its_answers(client, monkeypatch):
+async def test_a_quiz_downloads_without_its_answers(client, scope_identity, monkeypatch):
     """The download button on a quiz used to hand over the answer key.
 
     `build_for_kind` existed and only the CLI called it; every path a real user could
@@ -332,7 +332,8 @@ async def test_a_quiz_downloads_without_its_answers(client, monkeypatch):
     where a user touches it — the compiler's own redaction was correct throughout and
     tested, which is exactly why nothing caught this.
     """
-    notebook = _notebook_row(slug="q")
+    scope, _identity = scope_identity
+    notebook = _notebook_row(slug="q", owner_user_id=scope.user_id)
     spec = {
         "schema_version": 1,
         "slug": "q",
@@ -374,13 +375,14 @@ async def test_a_quiz_downloads_without_its_answers(client, monkeypatch):
     assert "Hadamard" in author.text
 
 
-async def test_a_lesson_downloads_whole(client, monkeypatch):
+async def test_a_lesson_downloads_whole(client, scope_identity, monkeypatch):
     """The negative control for the rule above: only a challenge or a quiz is redacted.
 
     Without this, making every download redacted would pass the quiz test and quietly
     strip the worked examples out of every lesson — the failure that looks like success.
     """
-    notebook = _notebook_row(slug="l")
+    scope, _identity = scope_identity
+    notebook = _notebook_row(slug="l", owner_user_id=scope.user_id)
     spec = {
         "schema_version": 1,
         "slug": "l",
@@ -494,6 +496,78 @@ async def test_another_member_of_the_workspace_does_not_see_the_answers(
     assert body["spec"]["cells"][1]["answer_prompt"]["options"] == ["X", "H"]
     assert "Hadamard" not in body["source"], "the .nb.py source carries the answer too"
     assert "Hadamard" not in json_module.dumps(body["ipynb"]), "so does the stored compile"
+
+
+async def test_a_non_author_cannot_ask_for_the_solution_build(client, monkeypatch):
+    """`?build=solution` was the redaction's back door, open to anyone in the workspace.
+
+    The version route was fixed and the export route, one function below it, took the
+    build straight from the query string — so a colleague got the unredacted notebook for
+    the price of a parameter. Greptile caught it on PR 836.
+
+    Refused rather than quietly downgraded: they asked for a specific thing and are
+    entitled to know they did not get it.
+    """
+    notebook = _notebook_row(slug="q", owner_user_id=uuid_module.uuid4())  # someone else's
+    _wire_quiz(monkeypatch, notebook)
+
+    async with client as c:
+        response = await c.get(
+            f"/v1/notebooks/{notebook.id}/versions/1/export.ipynb?build=solution"
+        )
+
+    assert response.status_code == 403
+    assert response.json()["reason"] == "notebook_solutions_are_the_authors"
+    assert "Hadamard" not in response.text
+
+
+async def test_a_non_author_downloading_a_LESSON_still_gets_it_redacted(client, monkeypatch):
+    """Deciding by kind alone leaves every graded lesson downloadable in full.
+
+    `build_for_kind` answers "what is this notebook FOR", so a lesson compiles whole —
+    right for its author, wrong for a colleague, because the ruling is about answers and
+    a lesson carries `role=answer` and stubbed `role=solution` cells exactly as a quiz
+    does. The same defect in a different costume, and it survives a fix aimed only at the
+    `?build=solution` parameter.
+    """
+    notebook = _notebook_row(slug="l", owner_user_id=uuid_module.uuid4())
+    spec = {
+        "schema_version": 1,
+        "slug": "l",
+        "title": "A graded lesson",
+        "kind": "lesson",
+        "cells": [
+            {"id": "c01", "kind": "markdown", "role": "objective", "source": "## Lesson"},
+            {
+                "id": "c02",
+                "kind": "code",
+                "role": "solution",
+                "source": "worked = 42",
+                "stub": "worked = None\n",
+            },
+            {"id": "c03", "kind": "markdown", "role": "answer", "source": "It is Hadamard."},
+            {"id": "c04", "kind": "markdown", "role": "summary", "source": "Done."},
+        ],
+    }
+    version = _version_row(notebook_id=notebook.id, seq=1, status="ready", ipynb=None, spec=spec)
+
+    async def fake_get_notebook(_scope, _session, _notebook_id):
+        return notebook
+
+    async def fake_get_version_by_seq(_scope, _session, _notebook_id, _seq):
+        return version
+
+    monkeypatch.setattr(notebooks_repo, "get_notebook", fake_get_notebook)
+    monkeypatch.setattr(notebooks_repo, "get_version_by_seq", fake_get_version_by_seq)
+
+    async with client as c:
+        response = await c.get(f"/v1/notebooks/{notebook.id}/versions/1/export.ipynb")
+
+    assert response.status_code == 200
+    assert "worked = 42" not in response.text
+    assert "It is Hadamard" not in response.text
+    # The control: the cell is still THERE as a slot to type in, not silently deleted.
+    assert "worked = None" in response.text
 
 
 # ------------------------------------------------ a learner's score is kept (ai-ops 260)

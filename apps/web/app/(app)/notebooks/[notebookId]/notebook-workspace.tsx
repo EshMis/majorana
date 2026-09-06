@@ -95,6 +95,10 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   //: Null both when the score is current and when there is no score at all — the strip
   //: only renders at all if there is something to show, so the two never collide.
   const [staleGradeSeq, setStaleGradeSeq] = useState<number | null>(null);
+  //: Whether a verdict has arrived on the live stream since this notebook was opened.
+  //: A ref rather than state: the restore callback needs the value at the moment it
+  //: settles, and a state read there would be the value captured when it was created.
+  const liveGradesSeen = useRef(false);
   /** Cells whose attempt is in the sandbox right now — one at a time, because the
    * reader submits one cell at a time and a second attempt supersedes the first. */
   const [gradingCellIds, setGradingCellIds] = useState<ReadonlySet<string>>(new Set());
@@ -190,10 +194,22 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
    * pass is never rendered against cells that have since been rewritten.
    */
   function loadGrades() {
+    // Which notebook this restore is for. An in-flight fetch outlives a switch to
+    // another notebook, and its result must not land on the new one's page.
+    const forNotebook = notebookId;
     fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/grades`, { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return;
         const payload = (await response.json()) as unknown;
+        // **A restored score never overwrites a live one.** This request is issued on
+        // mount and settles whenever the network lets it; a reader who presses Check
+        // straight away can have their real verdict on screen first, and an
+        // unconditional restore then replaces it with the OLDER persisted snapshot —
+        // the reader watches their new result turn back into their previous one.
+        // Greptile caught it on PR 836. `liveGradesSeen` is set the moment the stream
+        // applies a verdict, and this defers to it permanently: a restore is only ever
+        // interesting before the first live result of the session.
+        if (forNotebook !== notebookId || liveGradesSeen.current) return;
         if (payload === null) {
           setGrades({});
           setGradeReport(null);
@@ -246,6 +262,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
     setDraftCells(null);
     setFocusedCellId(null);
     setStaleGradeSeq(null);
+    liveGradesSeen.current = false;
     loadNotebook();
     loadVersions();
     loadTurns();
@@ -427,8 +444,12 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
       // Outcome observed: this submission is settled, so its key is forgotten and a
       // later press of the same answer starts a genuinely new run.
       if (inflightKey.current) pendingKeys.current.delete(inflightKey.current);
+      liveGradesSeen.current = true;
       setGrades((current) => ({ ...current, ...next }));
       setGradeReport(report);
+      // A live verdict is by definition against the version being worked on, so the
+      // "this is from an older version" note must go with the snapshot it described.
+      setStaleGradeSeq(null);
       // Identity-stable, and not a style point: `gradingCellIds` is a dependency of
       // this effect and the verdict stays in `gradingEvents` forever, so installing a
       // fresh empty Set each pass changes the dependency, re-runs the effect, and the

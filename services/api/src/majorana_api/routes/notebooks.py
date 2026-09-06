@@ -496,18 +496,44 @@ async def export_notebook_version(
 
     So the decision is made at the boundary rather than at write time. `reader` (the
     default) is the copy the notebook's kind implies — a challenge or a quiz redacted,
-    everything else whole — and `solution` is the explicit ask for the complete one. The
-    stored bytes are reused only where they are already right, which is also the only
-    case where the run's outputs are worth keeping.
+    everything else whole — and `solution` is the explicit ask for the complete one.
+
+    **`solution` is the author's ask, and only the author's** (owner ruling ai-ops 260,
+    option 1). The first version of this route took the parameter from anyone, which
+    handed a non-owner the unredacted build for the price of a query string and undid the
+    redaction on the route one function above. Greptile caught it on PR 836. A non-owner
+    is refused rather than quietly downgraded: they asked for a specific thing and are
+    entitled to know they did not get it.
+
+    **And a non-owner gets the learner build whatever the kind.** `build_for_kind` answers
+    "what is this notebook FOR", which is why a lesson compiles whole — but the ruling is
+    about answers, not about kinds, and a lesson may carry `role=solution` cells with
+    stubs and `role=answer` cells just as a quiz does. Deciding by kind alone would have
+    left every graded lesson downloadable in full by a colleague, which is the same defect
+    in a different costume.
     """
     notebook = await notebooks_repo.get_notebook(scope, session, notebook_id)
     version = await notebooks_repo.get_version_by_seq(scope, session, notebook_id, seq)
+    is_author = scope.user_id == notebook.owner_user_id
+    if build == "solution" and not is_author:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "Only the person who created this notebook can download it with its answers.",
+                "reason": "notebook_solutions_are_the_authors",
+            },
+        )
     spec = contracts.NotebookSpec.model_validate(version.spec) if version.spec is not None else None
-    wanted: NotebookBuild = (
-        "full"
-        if build == "solution"
-        else (build_for_kind(spec.kind) if spec is not None else "full")
-    )
+    if not is_author:
+        # `challenge` is the FILE redaction — the same one `for_learner()` performs, plus
+        # a typing slot where a solution cell had no stub, which a downloaded notebook
+        # needs and a browser build does not. Applied whatever the kind, so it does not
+        # depend on `build_for_kind`.
+        wanted: NotebookBuild = "challenge"
+    elif build == "solution":
+        wanted = "full"
+    else:
+        wanted = build_for_kind(spec.kind) if spec is not None else "full"
     if spec is not None:
         report = (
             contracts.ExecutionReport.model_validate(version.report)
