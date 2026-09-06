@@ -775,6 +775,50 @@ async def grade_notebook_attempt(
     return contracts.GradeAttemptResponse(run_id=run.id, graded_cells=len(graded))
 
 
+@router.get(
+    "/notebooks/{notebook_id}/grades",
+    response_model=contracts.NotebookGradesSnapshot | None,
+)
+async def get_notebook_grades(
+    notebook_id: uuid.UUID, scope: CurrentScope, session: DbSession
+) -> contracts.NotebookGradesSnapshot | None:
+    """This reader's own last score on this notebook, or `null` if they have none.
+
+    Owner ruling ai-ops 260, option 1 — the score is kept, and this is where a reader
+    gets it back. It reads the `notebook.grades` events that grading already writes to
+    `run_events` rather than a table of its own: the verdict was durable from the first
+    day grading shipped and simply had no reader, so a learner who closed the tab lost a
+    score that was sitting in the database the whole time.
+
+    Filtered to the requesting user, not just the workspace. A colleague's pass on the
+    same notebook is not this reader's score, and showing it would be worse than showing
+    nothing — they would believe they had already done the work.
+
+    `stale` is set when the graded version is no longer the current one. The verdicts are
+    still returned, because "you scored 4 of 5 on the previous version" is useful and
+    silently dropping it is not, but a client must be able to say so rather than render a
+    pass against cells that have since been rewritten.
+
+    `null` rather than a zeroed snapshot when there is no attempt. "Has not tried" and
+    "tried and got nothing right" are different facts about a learner, and a client that
+    cannot tell them apart greets a first-time reader with a failed scorecard.
+    """
+    notebook = await notebooks_repo.get_notebook(scope, session, notebook_id)
+    found = await notebooks_repo.latest_grades_for_reader(scope, session, notebook_id)
+    if found is None:
+        return None
+    version, payload = found
+    return contracts.NotebookGradesSnapshot(
+        version_seq=version.seq,
+        stale=notebook.current_version_id != version.id,
+        grades=contracts.GradeReport.model_validate(payload.get("grades") or {}),
+        passed=int(payload.get("passed") or 0),
+        failed=int(payload.get("failed") or 0),
+        attempted=int(payload.get("attempted") or 0),
+        note=str(payload.get("note") or ""),
+    )
+
+
 @router.get("/notebooks/{notebook_id}/turns", response_model=contracts.NotebookTurnList)
 async def list_notebook_turns(
     notebook_id: uuid.UUID, scope: CurrentScope, session: DbSession

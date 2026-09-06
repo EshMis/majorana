@@ -284,3 +284,35 @@ def test_version_to_resource_without_a_report_or_spec_reports_none_and_zero():
 
     assert summary.cell_count == 0
     assert summary.ok is None
+
+
+# ------------------------------------------ one learner's score is one learner's (ai-ops 260)
+
+
+async def test_latest_grades_binds_the_workspace_the_user_AND_the_notebook():
+    """The scoping is the ruling, so it is asserted on the SQL rather than on a fake.
+
+    Workspace alone is the tenancy boundary every query in this layer applies, and it is
+    NOT enough here: everyone in a workspace can open the same notebook, so a
+    workspace-only filter hands a reader whichever colleague graded it last and calls it
+    their score. Owner ruling ai-ops 260 option 1 keeps a score per learner, and
+    `Run.user_id` is the clause that makes that true.
+
+    The notebook clause is asserted because removing it left an earlier version of this
+    test green: without it the query returns the reader's most recent grading run
+    anywhere in the workspace, which renders one notebook's score on another's page.
+
+    Asserted against the compiled statement because the route test that covers this
+    behaviour monkeypatches this function away — a fake cannot show which columns the
+    real query filters on, which is the one thing that matters here.
+    """
+    scope = make_scope()
+    session = RecordingSession()
+    await notebooks_repo.latest_grades_for_reader(scope, session, uuid.uuid4())
+
+    assert session.statements, "the grades query was never issued"
+    sql = compiled(session.statements[0])[0]
+    assert "run_events.type = " in sql
+    assert "runs.workspace_id = " in sql, "tenancy boundary missing"
+    assert "runs.user_id = " in sql, "one learner's score is not another's"
+    assert "notebook_versions.notebook_id = " in sql, "the score is not tied to this notebook"

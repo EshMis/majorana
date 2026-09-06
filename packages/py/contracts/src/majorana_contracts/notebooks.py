@@ -819,6 +819,33 @@ class GradeAttemptResponse(_ResourceBase):
     graded_cells: int
 
 
+class NotebookGradesSnapshot(_ResourceBase):
+    """The score a reader last got on this notebook, restored when they come back.
+
+    Owner ruling ai-ops 260, option 1: a learner's score is kept. Before this it lived
+    only in the browser tab that watched the grading run's event stream and was gone the
+    moment the tab closed — so a reader who returned to a notebook they had already
+    worked through saw an ungraded one, and re-running every exercise was the only way to
+    see where they had got to.
+
+    `version_seq` is here rather than left implicit because a score belongs to the
+    version it was earned on. A notebook revised since means the reader's verdicts are
+    about cells that may no longer exist, and a client that renders them against the
+    current version without saying so is showing a stale pass as a current one.
+    """
+
+    #: The version the attempt was graded against, which need not be the current one.
+    version_seq: int
+    stale: bool = False
+    grades: GradeReport
+    passed: int = Field(ge=0)
+    failed: int = Field(ge=0)
+    attempted: int = Field(ge=0)
+    #: Why nothing could be graded, when that is the answer — a guard refusal, a sandbox
+    #: note. Empty on an ordinary wrong answer.
+    note: str = ""
+
+
 class ImportNotebookRequest(_ResourceBase):
     """An existing `.ipynb` becomes a notebook the reader can then edit with Nala."""
 

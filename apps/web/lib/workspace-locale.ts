@@ -647,6 +647,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     gradeSummaryLabel: string;
     gradeSummary: (passed: number, attempted: number) => string;
     gradeUngradable: (count: number) => string;
+    gradeFromOlderVersion: (seq: number) => string;
 
     edit: string;
     editExit: string;
@@ -1463,6 +1464,9 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       count === 1
         ? "1 exercise could not be checked — it is not counted either way."
         : `${count} exercises could not be checked — they are not counted either way.`,
+    gradeFromOlderVersion: (seq) =>
+      `This score is from version ${seq}, which has since been revised — some of these `
+      + `exercises may have changed.`,
 
     edit: "Edit",
     editExit: "Done editing",
@@ -2269,6 +2273,8 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     gradeSummaryLabel: "採点付き演習の進捗",
     gradeSummary: (passed, attempted) => `解答した ${attempted} 問中 ${passed} 問が正解です`,
     gradeUngradable: (count) => `${count} 問は採点できませんでした。どちらにも数えていません。`,
+    gradeFromOlderVersion: (seq) =>
+      `この結果はバージョン ${seq} のものです。その後改訂されているため、問題が変わっている可能性があります。`,
 
     edit: "編集",
     editExit: "編集を終える",
@@ -2435,7 +2441,7 @@ export const ACCOUNT_COPY: Record<PublicLocale, {
   usageQubits: (count: number) => string;
   // The per-project artifact limit, which is not a tier allowance and does not
   // live in `TierLimits`: it belongs to the project and its owner can change it.
-  // It is stated here because ai-ops#82 took it off /pricing, where it read as
+  // It is stated here because ai-ops issue 82 took it off /pricing, where it read as
   // an allowance a plan grants, and this is the screen where it is neither the
   // largest number nor the surprising one. `DEFAULT_PROJECT_ARTIFACT_LIMIT` is
   // the source; the value says "by default" because the share dialog can raise

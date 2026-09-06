@@ -496,6 +496,90 @@ async def test_another_member_of_the_workspace_does_not_see_the_answers(
     assert "Hadamard" not in json_module.dumps(body["ipynb"]), "so does the stored compile"
 
 
+# ------------------------------------------------ a learner's score is kept (ai-ops 260)
+
+
+def _wire_grades(monkeypatch, notebook, found):
+    async def fake_get_notebook(_scope, _session, _notebook_id):
+        return notebook
+
+    async def fake_latest(_scope, _session, _notebook_id):
+        return found
+
+    monkeypatch.setattr(notebooks_repo, "get_notebook", fake_get_notebook)
+    monkeypatch.setattr(notebooks_repo, "latest_grades_for_reader", fake_latest)
+
+
+def _grades_payload(version, **overrides):
+    payload = {
+        "version_id": str(version.id),
+        "grades": {"notebook_slug": "n", "cells": []},
+        "passed": 4,
+        "failed": 1,
+        "attempted": 5,
+        "note": "",
+    }
+    payload.update(overrides)
+    return payload
+
+
+async def test_a_reader_gets_their_last_score_back(client, monkeypatch):
+    """Owner ruling ai-ops 260, option 1 — the score survives closing the tab.
+
+    It always could have: grading writes `notebook.grades` to `run_events` and
+    `RepoEventSink` validates it before persisting. Nothing ever read it back, so the
+    score existed in the database and not in the product.
+    """
+    notebook = _notebook_row(slug="n")
+    version = _version_row(notebook_id=notebook.id, seq=3, status="ready")
+    notebook.current_version_id = version.id
+    _wire_grades(monkeypatch, notebook, (version, _grades_payload(version)))
+
+    async with client as c:
+        response = await c.get(f"/v1/notebooks/{notebook.id}/grades")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert (body["passed"], body["failed"], body["attempted"]) == (4, 1, 5)
+    assert body["version_seq"] == 3
+    assert body["stale"] is False
+
+
+async def test_a_score_earned_on_an_older_version_comes_back_marked_stale(client, monkeypatch):
+    """Returned, not dropped — but a client must be able to say which version it is for.
+
+    Rendering an old pass against rewritten cells silently is the failure this prevents:
+    the reader believes they have already done work the current version now asks for.
+    """
+    notebook = _notebook_row(slug="n")
+    graded = _version_row(notebook_id=notebook.id, seq=1, status="ready")
+    notebook.current_version_id = uuid_module.uuid4()  # a later version is current
+    _wire_grades(monkeypatch, notebook, (graded, _grades_payload(graded)))
+
+    async with client as c:
+        response = await c.get(f"/v1/notebooks/{notebook.id}/grades")
+
+    assert response.status_code == 200
+    assert response.json()["stale"] is True
+
+
+async def test_a_reader_with_no_attempt_gets_null_rather_than_an_invented_zero(client, monkeypatch):
+    """`null`, not `0 of 0`.
+
+    A zero score is a claim that the reader tried and got nothing right. "Has not tried"
+    and "tried and got nothing right" are different facts about a learner, and a client
+    that cannot tell them apart greets a first-time reader with a failed scorecard.
+    """
+    notebook = _notebook_row(slug="n")
+    _wire_grades(monkeypatch, notebook, None)
+
+    async with client as c:
+        response = await c.get(f"/v1/notebooks/{notebook.id}/grades")
+
+    assert response.status_code == 200
+    assert response.json() is None
+
+
 # -------------------------------------------------------------------------- import
 
 

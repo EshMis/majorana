@@ -45,6 +45,7 @@ type NotebookVersionSummary = components["schemas"]["NotebookVersionSummary"];
 type NotebookTurn = components["schemas"]["NotebookTurn"];
 type Cell = components["schemas"]["Cell"];
 type GradeReport = components["schemas"]["GradeReport"];
+type NotebookGradesSnapshot = components["schemas"]["NotebookGradesSnapshot"];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -90,6 +91,10 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   const [grades, setGrades] = useState<Record<string, NotebookCellGrade>>({});
   /** The same verdicts as one report, for the summary strip above the notebook. */
   const [gradeReport, setGradeReport] = useState<GradeReport | null>(null);
+  //: Set when the restored score was earned on a version that is no longer current.
+  //: Null both when the score is current and when there is no score at all — the strip
+  //: only renders at all if there is something to show, so the two never collide.
+  const [staleGradeSeq, setStaleGradeSeq] = useState<number | null>(null);
   /** Cells whose attempt is in the sandbox right now — one at a time, because the
    * reader submits one cell at a time and a second attempt supersedes the first. */
   const [gradingCellIds, setGradingCellIds] = useState<ReadonlySet<string>>(new Set());
@@ -169,6 +174,48 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
       .catch(() => {});
   }
 
+  /**
+   * Restore this reader's last score (owner ruling ai-ops issue 260, option 1).
+   *
+   * The verdicts were always persisted — grading writes `notebook.grades` to
+   * `run_events` — but nothing read them back, so closing the tab lost the score and
+   * a reader returning to a notebook they had worked through saw an ungraded one.
+   *
+   * `null` is a real answer and means "no attempt yet", which is why it clears rather
+   * than being ignored: an empty body is not an error and must not leave a previous
+   * notebook's score on screen after switching notebooks.
+   *
+   * A score earned on an older version comes back `stale`. It is still shown — "you
+   * scored 4/5 on the previous version" is worth knowing — but the strip says so, so a
+   * pass is never rendered against cells that have since been rewritten.
+   */
+  function loadGrades() {
+    fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/grades`, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const payload = (await response.json()) as unknown;
+        if (payload === null) {
+          setGrades({});
+          setGradeReport(null);
+          setStaleGradeSeq(null);
+          return;
+        }
+        if (!isRecord(payload) || !isRecord(payload.grades)) return;
+        const snapshot = payload as unknown as NotebookGradesSnapshot;
+        const report = snapshot.grades;
+        // The per-cell verdicts as well as the summary, mapped exactly the way the live
+        // stream maps them. Restoring only the header strip would tell a reader they got
+        // 4 of 5 and leave every cell unmarked, so the one thing they came back for —
+        // WHICH one they got wrong — would still be gone.
+        const next: Record<string, NotebookCellGrade> = {};
+        for (const grade of report.cells ?? []) next[grade.id] = grade;
+        setGrades(next);
+        setGradeReport(report);
+        setStaleGradeSeq(snapshot.stale ? snapshot.version_seq : null);
+      })
+      .catch(() => {});
+  }
+
   function loadTurns() {
     fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/turns`, { cache: "no-store" })
       .then(async (response) => {
@@ -198,9 +245,11 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
     setGradingRunId(null);
     setDraftCells(null);
     setFocusedCellId(null);
+    setStaleGradeSeq(null);
     loadNotebook();
     loadVersions();
     loadTurns();
+    loadGrades();
   }, [notebookId]);
 
   // Follow the notebook's current version unless the reader pinned one from the picker.
@@ -502,6 +551,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
         {rate !== null ? ` · ${Math.round(rate * 100)}%` : ""}
       </p>
       {summary.ungradable > 0 ? <p>{copy.gradeUngradable(summary.ungradable)}</p> : null}
+      {staleGradeSeq !== null ? <p>{copy.gradeFromOlderVersion(staleGradeSeq)}</p> : null}
     </section>
   ) : null;
 

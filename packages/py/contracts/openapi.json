@@ -4628,6 +4628,53 @@
         "title": "NotebookGrades",
         "type": "object"
       },
+      "NotebookGradesSnapshot": {
+        "additionalProperties": false,
+        "description": "The score a reader last got on this notebook, restored when they come back.\n\nOwner ruling ai-ops 260, option 1: a learner's score is kept. Before this it lived\nonly in the browser tab that watched the grading run's event stream and was gone the\nmoment the tab closed \u2014 so a reader who returned to a notebook they had already\nworked through saw an ungraded one, and re-running every exercise was the only way to\nsee where they had got to.\n\n`version_seq` is here rather than left implicit because a score belongs to the\nversion it was earned on. A notebook revised since means the reader's verdicts are\nabout cells that may no longer exist, and a client that renders them against the\ncurrent version without saying so is showing a stale pass as a current one.",
+        "properties": {
+          "attempted": {
+            "minimum": 0,
+            "title": "Attempted",
+            "type": "integer"
+          },
+          "failed": {
+            "minimum": 0,
+            "title": "Failed",
+            "type": "integer"
+          },
+          "grades": {
+            "$ref": "#/components/schemas/GradeReport"
+          },
+          "note": {
+            "default": "",
+            "title": "Note",
+            "type": "string"
+          },
+          "passed": {
+            "minimum": 0,
+            "title": "Passed",
+            "type": "integer"
+          },
+          "stale": {
+            "default": false,
+            "title": "Stale",
+            "type": "boolean"
+          },
+          "version_seq": {
+            "title": "Version Seq",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version_seq",
+          "grades",
+          "passed",
+          "failed",
+          "attempted"
+        ],
+        "title": "NotebookGradesSnapshot",
+        "type": "object"
+      },
       "NotebookKind": {
         "description": "What shape a notebook takes. Each kind is a checkable structure contract.",
         "enum": [
