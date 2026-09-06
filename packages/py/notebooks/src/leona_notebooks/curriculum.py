@@ -155,16 +155,34 @@ def _write_notebook(path: Path, notebook: dict[str, Any]) -> None:
 
 
 def builds_for(
-    spec: NotebookSpec, relative: Path, curriculum: CurriculumSpec
+    spec: NotebookSpec,
+    relative: Path,
+    curriculum: CurriculumSpec,
+    *,
+    include_solutions: bool = True,
 ) -> list[tuple[str, Path]]:
     """Which builds a source produces and where. A challenge or quiz yields the
-    answer-free notebook in place and the solution under `solutions/<same dir>/`."""
+    answer-free notebook in place and the solution under `solutions/<same dir>/`.
+
+    `include_solutions=False` drops that second build entirely, for a reader who is not
+    the course's author (owner ruling ai-ops 260, option 1). Dropping the BUILD rather
+    than redacting the spec is deliberate: `builds_for` keys on `spec.kind`, so a
+    pre-redacted spec would still produce a `solutions/` directory — one holding files
+    with no solutions in them, which is worse than either alternative, because a reader
+    who finds an empty answer key concludes the course has none rather than that they
+    were not given it.
+    """
     stem = relative.name[: -len(SOURCE_SUFFIX)]
     in_place = relative.parent / f"{stem}.ipynb"
     if spec.kind in HIDDEN_ANSWER_KINDS:
+        if not include_solutions:
+            return [("challenge", in_place)]
         solution = Path(curriculum.solutions_dir) / relative.parent / f"{stem}_solution.ipynb"
         return [("challenge", in_place), ("solution", solution)]
-    return [("full", in_place)]
+    # A `full` build of anything else still shows a stubbed `role=solution` cell and any
+    # `role=answer` cell, so a non-author's copy is the learner build here too — the
+    # ruling is about answers, not about kinds.
+    return [("full" if include_solutions else "challenge", in_place)]
 
 
 def build_curriculum(
@@ -175,7 +193,14 @@ def build_curriculum(
     timeout_s: int = 300,
     kernel_name: str = "python3",
     clean: bool = False,
+    include_solutions: bool = True,
 ) -> BuildManifest:
+    """Compile a curriculum source tree into its `.ipynb` repository.
+
+    `include_solutions=False` omits the `solutions/` half — the copy of every challenge
+    and quiz with its answers in place. Used when the reader is not the course's author
+    (owner ruling ai-ops 260, option 1).
+    """
     source_root = Path(source_dir)
     out_root = Path(out_dir)
     curriculum = load_curriculum(source_root)
@@ -223,7 +248,9 @@ def build_curriculum(
         entry = BuiltNotebook(
             source=source, outputs=[], spec=spec, structure_failures=check_structure(spec)
         )
-        for build, target_rel in builds_for(spec, rel, curriculum):
+        for build, target_rel in builds_for(
+            spec, rel, curriculum, include_solutions=include_solutions
+        ):
             target = out_root / target_rel
             _write_notebook(target, to_ipynb(spec, build=build, include_outputs=False))  # type: ignore[arg-type]
             entry.outputs.append(target)
