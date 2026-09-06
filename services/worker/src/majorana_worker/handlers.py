@@ -1015,7 +1015,17 @@ async def _handle_qapp_generation(
                 try:
                     check_qapp_usability(generated.ui_document, generated.input_schema)
                 except QappUsabilityWarning as usability:
-                    if not usability_repair_spent:
+                    # `attempt < _QAPP_GENERATION_ATTEMPTS` is the difference between the
+                    # guarantee holding and merely appearing to. Asking for a repair on
+                    # the LAST attempt means the raise below reaches
+                    # `if attempt == _QAPP_GENERATION_ATTEMPTS: raise` — and the fallback
+                    # branch above it deliberately ignores a usability warning, so the
+                    # error propagates and the whole generation is rolled back. A fully
+                    # validated Qapp, destroyed by the check that promises it never will
+                    # be, in the one path where no attempt remains to undo it.
+                    # Greptile, PR 837. There is nothing to gain by asking with no
+                    # attempt left to answer.
+                    if not usability_repair_spent and attempt < _QAPP_GENERATION_ATTEMPTS:
                         usability_repair_spent = True
                         usability_fallback = generated.model_copy(deep=True)
                         repair_kind = "ui"

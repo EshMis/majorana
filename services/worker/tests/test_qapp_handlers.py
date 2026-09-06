@@ -932,3 +932,129 @@ async def test_a_usability_finding_buys_one_repair_and_never_costs_a_qapp(monkey
     assert "window.qapp.run({})" in captured["fields"]["ui_document"]
     assert captured["fields"]["quantum_source"] == "RESULT = {'summary': 'Bell counts collected'}"
     assert session.commits == 1
+
+
+async def test_a_usability_finding_on_the_LAST_attempt_still_publishes(monkeypatch):
+    """The corner where the guarantee was false: no attempt left to answer the ask.
+
+    With the budget spent, requesting a repair means the raise reaches
+    `if attempt == _QAPP_GENERATION_ATTEMPTS: raise` — and the fallback branch above it
+    deliberately ignores a usability warning, so the error propagates and the whole
+    generation rolls back. A fully validated Qapp, destroyed by the check that promises it
+    never will be. Greptile, PR 837.
+
+    The budget is squeezed to 1 rather than scripting eleven prior failures, so attempt 1
+    IS the last attempt. What must happen is that the finding is logged and the Qapp is
+    created anyway — and that no repair is requested, since there is nothing to gain by
+    asking with no attempt left to answer.
+    """
+    run_id = uuid.uuid4()
+    qapp_id = uuid.uuid4()
+    version_id = uuid.uuid4()
+    sink = Sink()
+    store = Store()
+    session = Session()
+    captured = {}
+    # The `ui_document` below has a control for every input its schema declares, and a
+    # failure path, because the usability gate asks for both: an app that declares `shots`
+    # and calls `run({})` ships a knob its own interface cannot reach, and one with no
+    # catch leaves the interface running forever after a failed run. This test is about
+    # the generation bundle rather than the gate, so the fixture is written the way an
+    # honest generated app is; the gate has its own test below.
+    response_text = """{
+      "title": "Bell explorer",
+      "description": "Explore Bell-state correlations",
+      "ui_document": "<!doctype html><html><head></head><body><button>Run</button><script>button.onclick=()=>window.qapp.run({})</script></body></html>",
+      "quantum_source": "RESULT = {'summary': 'Bell counts collected'}",
+      "input_schema": {
+        "type": "object",
+        "properties": {"shots": {"type": "integer", "minimum": 1, "maximum": 4096}},
+        "required": ["shots"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {"summary": {"type": "string"}},
+        "required": ["summary"]
+      },
+      "qubits_estimate": 2
+    }"""
+    # The repair comes back unparseable. It has to be genuinely unusable, not merely the
+    # wrong SHAPE: the first version of this test returned the whole Qapp object, and
+    # `_QappUiRepair` validated it happily — pydantic ignores extra fields — so the repair
+    # succeeded, the gate fired a second time, the "already spent" branch published, and
+    # deleting the fallback entirely left this test green. A test that passes under the
+    # mutation it exists to catch is proving something other than what it says.
+    unusable_repair_text = "{ this is not json"
+
+    class FakeMeteredLLM:
+        def __init__(self, **_kwargs):
+            self.requests = []
+
+        async def complete(self, request):
+            self.requests.append(request)
+            captured["requests"] = self.requests
+            return LLMResponse(
+                text=response_text if len(self.requests) == 1 else unusable_repair_text,
+                model=request.model,
+                input_tokens=10,
+                output_tokens=20,
+            )
+
+    async def create_generated(_scope, _session, **fields):
+        captured["fields"] = fields
+        return (
+            SimpleNamespace(id=qapp_id, slug="bell-explorer-12345678", title=fields["title"]),
+            SimpleNamespace(id=version_id),
+        )
+
+    async def smoke_run(sandbox, spec):
+        captured["smoke_sandbox"] = sandbox
+        captured["smoke_spec"] = spec
+        return SandboxResult(
+            ok=True,
+            exit_code=0,
+            duration_ms=5,
+            stdout="",
+            stderr="",
+            provider="test",
+            protected_result={"result": {"summary": "Bell counts collected"}},
+        )
+
+    monkeypatch.setattr(handlers, "_QAPP_GENERATION_ATTEMPTS", 1)
+    monkeypatch.setattr(handlers, "MeteredAgentLLM", FakeMeteredLLM)
+    monkeypatch.setattr(handlers.qapps_repo, "create_generated", create_generated)
+    monkeypatch.setattr(handlers, "run_sandbox", smoke_run)
+    ctx = RunContext(
+        run_id=run_id,
+        task_prompt="Turn this circuit into an interactive Bell explorer",
+        mode=RunMode.QAPP,
+        framework=Framework.QISKIT,
+        seed=None,
+        shots=None,
+        timeout_s=None,
+        sink=sink,
+        source_code="from qiskit import QuantumCircuit\nqc = QuantumCircuit(2)",
+    )
+    scope = Scope(user_id=uuid.uuid4(), workspace_id=uuid.uuid4(), role=Role.MEMBER)
+
+    result = await handlers._handle_qapp_generation(
+        ctx,
+        store,
+        scope=scope,
+        session=session,
+        llm=SimpleNamespace(),
+        sandbox=SimpleNamespace(provider="test"),
+        source_artifact_version_id=uuid.uuid4(),
+    )
+
+    # Published, despite the finding and despite having no attempt left. The promise.
+    assert result is RunStatus.SUCCEEDED
+    assert store.finished == {"status": RunStatus.SUCCEEDED, "reason_code": "qapp_generated"}
+
+    # And it did not ask: one generation call, no repair, because a repair on the last
+    # attempt is the thing that destroys the Qapp.
+    assert len(captured["requests"]) == 1
+
+    assert captured["fields"]["ui_document"].startswith("<!doctype html>")
+    assert "window.qapp.run({})" in captured["fields"]["ui_document"]
+    assert session.commits == 1

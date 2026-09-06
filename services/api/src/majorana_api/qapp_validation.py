@@ -346,6 +346,21 @@ def check_qapp_usability(document: str, input_schema: dict[str, Any]) -> None:
     3. **Placeholder copy.** "Lorem ipsum" shipped to a visitor is the model having filled
        space rather than written the app.
 
+    **Every rule here is deliberately weak in one direction, and it is always the same
+    direction.** Both checks below are substring or document-wide regex tests, so a
+    property named only in a CSS comment satisfies the first and a `catch` around
+    unrelated work satisfies the second. Greptile raised both on PR 837 and both readings
+    are correct: a broken app can pass.
+
+    That bias is chosen, not overlooked. Telling those cases apart means knowing which
+    identifier a `catch` guards and whether a name reaches `window.qapp.run` — a JavaScript
+    parse, on a document that is 6,000 characters of generated markup. The failure modes
+    are not symmetric: a missed defect ships an app whose creator can see the problem and
+    ask for a change, while a false positive spends a paid repair on every honest Qapp
+    forever, which is the argument `validate_qapp_ui_document` above makes about adding
+    patterns speculatively. So these rules catch the blatant case and let the clever one
+    through on purpose.
+
     Accessibility and keyboard support are deliberately NOT here. Both are real promises
     and neither is checkable without parsing the document and making judgement calls this
     function has no business making — and the `ui_document` budget is 6,000 characters, so
