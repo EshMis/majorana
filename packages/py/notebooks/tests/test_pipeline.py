@@ -617,3 +617,88 @@ async def test_the_requested_audience_reaches_the_structure_gate() -> None:
     await generate(default_ports, GenerationRequest(brief="teach me a coin"))
     default_failures = {d for _s, status, d in default_ports.events if status == "failed"}
     assert not (default_failures & newcomer_only)
+
+
+# ------------------------------- a structure failure that survives is visible, not silent
+#
+# `check_structure` is not a gate, and reading the draft loop as one is the mistake these
+# cover. On a failure the loop keeps `spec = spec or candidate` — "the best so far rather
+# than nothing" — so when every attempt fails, `spec` is not None, nothing raises, and the
+# notebook finishes `ready` while violating its own kind's contract. That trade is
+# defensible. Nobody being able to tell was not.
+#
+# Named for what it is missing, NOT `BROKEN_LESSON` — that name is taken (line 41, a
+# lesson broken by an undefined name, which is about EXECUTION rather than structure).
+# Appending a second definition to the end of the module silently rebound it and broke
+# five tests that never mention it.
+
+LESSON_WITHOUT_ITS_OBJECTIVE = """\
+# ---
+# title: Missing its objective
+# kind: lesson
+# ---
+
+# %% [markdown] role=concept
+# Superposition, described without ever asking you to predict anything.
+
+# %% role=run
+value = 1
+
+# %% [markdown] role=summary
+# Done.
+"""
+
+
+async def test_a_draft_that_never_satisfies_its_structure_still_reports_what_it_missed() -> None:
+    """It ships — and it says so, which is the whole change.
+
+    Both draft attempts return a lesson with no objective cell and no learning loop. The
+    notebook runs, so it is `ready`; the failures now ride out on the review's warnings,
+    which `NotebookVersion.warnings` mirrors, instead of going to `ports.observe` and
+    being forgotten.
+    """
+    ports = ScriptedPorts(drafts=[LESSON_WITHOUT_ITS_OBJECTIVE] * 2)
+    outcome = await generate(ports, GenerationRequest(brief="teach me something"))
+
+    assert outcome.status == "ready", "the trade is unchanged: a notebook that runs still ships"
+    assert outcome.review is not None, "with no review there is nowhere for a warning to live"
+    structure = [w for w in outcome.review.warnings if w.startswith("structure:")]
+    assert structure, outcome.review.warnings
+    assert any("objective" in w for w in structure), structure
+
+
+async def test_a_compliant_notebook_gets_no_structure_warnings() -> None:
+    """The control. Without it the assertion above passes on a build that warns always,
+    which would mark every notebook broken and teach readers to ignore the field."""
+    ports = ScriptedPorts(drafts=[LESSON])
+    outcome = await generate(ports, GenerationRequest(brief="teach me a coin"))
+    assert outcome.status == "ready"
+    warnings = list(outcome.review.warnings) if outcome.review else []
+    assert not [w for w in warnings if w.startswith("structure:")], warnings
+
+
+async def test_a_chat_edit_that_deletes_the_objective_cell_is_reported() -> None:
+    """`revise()` never called `check_structure` at all.
+
+    `apply_revision` honours a `delete` faithfully — that is its job — so a chat edit
+    could remove the objective cell, or every checkpoint, and the notebook came back
+    `ready` with nothing recording that it no longer met its contract.
+    """
+    from leona_notebooks.spec import CellRole
+
+    before = parse_source(LESSON)
+    objective = next(cell for cell in before.cells if cell.role is CellRole.OBJECTIVE)
+    ports = ScriptedPorts(
+        drafts=[],
+        revision=RevisionPlan(
+            reply="Removed the intro.",
+            summary="drop the objective",
+            ops=[RevisionOp(op="delete", cell_id=objective.id)],
+        ),
+    )
+    outcome = await revise(ports, RevisionRequest(spec=before, message="drop the intro"))
+
+    assert outcome.spec is not None
+    assert all(cell.role is not CellRole.OBJECTIVE for cell in outcome.spec.cells)
+    warnings = list(outcome.review.warnings) if outcome.review else []
+    assert any(w.startswith("structure:") for w in warnings), warnings

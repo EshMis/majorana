@@ -320,6 +320,45 @@ def _ensure_seed_run_cell(spec: NotebookSpec, seed_run_cell: str | None) -> Note
     return spec.with_cells(cells)
 
 
+def _with_structure_warnings(
+    review: NotebookReview | None, spec: NotebookSpec
+) -> NotebookReview | None:
+    """Carry any surviving structure failures out where a reader can see them.
+
+    **`check_structure` is not a gate, and reading the draft loop as one is the mistake
+    this closes.** On a failure the loop keeps `spec = spec or candidate` — "the best so
+    far rather than nothing" — so when every draft attempt fails, `spec` is not None, no
+    exception is raised, and the notebook proceeds to execution and can finish `ready`
+    while violating its own kind's contract. That choice is defensible: a notebook that
+    runs beats no notebook. What was not defensible is that nobody could tell. The
+    failures went to `ports.observe` and were then forgotten, so the stored version
+    carried no trace, and neither the author nor a later session could see that a lesson
+    shipped with no objective cell or a newcomer's course with none of its pacing.
+
+    Called AFTER execution and repair rather than only inside the draft loop, because
+    repair rewrites cells: a draft that satisfied its contract can stop satisfying it,
+    and a draft that failed can be fixed into compliance by a repair aimed at something
+    else. The loop's own check answers a question about a spec that no longer exists.
+
+    Non-blocking, deliberately. `status` still comes from whether the code ran. This is
+    the same shape the range smoke takes for Qapps under owner ruling ai-ops 180 — warn
+    the creator, publish either way — and the same reason: a rule that can destroy the
+    thing a reader waited for needs evidence these rules have not yet earned.
+    """
+    problems = check_structure(spec)
+    if not problems:
+        return review
+    notes = [f"structure: {problem}" for problem in problems]
+    if review is None:
+        # Review is skipped when execution failed and swallowed when it raises, and
+        # `NotebookVersion.warnings` is mirrored out of the review blob — so with no
+        # review there is nowhere for a warning to live. One is synthesised rather than
+        # letting the finding fall on the floor in exactly the cases (a broken or
+        # unreviewed notebook) where it is most worth having.
+        return NotebookReview(verdict="needs-attention", warnings=notes)
+    return review.model_copy(update={"warnings": [*review.warnings, *notes]})
+
+
 async def generate(
     ports: NotebookPorts, request: GenerationRequest, budget: PipelineBudget | None = None
 ) -> PipelineOutcome:
@@ -405,6 +444,7 @@ async def generate(
                 attempts.append(Attempt("notebook.review", False, str(exc)))
                 await ports.observe("notebook.review", "failed", str(exc))
 
+        review = _with_structure_warnings(review, spec)
         status: Literal["ready", "failed"] = "ready" if report.ok else "failed"
         error = "" if report.ok else _describe_failure(report)
         return PipelineOutcome(
@@ -481,6 +521,12 @@ async def revise(
             review = await ports.review(spec, report)
         except Exception as exc:  # noqa: BLE001 - advisory
             attempts.append(Attempt("notebook.review", False, str(exc)))
+    # A chat edit could delete the objective cell, or every checkpoint, or the last
+    # `role=answer` cell in a quiz, and nothing anywhere noticed: this lane never called
+    # `check_structure` at all. `apply_revision` honours `delete` and `replace` ops
+    # faithfully, which is its job, so the only thing that can tell a reader their
+    # notebook has stopped meeting its own contract is a check on the result.
+    review = _with_structure_warnings(review, spec)
     return PipelineOutcome(
         status="ready" if report.ok else "failed",
         spec=spec,
