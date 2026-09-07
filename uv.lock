@@ -44,7 +44,7 @@ wheels = [
 
 [[package]]
 name = "amazon-braket-default-simulator"
-version = "1.40.1"
+version = "1.40.1.post0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "amazon-braket-schemas" },
@@ -56,9 +56,9 @@ dependencies = [
     { name = "scipy" },
     { name = "sympy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f2/27/28cce124ce1de9911a706e9a2ed103d783308b6776e9d7b2f2f74847c17e/amazon_braket_default_simulator-1.40.1.tar.gz", hash = "sha256:13e8e7c940f967a384a1897d806834a4c2c3af567f11f1335e51f16c39cc316e", size = 205386, upload-time = "2026-08-20T22:54:00.502Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/88/83/34b29d4469e7de4a657e24ce8dd614d8c61918258f94e83d270a96a2dc1a/amazon_braket_default_simulator-1.40.1.post0.tar.gz", hash = "sha256:050a4041ce871153a16a8b9e9f21dc5adbeb49d587c3757c42c782dc7305c0c3", size = 205535, upload-time = "2026-09-02T16:43:49.402Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/15/64/f1ddd919c4129b0688f0dad907ae7a05feb8f24e33ee9a004b26cbf1d7a1/amazon_braket_default_simulator-1.40.1-py3-none-any.whl", hash = "sha256:4a431cfe27af8efcbdeee11cc7c0a78c70e2968f481c1c2978132fefbc75f56b", size = 247379, upload-time = "2026-08-20T22:53:58.529Z" },
+    { url = "https://files.pythonhosted.org/packages/e2/12/f4d8925b8a3dfb51c1909c10f04e9ee9a5f85cfb5a77836a33d82e5d01af/amazon_braket_default_simulator-1.40.1.post0-py3-none-any.whl", hash = "sha256:97eceaf1226a81ee74c70faf425a910c7c090a3145f7b9f4c2c287139adecf91", size = 247477, upload-time = "2026-09-02T16:43:47.974Z" },
 ]
 
 [[package]]
@@ -1878,7 +1878,7 @@ requires-dist = [{ name = "majorana-contracts", editable = "packages/py/contract
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "amazon-braket-default-simulator", specifier = "==1.40.1" },
+    { name = "amazon-braket-default-simulator", specifier = "==1.40.1.post0" },
     { name = "amazon-braket-sdk", specifier = "==1.126.1" },
     { name = "bqskit", specifier = "==1.2.1" },
     { name = "cirq-core", specifier = ">=1.4" },
