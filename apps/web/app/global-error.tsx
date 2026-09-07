@@ -66,8 +66,7 @@ export default function GlobalError({
               Something went wrong.
             </h1>
             <p style={{ margin: "0 0 1.5rem" }}>
-              Nothing was saved or changed. Reloading usually clears it; if it does not, the site itself
-              is having trouble and we are already being told.
+              This page could not load. Try again to continue.
             </p>
             <button
               type="button"

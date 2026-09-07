@@ -14,7 +14,7 @@ import { getPublicLocale } from "../../lib/public-locale-server";
 export default async function AppLoading() {
   const copy = LOADING_COPY[await getPublicLocale()];
   return (
-    <main className="mj-loading-screen mj-loading-screen--workspace" aria-busy="true" aria-label={copy.workspace}>
+    <section className="mj-loading-screen mj-loading-screen--workspace" aria-busy="true" aria-label={copy.workspace}>
       <span className="sr-only" role="status" aria-live="polite">{copy.status}</span>
       <span className="mj-skeleton mj-skeleton--eyebrow" />
       <span className="mj-skeleton mj-skeleton--workspace-title" />
@@ -22,6 +22,6 @@ export default async function AppLoading() {
       <span className="mj-skeleton mj-skeleton--workspace-row" />
       <span className="mj-skeleton mj-skeleton--workspace-row" />
       <span className="mj-skeleton mj-skeleton--workspace-row" />
-    </main>
+    </section>
   );
 }

@@ -30,8 +30,7 @@ export default function RootError({
           <p className="mj-section-label">Leona Quantum</p>
           <h1 id="root-error-heading">This page did not load.</h1>
           <p>
-            Nothing was saved or changed. Try again, or head back to the home page — the rest of the
-            site is unaffected.
+            Try again, or return to the home page.
           </p>
           <div className="mj-public-actions">
             <button className="mj-primary-button" type="button" onClick={reset}>
