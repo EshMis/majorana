@@ -58,6 +58,7 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
   const [courseError, setCourseError] = useState<string | null>(null);
   const [turns, setTurns] = useState<CourseTurn[]>([]);
   const [turnsError, setTurnsError] = useState<string | null>(null);
+  const [turnsLoading, setTurnsLoading] = useState(true);
 
   const [followedPlanRunId, setFollowedPlanRunId] = useState<string | null>(null);
   const [planRunActive, setPlanRunActive] = useState(false);
@@ -77,9 +78,13 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
   const [reordering, setReordering] = useState(false);
 
   const reloadSeq = useRef(0);
+  const turnsSeq = useRef(0);
+  const titleEditing = useRef(false);
+  titleEditing.current = editingTitle;
 
   function loadCourse() {
     const seq = ++reloadSeq.current;
+    setCourseError(null);
     fetch(`/api/courses/${encodeURIComponent(courseId)}`, { cache: "no-store" })
       .then(async (response) => {
         const payload = (await response.json()) as unknown;
@@ -92,7 +97,7 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
         if (seq !== reloadSeq.current) return;
         setCourse(loaded);
         setCourseError(null);
-        setTitleDraft((current) => (editingTitle ? current : loaded.title));
+        setTitleDraft((current) => (titleEditing.current ? current : loaded.title));
         if (loaded.status === "planning" && loaded.plan_run_id) {
           setFollowedPlanRunId(loaded.plan_run_id);
           setPlanRunActive(true);
@@ -105,18 +110,23 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
   }
 
   function loadTurns() {
+    const seq = ++turnsSeq.current;
+    setTurnsLoading(true);
+    setTurnsError(null);
     fetch(`/api/courses/${encodeURIComponent(courseId)}/turns`, { cache: "no-store" })
       .then(async (response) => {
         const payload = (await response.json()) as unknown;
         if (!response.ok || !isRecord(payload) || !Array.isArray(payload.items)) {
           throw new Error(refusalSentence(payload) ?? coursesCopy.chatLoadFailed);
         }
+        if (seq !== turnsSeq.current) return;
         setTurns(payload.items as CourseTurn[]);
         setTurnsError(null);
       })
       .catch((cause) => {
-        setTurnsError(cause instanceof Error ? cause.message : coursesCopy.chatLoadFailed);
-      });
+        if (seq === turnsSeq.current) setTurnsError(cause instanceof Error ? cause.message : coursesCopy.chatLoadFailed);
+      })
+      .finally(() => { if (seq === turnsSeq.current) setTurnsLoading(false); });
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- courseId change is a hard reset; copy.* are stable strings for the active locale
@@ -124,11 +134,16 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
     setCourse(null);
     setCourseError(null);
     setTurns([]);
+    setTurnsError(null);
+    setActionError(null);
+    setEditingTitle(false);
+    setMessage("");
     setFollowedPlanRunId(null);
     setPlanRunActive(false);
     setModuleRunIds({});
     loadCourse();
     loadTurns();
+    return () => { reloadSeq.current += 1; turnsSeq.current += 1; };
   }, [courseId]);
 
   const planEvents = useRunProgress(followedPlanRunId, () => {
@@ -160,7 +175,7 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
         setFollowedPlanRunId(runId);
         setPlanRunActive(true);
       }
-      setMessage("");
+      setMessage((current) => current.trim() === trimmed ? "" : current);
     } catch (cause) {
       setActionError(cause instanceof Error ? cause.message : coursesCopy.chatSendFailed);
     } finally {
@@ -287,9 +302,9 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
   }
 
   if (courseError && !course) {
-    return <div className="mj-course-workspace-empty mj-library-empty" role="alert"><strong>{courseError}</strong></div>;
+    return <div className="mj-course-workspace-empty mj-library-empty mj-notebooks-retry" role="alert"><strong>{courseError}</strong><button type="button" className="mj-secondary-button" onClick={loadCourse}>{locale === "ja" ? "再試行" : "Retry"}</button></div>;
   }
-  if (!course) {
+  if (!course || course.id !== courseId) {
     return <div className="mj-course-workspace-empty mj-library-empty" role="status"><strong>{coursesCopy.loading}</strong></div>;
   }
 
@@ -299,11 +314,14 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
 
   return (
     <main className="mj-course-workspace">
+      <Link className="mj-notebooks-back" href="/notebooks/courses">{locale === "ja" ? "コース一覧" : "All courses"}</Link>
       <header className="mj-course-workspace-header">
         <div className="mj-course-workspace-title">
           {editingTitle ? (
             <form className="mj-notebook-title-edit-form" onSubmit={(event) => { event.preventDefault(); void saveTitle(); }}>
               <input
+                aria-label={coursesCopy.saveTitle}
+                onKeyDown={(event) => { if (event.key === "Escape") setEditingTitle(false); }}
                 value={titleDraft}
                 onChange={(event) => setTitleDraft(event.target.value)}
                 disabled={savingTitle}
@@ -327,7 +345,7 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
           {course.summary ? <p className="mj-course-workspace-summary">{course.summary}</p> : null}
           <div className="mj-course-workspace-meta">
             <span className={`mj-course-status-pill mj-course-status-pill--${course.status}`}>{coursesCopy.statusPill[course.status]}</span>
-            <div className="mj-course-progress-bar" role="progressbar" aria-valuenow={progress.percent} aria-valuemin={0} aria-valuemax={100}>
+            <div className="mj-course-progress-bar" role="progressbar" aria-label={course.title} aria-valuetext={coursesCopy.progress(progress.ready, progress.total)} aria-valuenow={progress.percent} aria-valuemin={0} aria-valuemax={100}>
               <span style={{ width: `${progress.percent}%` }} />
             </div>
             <span className="mj-mono-muted">{coursesCopy.progress(progress.ready, progress.total)}</span>
@@ -354,7 +372,7 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
         </div>
       </header>
 
-      {courseError ? <p role="alert" className="mj-notebook-workspace-error">{courseError}</p> : null}
+      {courseError ? <div className="mj-notebooks-retry" role="alert"><p>{courseError}</p><button type="button" className="mj-secondary-button" onClick={loadCourse}>{locale === "ja" ? "再試行" : "Retry"}</button></div> : null}
       {actionError ? <p role="alert" className="mj-notebook-workspace-error">{actionError}</p> : null}
 
       {planRunActive && planStages.length > 0 ? (
@@ -365,6 +383,7 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
 
       <div className="mj-course-workspace-body">
         <section className="mj-course-module-list">
+          {!orderedModules.length && !planRunActive ? <p className="mj-notebook-chat-empty">{locale === "ja" ? "Nalaに学習内容を伝えて、コースを計画しましょう。" : "Tell Nala what you want to learn to plan your course."}</p> : null}
           {orderedModules.map((module, index) => (
             <CourseModuleCard
               key={module.id}
@@ -386,8 +405,9 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
 
         <aside className="mj-notebook-workspace-chat" aria-label={coursesCopy.chatLabel}>
           <h2>{coursesCopy.chatLabel}</h2>
-          {turnsError ? <p role="alert">{turnsError}</p> : null}
-          {turns.length === 0 ? <p className="mj-notebook-chat-empty">{coursesCopy.chatEmpty}</p> : null}
+          {turnsError ? <div className="mj-notebooks-retry" role="alert"><p>{turnsError}</p><button type="button" className="mj-secondary-button" onClick={loadTurns}>{locale === "ja" ? "再試行" : "Retry"}</button></div> : null}
+          {turnsLoading && turns.length === 0 ? <p className="mj-notebook-chat-empty" role="status">{coursesCopy.loading}</p> : null}
+          {!turnsLoading && !turnsError && turns.length === 0 ? <p className="mj-notebook-chat-empty">{coursesCopy.chatEmpty}</p> : null}
           <div className="mj-chat-thread mj-notebook-chat-thread">
             {turns.map((turn) => (
               <div key={turn.id} className="mj-chat-turn">

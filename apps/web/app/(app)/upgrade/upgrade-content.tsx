@@ -41,7 +41,7 @@ export async function UpgradeContent() {
     .filter((plan): plan is (typeof pricing.plans)[number] => plan !== undefined);
 
   return (
-    <div className="mj-workspace-content">
+    <div className="mj-workspace-content leona-upgrade-page">
       <header className="mj-page-header">
         <div>
           <h1 className="mj-page-title">{copy.title}</h1>
@@ -110,19 +110,16 @@ export async function UpgradeContent() {
                 {/* /contact, not a checkout: there is no payment path in this
                     deployment and a button implying one would be a lie about
                     what happens next. The panel below says so in words. */}
-                <a className="mj-primary-button" href="/contact">
+                <Link className="mj-primary-button" href="/contact">
                   {copy.cta}
-                </a>
+                </Link>
               </section>
             ))}
           </div>
 
-          <section className="mj-artifact-panel">
-            <div className="mj-panel-heading">
-              <h2>{copy.checkoutTitle}</h2>
-            </div>
-            <p className="mj-panel-help">{copy.checkoutBody}</p>
-          </section>
+          <p className="mj-panel-help leona-upgrade-contact-note">
+            {locale === "ja" ? "プランのご相談はお問い合わせから承ります。" : "Contact us to arrange a plan change."}
+          </p>
         </>
       )}
     </div>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ShareRefused,
   ShareVersionConflict,
+  SharedProjectUnavailable,
   canContribute,
   contributeSharedArtifact,
   copySharedArtifact,
@@ -50,6 +51,8 @@ export function SharedProjectView({
   const [project, setProject] = useState<SharedProject | null>(null);
   const [circuits, setCircuits] = useState<SharedCircuit[]>([]);
   const [failed, setFailed] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [changed, setChanged] = useState(false);
@@ -72,6 +75,8 @@ export function SharedProjectView({
   const seenRevision = useRef<string | null>(null);
 
   const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
     try {
       const [header, rows] = await Promise.all([
         loadSharedProject(projectId),
@@ -82,10 +87,11 @@ export function SharedProjectView({
       setChanged(false);
       setCircuits(rows.map(toCircuit).filter((row): row is SharedCircuit => row !== null));
       setFailed(false);
-    } catch {
-      // A revoked or expired grant answers 404 here, and that is not an error
-      // state to retry — it is the share being over.
-      setFailed(true);
+    } catch (cause) {
+      if (cause instanceof SharedProjectUnavailable) setFailed(true);
+      else setLoadError(true);
+    } finally {
+      setLoading(false);
     }
   }, [projectId]);
 
@@ -101,12 +107,12 @@ export function SharedProjectView({
     const timer = setInterval(() => {
       void loadSharedProject(projectId)
         .then((header) => {
+          setLoadError(false);
           if (hasMoved(seenRevision.current, header.revision)) setChanged(true);
         })
-        .catch(() => {
-          // A grant withdrawn while the page is open. Say so on the next
-          // interaction rather than yanking the screen away mid-read.
-          setFailed(true);
+        .catch((cause) => {
+          if (cause instanceof SharedProjectUnavailable) setFailed(true);
+          else setLoadError(true);
         });
     }, POLL_MS);
     return () => clearInterval(timer);
@@ -258,6 +264,13 @@ export function SharedProjectView({
     }
   }
 
+  const retryNotice = (
+    <div className="leona-workspace-retry mj-studio-notice" role="alert">
+      <p>{locale === "ja" ? "共有プロジェクトを更新できません。接続を確認して再試行してください。" : "Could not refresh this shared project. Check your connection and try again."}</p>
+      <button type="button" className="mj-secondary-button" disabled={loading} onClick={() => void load()}>{loading ? (locale === "ja" ? "読み込み中…" : "Loading…") : copy.refresh}</button>
+    </div>
+  );
+
   if (failed) {
     return (
       <main className="mj-shared-project">
@@ -275,6 +288,8 @@ export function SharedProjectView({
   // page does not jump the moment the grant resolves. It used to render an
   // empty <main>, which is why arriving here flashed a blank column and then
   // pushed everything down.
+  if (!project && loadError) return <main className="mj-shared-project">{retryNotice}</main>;
+
   if (!project) {
     return (
       <main className="mj-shared-project" aria-busy="true">
@@ -368,6 +383,7 @@ export function SharedProjectView({
         ) : null}
       </header>
 
+      {loadError ? retryNotice : null}
       {changed ? (
         <div className="mj-shared-project-changed" role="status">
           <span>{copy.changedElsewhere}</span>
@@ -377,8 +393,8 @@ export function SharedProjectView({
         </div>
       ) : null}
 
-      {error ? <p className="mj-share-error">{error}</p> : null}
-      {notice ? <p className="mj-share-notice">{notice}</p> : null}
+      {error ? <p className="mj-share-error" role="alert">{error}</p> : null}
+      {notice ? <p className="mj-share-notice" role="status">{notice}</p> : null}
 
       {canContribute(project) ? (
         adding ? (

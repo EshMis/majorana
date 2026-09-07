@@ -70,6 +70,14 @@ export class ShareVersionConflict extends Error {
   }
 }
 
+/** An explicit access refusal, distinct from a failed network request. */
+export class SharedProjectUnavailable extends Error {
+  constructor() {
+    super("That shared project is no longer available");
+    this.name = "SharedProjectUnavailable";
+  }
+}
+
 /** The server refused the grant and said why in a sentence worth showing. */
 export class ShareRefused extends Error {
   /**
@@ -255,6 +263,7 @@ export async function loadProjectShares(projectId: string): Promise<ProjectShare
   const response = await fetch(`/api/workspace/projects/${encodeURIComponent(projectId)}/shares`, {
     cache: "no-store",
   });
+  if (response.status === 403 || response.status === 404) throw new SharedProjectUnavailable();
   if (!response.ok) throw new Error("Sharing could not be loaded");
   const payload = (await response.json()) as unknown;
   if (!Array.isArray(payload)) throw new Error("Sharing response was invalid");
@@ -391,7 +400,8 @@ export async function loadSharedProject(projectId: string): Promise<SharedProjec
   const response = await fetch(`/api/shared/projects/${encodeURIComponent(projectId)}`, {
     cache: "no-store",
   });
-  if (!response.ok) throw new Error("That shared project is no longer available");
+  if (response.status === 403 || response.status === 404) throw new SharedProjectUnavailable();
+  if (!response.ok) throw new Error("Shared project could not be loaded");
   const project = parseSharedProject((await response.json()) as unknown);
   if (!project) throw new Error("Shared project response was invalid");
   return project;
@@ -402,9 +412,11 @@ export async function loadSharedProjectArtifacts(projectId: string): Promise<unk
     `/api/shared/projects/${encodeURIComponent(projectId)}/artifacts`,
     { cache: "no-store" },
   );
-  if (!response.ok) throw new Error("That shared project is no longer available");
+  if (response.status === 403 || response.status === 404) throw new SharedProjectUnavailable();
+  if (!response.ok) throw new Error("Shared project could not be loaded");
   const payload = (await response.json()) as unknown;
-  return Array.isArray(payload) ? payload : [];
+  if (!Array.isArray(payload)) throw new Error("Shared circuits response was invalid");
+  return payload;
 }
 
 export async function saveSharedVersion(

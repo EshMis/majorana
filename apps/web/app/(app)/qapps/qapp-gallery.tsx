@@ -25,7 +25,7 @@ const COPY = {
   en: {
     eyebrow: "Quantum applications",
     title: "Qapps",
-    lede: "Open the applications you created, or explore Qapps published by people around the world.",
+    lede: "Run your quantum applications or explore published Qapps.",
     mine: "My Qapps",
     public: "Explore",
     createRun: "Create in Run",
@@ -37,6 +37,8 @@ const COPY = {
     mineEmpty: "You have not created a Qapp yet.",
     publicEmpty: "No public Qapps have been published yet.",
     noMatch: "No Qapps match this search.",
+    retry: "Try again",
+    clear: "Clear search",
     count: (shown: number, total: number) => `${shown} of ${total} Qapps`,
     private: "Private",
     published: "Public",
@@ -50,7 +52,7 @@ const COPY = {
   ja: {
     eyebrow: "量子アプリケーション",
     title: "Qapps",
-    lede: "自分が作った量子アプリを開いたり、世界中で公開されているQappを探したりできます。",
+    lede: "自分の量子アプリを実行したり、公開Qappを探したりできます。",
     mine: "自分のQapp",
     public: "公開Qappを探す",
     createRun: "Runで作る",
@@ -62,6 +64,8 @@ const COPY = {
     mineEmpty: "まだQappを作成していません。",
     publicEmpty: "公開されているQappはまだありません。",
     noMatch: "検索条件に一致するQappはありません。",
+    retry: "再試行",
+    clear: "検索をクリア",
     count: (shown: number, total: number) => `${total}件中${shown}件のQapp`,
     private: "非公開",
     published: "公開中",
@@ -80,12 +84,14 @@ export function QappGallery({ view, locale = "en" }: { view: QappGalleryView; lo
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
     setLoading(true);
     setError(null);
-    fetch(view === "mine" ? "/api/qapps" : "/api/qapps/public", { cache: "no-store" })
+    fetch(view === "mine" ? "/api/qapps" : "/api/qapps/public", { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         const payload = await response.json() as unknown;
         if (!response.ok || !Array.isArray(payload)) {
@@ -107,8 +113,9 @@ export function QappGallery({ view, locale = "en" }: { view: QappGalleryView; lo
       });
     return () => {
       active = false;
+      controller.abort();
     };
-  }, [copy.loadFailed, view]);
+  }, [copy.loadFailed, view, reload]);
 
   const visible = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase(locale);
@@ -124,7 +131,6 @@ export function QappGallery({ view, locale = "en" }: { view: QappGalleryView; lo
       <div className="mj-qapps-scroll">
         <header className="mj-qapps-hero">
           <div>
-            <p className="mj-section-label">{copy.eyebrow}</p>
             <div className="mj-qapps-title-row">
               <QappsIcon size={22} />
               <h1>{copy.title}</h1>
@@ -146,8 +152,9 @@ export function QappGallery({ view, locale = "en" }: { view: QappGalleryView; lo
           <label className="mj-library-search">
             <SearchIcon size={16} />
             <span className="sr-only">{copy.search}</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.searchPlaceholder} />
+            <input name="qapp-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.searchPlaceholder} />
           </label>
+          {query ? <button className="mj-secondary-button" type="button" onClick={() => setQuery("")}>{copy.clear}</button> : null}
         </div>
 
         {!loading && !error && items.length > 0 ? (
@@ -155,7 +162,7 @@ export function QappGallery({ view, locale = "en" }: { view: QappGalleryView; lo
         ) : null}
 
         {loading ? <QappGalleryNotice role="status" text={copy.loading} /> : null}
-        {error ? <QappGalleryNotice role="alert" text={error} /> : null}
+        {error ? <QappGalleryNotice role="alert" text={error} action={<button className="mj-secondary-button" type="button" onClick={() => setReload((value) => value + 1)}>{copy.retry}</button>} /> : null}
         {!loading && !error && visible.length === 0 ? (
           <QappGalleryNotice text={items.length ? copy.noMatch : view === "mine" ? copy.mineEmpty : copy.publicEmpty} />
         ) : null}
@@ -182,7 +189,7 @@ function OwnedQappCard({ qapp, locale }: { qapp: Qapp; locale: PublicLocale }) {
         <time dateTime={qapp.updated_at}>{copy.updated} {formatDate(qapp.updated_at, locale)}</time>
       </div>
       <div className="mj-qapp-card-copy">
-        <h2>{qapp.title}</h2>
+        <h2><Link href={`/qapps/${encodeURIComponent(qapp.id)}`}>{qapp.title}</Link></h2>
         <p>{qapp.description}</p>
       </div>
       <div className="mj-qapp-card-actions">
@@ -216,8 +223,8 @@ function PublicQappCard({ qapp, locale }: { qapp: PublicQappSummary; locale: Pub
   );
 }
 
-function QappGalleryNotice({ text, role }: { text: string; role?: "alert" | "status" }) {
-  return <div className="mj-library-empty" role={role}><strong>{text}</strong></div>;
+function QappGalleryNotice({ text, role, action }: { text: string; role?: "alert" | "status"; action?: import("react").ReactNode }) {
+  return <div className="mj-library-empty leona-workspace-state" role={role}><strong>{text}</strong>{action}</div>;
 }
 
 function formatDate(value: string, locale: PublicLocale): string {

@@ -1291,10 +1291,10 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     },
   notebooks: {
     title: "Notebooks",
-    lede: "Ask Nala for a Jupyter lesson, then keep talking to change it. Every turn runs in the sandbox before you see it.",
+    lede: "Create a Jupyter notebook with Nala, then edit, run, and download it.",
     newNotebook: "New notebook",
     briefLabel: "What do you want to learn or teach?",
-    briefPlaceholder: "e.g. Teach a Python engineer the Bell state and why it can't be simulated classically, with a coin-flip analogy and a checkpoint that would fail if the code were wrong.",
+    briefPlaceholder: "e.g. Explain Bell states to a Python engineer with a working circuit, measurement results, and a practice exercise.",
     create: "Create notebook",
     creating: "Starting…",
     createFailed: "The notebook could not be started.",
@@ -1502,7 +1502,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
   },
   courses: {
     title: "Courses",
-    lede: "Ask Nala to plan a whole course from one brief, then generate each module as a notebook and follow along.",
+    lede: "Plan a course with Nala, then work through each module as a notebook.",
     coursesTab: "Courses",
 
     planLabel: "Plan a course",
@@ -2105,10 +2105,10 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     },
   notebooks: {
     title: "ノートブック",
-    lede: "Nalaに依頼してJupyterレッスンを作成し、対話しながら編集できます。各バージョンは表示前にサンドボックスで実行されています。",
+    lede: "NalaとJupyterノートブックを作成し、編集・実行・ダウンロードできます。",
     newNotebook: "新しいノートブック",
     briefLabel: "何を学びたい、または教えたいですか？",
-    briefPlaceholder: "例：Pythonエンジニアにベル状態と、それが古典的にシミュレートできない理由を、コイン投げのたとえと、コードが間違っていれば失敗するチェックポイント付きで教えてください。",
+    briefPlaceholder: "例：Pythonエンジニア向けに、回路、測定結果、練習問題を使ってベル状態を説明してください。",
     create: "ノートブックを作成",
     creating: "開始しています…",
     createFailed: "ノートブックを開始できませんでした。",
@@ -2311,7 +2311,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
   },
   courses: {
     title: "コース",
-    lede: "Nalaに依頼して一つの依頼文からコース全体を計画し、各モジュールをノートブックとして生成しながら進められます。",
+    lede: "Nalaとコースを計画し、各モジュールをノートブックで学習できます。",
     coursesTab: "コース",
 
     planLabel: "コースを計画する",

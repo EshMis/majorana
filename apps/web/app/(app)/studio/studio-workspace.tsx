@@ -173,6 +173,8 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
   const [seed, setSeed] = useState("");
   const [artifactHydration, setArtifactHydration] = useState<ArtifactHydration>(() => artifactId && !newDraft ? "loading" : "ready");
   const [artifactSyncError, setArtifactSyncError] = useState(false);
+  const [artifactsLoading, setArtifactsLoading] = useState(true);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [verificationStale, setVerificationStale] = useState(false);
   // Matches the starter source `code` is initialised with, so the first paint
   // is already self-consistent.
@@ -215,6 +217,7 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
     let active = true;
     setArtifacts(loadLibraryArtifacts());
     setArtifactSyncError(false);
+    setArtifactsLoading(true);
     setArtifactHydration(artifactId && !newDraft ? "loading" : "ready");
     // Paged, not a single fetch: an un-paged read returns the route's default
     // of 50 rows and is indistinguishable from a workspace that holds 50. Studio
@@ -229,7 +232,8 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
       })
       .catch(() => {
         if (active) setArtifactSyncError(true);
-      });
+      })
+      .finally(() => { if (active) setArtifactsLoading(false); });
 
     if (artifactId) {
       const local = getLibraryArtifact(artifactId);
@@ -259,7 +263,7 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
     return () => {
       active = false;
     };
-  }, [artifactId, copy]);
+  }, [artifactId, copy, loadAttempt]);
 
   useEffect(() => {
     setSimulationRecords(artifact ? loadCpuSimulationRecords(artifact.id) : []);
@@ -805,6 +809,8 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
                 </div>
               </div>
 
+              <details className="leona-studio-qapp-disclosure">
+                <summary>{locale === "ja" ? "この回路からQappを作成" : "Create a Qapp from this circuit"}</summary>
               <form
                 className="mj-studio-qapp-request"
                 onSubmit={(event) => {
@@ -840,6 +846,7 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
                   </button>
                 </div>
               </form>
+              </details>
 
               <PanelTabs
                 panels={STUDIO_PANELS}
@@ -853,6 +860,7 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
               {artifactId && !newDraft && artifactHydration !== "ready" ? (
                 <div className="mj-studio-empty" role={artifactHydration === "error" ? "alert" : "status"}>
                   {artifactHydration === "loading" ? copy.loadingArtifacts : copy.selectedUnavailable}
+                  {artifactHydration === "error" ? <button className="mj-secondary-button" type="button" onClick={() => setLoadAttempt((value) => value + 1)}>{locale === "ja" ? "再試行" : "Retry"}</button> : null}
                 </div>
               ) : (
                 <>
@@ -1042,7 +1050,7 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
                 higher and it pushes the search box down under whoever is
                 already typing in it. Here the only thing it moves is the list
                 it qualifies. */}
-            {artifactSyncError ? <p className="mj-studio-notice" data-tone="warn" role="alert">{copy.remoteSyncUnavailable}</p> : null}
+            {artifactSyncError ? <div className="mj-studio-notice leona-workspace-retry" data-tone="warn" role="alert"><span>{copy.remoteSyncUnavailable}</span><button type="button" className="mj-secondary-button" onClick={() => setLoadAttempt((value) => value + 1)}>{locale === "ja" ? "再試行" : "Retry"}</button></div> : null}
             <div className="mj-studio-discovery-list">
               {filteredArtifacts.length ? filteredArtifacts.map((item) => {
                 // Named on the card only under "All". Repeating one project's
@@ -1076,7 +1084,9 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
                   </span>
                 </article>
                 );
-              }) : (
+              }) : artifactsLoading ? (
+                <div className="leona-workspace-state" role="status"><span>{copy.loadingArtifacts}</span></div>
+              ) : artifactSyncError ? null : (
                 <p className="mj-studio-empty">
                   {/* Four different nothings. An empty project told the reader
                       "no results match your search" while the search box was

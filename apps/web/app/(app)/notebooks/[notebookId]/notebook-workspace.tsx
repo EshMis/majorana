@@ -2,6 +2,7 @@
 
 import type { components } from "@majorana/contracts-gen";
 import { StageRail, type RailStage } from "@majorana/ui";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
@@ -82,10 +83,14 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   // version from the dropdown pins it here so browsing history does not get
   // silently yanked forward the next time this component reloads the notebook.
   const [pinnedSeq, setPinnedSeq] = useState<number | null>(null);
-  const [version, setVersion] = useState<NotebookVersion | null>(null);
+  const [loadedVersion, setVersion] = useState<NotebookVersion | null>(null);
+  const [versionLoading, setVersionLoading] = useState(false);
+  const [versionAttempt, setVersionAttempt] = useState(0);
+  const [versionsError, setVersionsError] = useState<string | null>(null);
   const [versionError, setVersionError] = useState<string | null>(null);
   const [turns, setTurns] = useState<NotebookTurn[]>([]);
   const [turnsError, setTurnsError] = useState<string | null>(null);
+  const [turnsLoading, setTurnsLoading] = useState(true);
 
   const [followedRunId, setFollowedRunId] = useState<string | null>(null);
   /** Verdicts from the last graded attempt, by cell id. */
@@ -129,7 +134,8 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   // unless pinned" pattern `pinnedSeq` uses for the main version picker.
   const [compareMode, setCompareMode] = useState(false);
   const [compareSeq, setCompareSeq] = useState<number | null>(null);
-  const [compareVersion, setCompareVersion] = useState<NotebookVersion | null>(null);
+  const [loadedCompareVersion, setCompareVersion] = useState<NotebookVersion | null>(null);
+  const [compareAttempt, setCompareAttempt] = useState(0);
   const [compareError, setCompareError] = useState<string | null>(null);
 
   // The editor's draft. `null` means "not editing" — distinct from an empty array,
@@ -150,9 +156,15 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   const authored = useRef<AuthoredVersion | null>(null);
 
   const reloadSeq = useRef(0);
+  const versionsRequest = useRef(0);
+  const turnsRequest = useRef(0);
+  const mutationPending = useRef(false);
+  const titleEditing = useRef(false);
+  titleEditing.current = editingTitle;
 
   function loadNotebook() {
     const seq = ++reloadSeq.current;
+    setNotebookError(null);
     fetch(`/api/notebooks/${encodeURIComponent(notebookId)}`, { cache: "no-store" })
       .then(async (response) => {
         const payload = (await response.json()) as unknown;
@@ -165,7 +177,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
         if (seq !== reloadSeq.current) return;
         setNotebook(loaded);
         setNotebookError(null);
-        setTitleDraft((current) => (editingTitle ? current : loaded.title));
+        setTitleDraft((current) => (titleEditing.current ? current : loaded.title));
         if (RUNNING_STATUSES.has(loaded.latest_status) && loaded.latest_run_id) {
           setFollowedRunId(loaded.latest_run_id);
         }
@@ -177,14 +189,19 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   }
 
   function loadVersions() {
+    const seq = ++versionsRequest.current;
+    setVersionsError(null);
     fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/versions`, { cache: "no-store" })
       .then(async (response) => {
         const payload = (await response.json()) as unknown;
-        if (response.ok && isRecord(payload) && Array.isArray(payload.items)) {
-          setVersions(payload.items as NotebookVersionSummary[]);
+        if (!response.ok || !isRecord(payload) || !Array.isArray(payload.items)) {
+          throw new Error(refusalSentence(payload) ?? copy.loadFailed);
         }
+        if (seq === versionsRequest.current) setVersions(payload.items as NotebookVersionSummary[]);
       })
-      .catch(() => {});
+      .catch((cause) => {
+        if (seq === versionsRequest.current) setVersionsError(cause instanceof Error ? cause.message : copy.loadFailed);
+      });
   }
 
   /**
@@ -264,23 +281,53 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   }
 
   function loadTurns() {
+    const seq = ++turnsRequest.current;
+    setTurnsLoading(true);
+    setTurnsError(null);
     fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/turns`, { cache: "no-store" })
       .then(async (response) => {
         const payload = (await response.json()) as unknown;
         if (!response.ok || !isRecord(payload) || !Array.isArray(payload.items)) {
           throw new Error(refusalSentence(payload) ?? copy.chatLoadFailed);
         }
+        if (seq !== turnsRequest.current) return;
         setTurns(payload.items as NotebookTurn[]);
         setTurnsError(null);
       })
       .catch((cause) => {
-        setTurnsError(cause instanceof Error ? cause.message : copy.chatLoadFailed);
+        if (seq === turnsRequest.current) setTurnsError(cause instanceof Error ? cause.message : copy.chatLoadFailed);
+      })
+      .finally(() => {
+        if (seq === turnsRequest.current) setTurnsLoading(false);
       });
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps -- notebookId change is a hard reset; copy.* are stable strings for the active locale
   useEffect(() => {
     setNotebook(null);
+    setNotebookError(null);
+    setVersionError(null);
+    setVersionsError(null);
+    setTurnsError(null);
+    setActionError(null);
+    setEditingTitle(false);
+    setSavingTitle(false);
+    setMessage("");
+    setSending(false);
+    setSaving(false);
+    setRerunning(false);
+    setQuizzing(false);
+    setDownloading(false);
+    setCompareMode(false);
+    setCompareSeq(null);
+    setCompareVersion(null);
+    setCompareError(null);
+    mutationPending.current = false;
+    authored.current = null;
+    attemptSeq.current += 1;
+    runAttempt.current.clear();
+    pendingKeys.current.clear();
+    inflightKey.current = null;
     setVersion(null);
     setVersions([]);
     setPinnedSeq(null);
@@ -299,12 +346,21 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
     loadVersions();
     loadTurns();
     loadGrades();
+    return () => {
+      reloadSeq.current += 1;
+      versionsRequest.current += 1;
+      turnsRequest.current += 1;
+      openNotebookId.current = "";
+    };
   }, [notebookId]);
 
   // Follow the notebook's current version unless the reader pinned one from the picker.
-  const selectedSeq = pinnedSeq ?? notebook?.current_version_seq ?? null;
+  const selectedSeq = notebook?.id === notebookId ? pinnedSeq ?? notebook.current_version_seq ?? null : null;
+  const version = loadedVersion?.notebook_id === notebookId && loadedVersion.seq === selectedSeq ? loadedVersion : null;
 
   useEffect(() => {
+    setVersionError(null);
+    setVersionLoading(selectedSeq !== null);
     if (selectedSeq === null) {
       setVersion(null);
       return;
@@ -326,11 +382,14 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
       })
       .catch((cause) => {
         if (active) setVersionError(cause instanceof Error ? cause.message : copy.loadFailed);
+      })
+      .finally(() => {
+        if (active) setVersionLoading(false);
       });
     return () => {
       active = false;
     };
-  }, [notebookId, selectedSeq, copy.loadFailed]);
+  }, [notebookId, selectedSeq, copy.loadFailed, versionAttempt]);
 
   // Versions strictly earlier than the one on screen — what the "compare
   // against" picker offers, and where the default (no explicit pin) comes
@@ -338,9 +397,11 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   const earlierVersions = versions.filter((item) => selectedSeq !== null && item.seq < selectedSeq);
   const defaultCompareSeq =
     earlierVersions.length > 0 ? Math.max(...earlierVersions.map((item) => item.seq)) : null;
-  const effectiveCompareSeq = compareSeq ?? defaultCompareSeq;
+  const effectiveCompareSeq = earlierVersions.some((item) => item.seq === compareSeq) ? compareSeq : defaultCompareSeq;
+  const compareVersion = loadedCompareVersion?.notebook_id === notebookId && loadedCompareVersion.seq === effectiveCompareSeq ? loadedCompareVersion : null;
 
   useEffect(() => {
+    setCompareError(null);
     if (!compareMode || effectiveCompareSeq === null) {
       setCompareVersion(null);
       return;
@@ -366,7 +427,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
     return () => {
       active = false;
     };
-  }, [notebookId, compareMode, effectiveCompareSeq, copy.diffLoadFailed]);
+  }, [notebookId, compareMode, effectiveCompareSeq, copy.diffLoadFailed, compareAttempt]);
 
   // Follow the active run's SSE stream. The reader itself lives in
   // `lib/use-run-progress.ts` (extracted from what used to be inline here) so
@@ -574,6 +635,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
         body,
       });
       const payload = (await response.json()) as unknown;
+      if (openNotebookId.current !== notebookId) return;
       if (!response.ok || !isRecord(payload)) {
         throw new Error(refusalSentence(payload) ?? copy.gradeFailed);
       }
@@ -582,6 +644,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
       runAttempt.current.set(runId, mine);
       setGradingRunId(runId);
     } catch (cause) {
+      if (openNotebookId.current !== notebookId) return;
       // Deliberately NOT clearing the key here. A thrown fetch is the ambiguous case
       // this whole mechanism exists for: the server may have accepted the attempt and
       // only the response was lost, so the next press must carry the same key. It is
@@ -612,7 +675,8 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
 
   async function sendTurn(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || sending) return;
+    if (!trimmed || mutationPending.current || RUNNING_STATUSES.has(notebook?.latest_status ?? "")) return;
+    mutationPending.current = true;
     setSending(true);
     setActionError(null);
     try {
@@ -622,6 +686,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
         body: JSON.stringify({ message: trimmed }),
       });
       const payload = (await response.json()) as unknown;
+      if (openNotebookId.current !== notebookId) return;
       if (!response.ok || !isRecord(payload) || !isRecord(payload.turn) || !isRecord(payload.version)) {
         throw new Error(refusalSentence(payload) ?? copy.chatSendFailed);
       }
@@ -633,10 +698,13 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
       // pill flips to "generating" as soon as the revise run is queued.
       loadNotebook();
       if (runId) setFollowedRunId(runId);
-      setMessage("");
+      setMessage((current) => current.trim() === trimmed ? "" : current);
     } catch (cause) {
+      if (openNotebookId.current !== notebookId) return;
       setActionError(cause instanceof Error ? cause.message : copy.chatSendFailed);
     } finally {
+      if (openNotebookId.current !== notebookId) return;
+      mutationPending.current = false;
       setSending(false);
     }
   }
@@ -648,6 +716,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   const dirty = editing && cellsAreDirty(originalCells, draftCells ?? []);
 
   function startEditing() {
+    setCompareMode(false);
     setDraftCells(originalCells.map((cell) => ({ ...cell })));
     setFocusedCellId(null);
     setActionError(null);
@@ -688,7 +757,8 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   /** Save the draft as a new user-authored version. `runUntil` is "Run to here". */
   async function saveDraft({ execute, runUntil }: { execute: boolean; runUntil?: string | null }) {
     const spec = version?.spec;
-    if (!spec || draftCells === null || saving) return;
+    if (!spec || draftCells === null || mutationPending.current) return;
+    mutationPending.current = true;
     setSaving(true);
     setActionError(null);
     try {
@@ -703,6 +773,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
         }),
       });
       const payload = (await response.json()) as unknown;
+      if (openNotebookId.current !== notebookId) return;
       if (!response.ok || !isRecord(payload) || !isRecord(payload.version)) {
         // `title` is what the API's problem+json puts the sentence in — the parse
         // error from a source edit, or the reason two inputs were refused.
@@ -722,8 +793,11 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
         setPinnedSeq(created.seq);
       }
     } catch (cause) {
+      if (openNotebookId.current !== notebookId) return;
       setActionError(cause instanceof Error ? cause.message : copy.saveFailed);
     } finally {
+      if (openNotebookId.current !== notebookId) return;
+      mutationPending.current = false;
       setSaving(false);
     }
   }
@@ -795,7 +869,8 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
    * one (worker-side resolution in `_seed_material_for`, `kind: "notebook"`)
    * and navigates to it once queued. */
   async function quizMe() {
-    if (!notebook || quizzing) return;
+    if (!notebook || mutationPending.current) return;
+    mutationPending.current = true;
     setQuizzing(true);
     setActionError(null);
     try {
@@ -817,6 +892,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
         }),
       });
       const payload = (await response.json()) as unknown;
+      if (openNotebookId.current !== notebookId) return;
       const newNotebookId =
         isRecord(payload) && isRecord(payload.notebook) && typeof payload.notebook.id === "string"
           ? payload.notebook.id
@@ -826,7 +902,9 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
       }
       router.push(`/notebooks/${encodeURIComponent(newNotebookId)}`);
     } catch (cause) {
+      if (openNotebookId.current !== notebookId) return;
       setActionError(cause instanceof Error ? cause.message : copy.quizButtonFailed);
+      mutationPending.current = false;
       setQuizzing(false);
     }
   }
@@ -847,14 +925,17 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
         body: JSON.stringify({ title: trimmed }),
       });
       const payload = (await response.json()) as unknown;
+      if (openNotebookId.current !== notebookId) return;
       if (!response.ok || !isRecord(payload) || typeof payload.id !== "string") {
         throw new Error(refusalSentence(payload) ?? copy.titleEditFailed);
       }
       setNotebook(payload as unknown as Notebook);
       setEditingTitle(false);
     } catch (cause) {
+      if (openNotebookId.current !== notebookId) return;
       setActionError(cause instanceof Error ? cause.message : copy.titleEditFailed);
     } finally {
+      if (openNotebookId.current !== notebookId) return;
       setSavingTitle(false);
     }
   }
@@ -888,19 +969,23 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
         ),
       );
     } catch (cause) {
+      if (openNotebookId.current !== notebookId) return;
       setActionError(cause instanceof Error ? cause.message : copy.downloadFailed);
     } finally {
+      if (openNotebookId.current !== notebookId) return;
       setDownloading(false);
     }
   }
 
   async function runAgain() {
-    if (rerunning) return;
+    if (mutationPending.current || RUNNING_STATUSES.has(notebook?.latest_status ?? "")) return;
+    mutationPending.current = true;
     setRerunning(true);
     setActionError(null);
     try {
       const response = await fetch(`/api/notebooks/${encodeURIComponent(notebookId)}/run`, { method: "POST" });
       const payload = (await response.json()) as unknown;
+      if (openNotebookId.current !== notebookId) return;
       if (!response.ok || !isRecord(payload)) {
         throw new Error(refusalSentence(payload) ?? copy.runAgainFailed);
       }
@@ -909,16 +994,19 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
       loadVersions();
       if (runId) setFollowedRunId(runId);
     } catch (cause) {
+      if (openNotebookId.current !== notebookId) return;
       setActionError(cause instanceof Error ? cause.message : copy.runAgainFailed);
     } finally {
+      if (openNotebookId.current !== notebookId) return;
+      mutationPending.current = false;
       setRerunning(false);
     }
   }
 
   if (notebookError && !notebook) {
-    return <div className="mj-notebook-workspace-empty mj-library-empty" role="alert"><strong>{notebookError}</strong></div>;
+    return <div className="mj-notebook-workspace-empty mj-library-empty mj-notebooks-retry" role="alert"><strong>{notebookError}</strong><button type="button" className="mj-secondary-button" onClick={loadNotebook}>{locale === "ja" ? "再試行" : "Retry"}</button></div>;
   }
-  if (!notebook) {
+  if (!notebook || notebook.id !== notebookId) {
     return <div className="mj-notebook-workspace-empty mj-library-empty" role="status"><strong>{copy.loading}</strong></div>;
   }
 
@@ -935,9 +1023,9 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
   // an edit is saved as the NEXT version, so branching from an older one would
   // silently discard everything after it, and `_assert_not_in_flight` would refuse a
   // save made while a run is going anyway — better not to offer the button.
-  const latestSeq = versions.length > 0 ? versions[versions.length - 1].seq : null;
+  const latestSeq = versions.length > 0 ? Math.max(...versions.map((item) => item.seq)) : null;
   const canEdit =
-    !isGenerating &&
+    !isGenerating && !sending && !rerunning && !quizzing && !versionLoading &&
     version !== null &&
     version.status === "ready" &&
     version.spec !== null &&
@@ -946,25 +1034,30 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
 
   return (
     <main className="mj-notebook-workspace">
+      <Link className="mj-notebooks-back" href="/notebooks">{locale === "ja" ? "ノートブック一覧" : "All notebooks"}</Link>
       <header className="mj-notebook-workspace-header">
         <div className="mj-notebook-workspace-title">
           {editingTitle ? (
             <form className="mj-notebook-title-edit-form" onSubmit={(event) => { event.preventDefault(); void saveTitle(); }}>
               <input
+                aria-label={locale === "ja" ? "ノートブック名" : "Notebook title"}
+                onKeyDown={(event) => { if (event.key === "Escape" && !savingTitle) setEditingTitle(false); }}
                 value={titleDraft}
                 onChange={(event) => setTitleDraft(event.target.value)}
                 disabled={savingTitle}
                 autoFocus
               />
-              <button className="mj-secondary-button" type="submit" disabled={savingTitle}>
-                {savingTitle ? copy.creating : copy.saveTitle}
+              <button className="mj-secondary-button" type="submit" disabled={savingTitle || !titleDraft.trim()}>
+                {savingTitle ? copy.saving : copy.saveTitle}
               </button>
+              <button type="button" className="mj-secondary-button" disabled={savingTitle} onClick={() => setEditingTitle(false)}>{locale === "ja" ? "キャンセル" : "Cancel"}</button>
             </form>
           ) : (
             <h1>
               <button
                 type="button"
                 className="mj-notebook-title-edit"
+                title={locale === "ja" ? "名前を変更" : "Rename"}
                 onClick={() => { setTitleDraft(notebook.title); setEditingTitle(true); }}
               >
                 {notebook.title}
@@ -984,6 +1077,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
             <label className="mj-notebook-version-picker mj-filter-select">
               <span className="sr-only">{copy.versionPickerLabel}</span>
               <select
+                disabled={editing || saving}
                 value={selectedSeq ?? ""}
                 onChange={(event) => setPinnedSeq(Number(event.target.value))}
               >
@@ -993,11 +1087,25 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
               </select>
             </label>
           ) : null}
+          {canEdit || editing ? (
+            <button
+              className="mj-primary-button"
+              type="button"
+              disabled={saving}
+              onClick={() => (editing ? discardEdits() : startEditing())}
+            >
+              {editing ? copy.editExit : copy.edit}
+            </button>
+          ) : null}
+          <details className="mj-notebooks-disclosure mj-notebook-toolbar-more">
+            <summary>{locale === "ja" ? "その他の操作" : "More actions"}</summary>
+            <div className="mj-notebook-toolbar-options">
           {earlierVersions.length > 0 ? (
             <>
               <button
                 className="mj-secondary-button"
                 type="button"
+                disabled={editing || versionLoading}
                 aria-pressed={compareMode}
                 onClick={() => setCompareMode((current) => !current)}
               >
@@ -1022,7 +1130,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
             <button
               className="mj-secondary-button"
               type="button"
-              disabled={!version?.ipynb || downloading}
+              disabled={!version?.ipynb || downloading || versionLoading || editing}
               onClick={() => void downloadVersion(true)}
             >
               {downloading ? copy.creating : copy.downloadWithSolutions}
@@ -1031,7 +1139,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
           <button
             className="mj-secondary-button"
             type="button"
-            disabled={!version?.ipynb || downloading}
+            disabled={!version?.ipynb || downloading || versionLoading || editing}
             onClick={() => void downloadVersion()}
           >
             {downloading ? copy.creating : copy.download}
@@ -1039,7 +1147,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
           <button
             className="mj-secondary-button"
             type="button"
-            disabled={rerunning || isGenerating}
+            disabled={rerunning || isGenerating || sending || quizzing || editing}
             onClick={() => void runAgain()}
           >
             {rerunning || isGenerating ? copy.running : copy.runAgain}
@@ -1047,25 +1155,19 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
           <button
             className="mj-secondary-button"
             type="button"
-            disabled={quizzing || !version?.spec}
+            disabled={quizzing || !version?.spec || versionLoading || sending || rerunning || isGenerating || editing}
             onClick={() => void quizMe()}
           >
             {quizzing ? copy.creating : copy.quizButtonLabel}
           </button>
-          {canEdit || editing ? (
-            <button
-              className="mj-secondary-button"
-              type="button"
-              disabled={saving}
-              onClick={() => (editing ? discardEdits() : startEditing())}
-            >
-              {editing ? copy.editExit : copy.edit}
-            </button>
-          ) : null}
+            </div>
+          </details>
         </div>
       </header>
 
-      {notebookError ? <p role="alert" className="mj-notebook-workspace-error">{notebookError}</p> : null}
+      {notebookError || versionsError ? (
+        <div className="mj-notebooks-retry" role="alert"><p>{notebookError ?? versionsError}</p><button type="button" className="mj-secondary-button" onClick={() => { loadNotebook(); loadVersions(); }}>{locale === "ja" ? "再試行" : "Retry"}</button></div>
+      ) : null}
       {actionError ? <p role="alert" className="mj-notebook-workspace-error">{actionError}</p> : null}
 
       {isGenerating && stages.length > 0 ? (
@@ -1083,8 +1185,8 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
               <p>{copy.versionFailedHint}</p>
             </div>
           ) : null}
-          {versionError ? <p role="alert" className="mj-notebook-workspace-error">{versionError}</p> : null}
-          {compareError ? <p role="alert" className="mj-notebook-workspace-error">{compareError}</p> : null}
+          {versionError ? <div className="mj-notebooks-retry" role="alert"><p>{versionError}</p><button type="button" className="mj-secondary-button" onClick={() => setVersionAttempt((current) => current + 1)}>{locale === "ja" ? "再試行" : "Retry"}</button></div> : null}
+          {compareMode && compareError ? <div className="mj-notebooks-retry" role="alert"><p>{compareError}</p><button type="button" className="mj-secondary-button" onClick={() => setCompareAttempt((current) => current + 1)}>{locale === "ja" ? "再試行" : "Retry"}</button></div> : null}
           {editing && draftCells !== null ? (
             <>
               <NotebookEditor
@@ -1126,16 +1228,20 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
                 </button>
               </div>
             </>
-          ) : compareMode ? (
+          ) : versionLoading || (!version && selectedSeq !== null && !versionError) ? (
+            <p className="mj-notebook-workspace-empty-notebook" role="status">{copy.loading}</p>
+          ) : compareMode && effectiveCompareSeq !== null ? (
             diff && version?.spec && compareVersion?.spec ? (
               <NotebookDiffView diff={diff} older={compareVersion.spec} newer={version.spec} locale={locale} />
             ) : (
-              <p className="mj-notebook-workspace-empty-notebook">{copy.diffLoading}</p>
+              <p className="mj-notebook-workspace-empty-notebook" role="status">{compareError ? "" : copy.diffLoading}</p>
             )
           ) : version ? (
             <>
             {gradeSummaryStrip}
             <NotebookView
+              key={`${notebookId}:${version.seq}`}
+              busy={sending || isGenerating || rerunning || quizzing}
               cells={cells}
               locale={locale}
               framework={notebook.framework?.name ?? "qiskit"}
@@ -1144,27 +1250,28 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
               gradingCellIds={gradingCellIds}
             />
             </>
-          ) : !isGenerating ? (
-            <p className="mj-notebook-workspace-empty-notebook">{copy.loadFailed}</p>
+          ) : !isGenerating && !versionError ? (
+            <p className="mj-notebook-workspace-empty-notebook">{locale === "ja" ? "ノートブックを準備しています。" : "Your notebook is being prepared."}</p>
           ) : null}
           {!editing && version?.warnings && version.warnings.length > 0 ? (
-            <section className="mj-notebook-structure-notes" aria-label={copy.structureNotesLabel}>
-              <h2>{copy.structureNotesLabel}</h2>
+            <details className="mj-notebook-structure-notes mj-notebooks-disclosure">
+              <summary>{copy.structureNotesLabel}</summary>
               <p className="mj-notebook-structure-notes-hint">{copy.structureNotesHint}</p>
               <ul>
                 {version.warnings.map((warning, index) => (
                   <li key={index}>{warning}</li>
                 ))}
               </ul>
-            </section>
+            </details>
           ) : null}
           {!compareMode && version ? <NotebookReviewPanel review={version.review} locale={locale} /> : null}
         </section>
 
         <aside className="mj-notebook-workspace-chat" aria-label={copy.chatLabel}>
           <h2>{copy.chatLabel}</h2>
-          {turnsError ? <p role="alert">{turnsError}</p> : null}
-          {turns.length === 0 ? <p className="mj-notebook-chat-empty">{copy.chatEmpty}</p> : null}
+          {turnsError ? <div className="mj-notebooks-retry" role="alert"><p>{turnsError}</p><button type="button" className="mj-secondary-button" onClick={loadTurns}>{locale === "ja" ? "再試行" : "Retry"}</button></div> : null}
+          {turnsLoading && turns.length === 0 ? <p className="mj-notebook-chat-empty" role="status">{copy.loading}</p> : null}
+          {!turnsLoading && !turnsError && turns.length === 0 ? <p className="mj-notebook-chat-empty">{copy.chatEmpty}</p> : null}
           <div className="mj-chat-thread mj-notebook-chat-thread">
             {turns.map((turn) => (
               <div key={turn.id} className="mj-chat-turn">
@@ -1185,7 +1292,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
                 rows={2}
               />
             </label>
-            <button className="mj-primary-button" type="submit" disabled={sending || !message.trim()}>
+            <button className="mj-primary-button" type="submit" disabled={sending || isGenerating || saving || rerunning || quizzing || editing || !message.trim()}>
               {sending ? copy.chatSending : copy.chatSend}
             </button>
           </form>

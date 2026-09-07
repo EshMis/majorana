@@ -114,7 +114,8 @@ test("account settings: a failed save shows the server's error and leaves the bu
     });
 
     await waitFor(() => {
-      assert.equal(getByRole("status").textContent, "Database unavailable");
+      assert.equal(getByRole("alert").textContent, "Database unavailable");
+      assert.ok(getByRole("alert").closest("section")?.querySelector("form"), "profile errors stay beside the profile form");
     });
     const button = getByRole("button", { name: /Save name/i });
     assert.equal(button.hasAttribute("disabled"), false);
@@ -147,7 +148,7 @@ test("account settings: the auto-keep-artifacts toggle PATCHes /api/workspace/se
     // the only feedback there is, so it must not keep claiming a state the
     // workspace does not actually have.
     await waitFor(() => assert.equal(toggle.checked, false));
-    assert.ok((getByRole("status").textContent?.length ?? 0) > 0, "a failure must say so, not just quietly revert");
+    assert.ok((getByRole("alert").textContent?.length ?? 0) > 0, "a failure must say so, not just quietly revert");
   } finally {
     fetchStub.restore();
   }
