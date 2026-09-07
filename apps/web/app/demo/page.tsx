@@ -5,7 +5,10 @@ import { DemoWorkspace } from "./demo-workspace";
 
 export const metadata = { title: "Leona Quantum public preview" };
 
-export default async function DemoPage() {
+export default async function DemoPage({ searchParams }: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   if (!isPublicDemoEnabled()) notFound();
-  return <DemoWorkspace locale={await getPublicLocale()} />;
+  const [locale, query] = await Promise.all([getPublicLocale(), searchParams]);
+  return <DemoWorkspace locale={locale} view={query.view === "library" ? "library" : "run"} />;
 }

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { LeonaWordmark } from "../../../components/leona-wordmark";
-import { LiquidGridBackground } from "../../../components/liquid-grid-background";
+import Link from "next/link";
 import { PublicSite } from "../../../components/public-site";
 import { Reveal } from "../../../components/reveal";
 import { ABOUT_COPY } from "../../../lib/about-copy";
@@ -49,8 +48,6 @@ export default async function AboutPage({
       locale={locale}
       chrome="static"
     >
-      <LiquidGridBackground />
-
       <section className="mj-about-hero" aria-labelledby="about-hero-heading">
         <div className="mj-about-hero-copy">
           <p className="mj-section-label">{copy.hero.label}</p>
@@ -62,24 +59,6 @@ export default async function AboutPage({
           <p className="mj-about-hero-lede">{copy.hero.body}</p>
         </div>
 
-        <div className="mj-about-signal" aria-hidden="true">
-          <span className="mj-about-signal-ring mj-about-signal-ring--outer" />
-          <span className="mj-about-signal-ring mj-about-signal-ring--inner" />
-          <span className="mj-about-signal-axis mj-about-signal-axis--horizontal" />
-          <span className="mj-about-signal-axis mj-about-signal-axis--vertical" />
-          <LeonaWordmark className="lq-wordmark--about-signal" />
-          {copy.hero.signal.map((label, index) => (
-            <span className={`mj-about-signal-label mj-about-signal-label--${index + 1}`} key={label}>
-              {label}
-            </span>
-          ))}
-          <span className="mj-about-signal-pulse" />
-        </div>
-
-        <div className="mj-about-hero-foot" aria-hidden="true">
-          <span>LEONA / QUANTUM SYSTEMS</span>
-          <span>ABOUT / 2026</span>
-        </div>
       </section>
 
       <section className="mj-about-section mj-about-team" aria-labelledby="about-team-heading">
@@ -98,7 +77,7 @@ export default async function AboutPage({
                   <Image
                     alt={copy.team.portraitAlt.replace("{name}", member.name)}
                     placeholder="blur"
-                    sizes="(max-width: 980px) calc(100vw - 48px), 368px"
+                    sizes="(max-width: 620px) 128px, 192px"
                     src={TEAM_PORTRAITS[member.number]}
                   />
                 </div>
@@ -137,30 +116,6 @@ export default async function AboutPage({
         </section>
       </Reveal>
 
-      <section className="mj-about-section mj-about-build" aria-labelledby="about-build-heading">
-        <Reveal>
-          <div className="mj-about-build-heading">
-            <p className="mj-section-label">{copy.build.label}</p>
-            <h2 id="about-build-heading">{copy.build.title}</h2>
-            <p>{copy.build.body}</p>
-          </div>
-        </Reveal>
-        <div className="mj-about-flow">
-          {copy.build.steps.map((step, index) => (
-            <Reveal delay={index * 80} key={step.number}>
-              <article className="mj-about-flow-step">
-                <div className="mj-about-flow-step-head">
-                  <span>{step.number}</span>
-                  <span className="mj-about-flow-dot" aria-hidden="true" />
-                </div>
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
-              </article>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
       <Reveal>
         <section className="mj-about-section mj-about-direction" aria-labelledby="about-direction-heading">
           <div className="mj-about-direction-copy">
@@ -189,8 +144,8 @@ export default async function AboutPage({
             <p>{copy.cta.body}</p>
           </div>
           <div className="mj-public-actions">
-            <a className="mj-primary-button" href="/contact">{copy.cta.primary}</a>
-            <a className="mj-secondary-button" href="/workspace">{copy.cta.secondary}</a>
+            <Link className="mj-primary-button" href="/contact">{copy.cta.primary}</Link>
+            <Link className="mj-secondary-button" href="/run">{copy.cta.secondary}</Link>
           </div>
         </section>
       </Reveal>

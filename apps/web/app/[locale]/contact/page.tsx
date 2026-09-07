@@ -3,7 +3,6 @@ import { PublicSite } from "../../../components/public-site";
 import { Reveal } from "../../../components/reveal";
 import { CONTACT_COPY } from "../../../lib/public-copy";
 import { ContactForm } from "./contact-form";
-import { MeasurementLab } from "../../../components/measurement-lab";
 import { parsePublicLocale, PUBLIC_LOCALES } from "../../../lib/public-locale";
 import { canonicalMetadata } from "../../../lib/public-metadata";
 import { contactMetadataCopy } from "../../../lib/public-page-metadata";
@@ -55,11 +54,9 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                 on the page after the form stopped doing that. */}
             <ContactForm locale={locale} />
           </div>
-          {/* A small interactive aside (Owner Inbox 2026-07-19): compact, no
-              explanatory copy — just a qubit to measure while you're here. */}
-          <aside className="mj-contact-measure" aria-labelledby="contact-measure-heading">
-            <p className="mj-section-label" id="contact-measure-heading">{copy.measure.label}</p>
-            <MeasurementLab compact />
+          <aside className="lq-contact-help" aria-labelledby="contact-help-heading">
+            <h2 id="contact-help-heading">{copy.panelTitle}</h2>
+            <ul>{copy.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul>
           </aside>
         </section>
       </Reveal>
