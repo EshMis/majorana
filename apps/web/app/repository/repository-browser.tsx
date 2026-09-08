@@ -400,6 +400,7 @@ export function RepositoryBrowser({
       clearTimeout(searchDebounceRef.current);
       searchDebounceRef.current = null;
     }
+    requestedQueryRef.current = new URL(href, "https://leonaqt.com").searchParams.get("q") ?? "";
     startTransition(() => {
       router.replace(href, { scroll: false });
     });
@@ -467,7 +468,11 @@ export function RepositoryBrowser({
    */
   const [query, setQuery] = useState(params.query);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestedQueryRef = useRef<string | null>(null);
   useEffect(() => {
+    // An older response may arrive after a newer debounce has already fired.
+    if (requestedQueryRef.current !== null && params.query !== requestedQueryRef.current) return;
+    requestedQueryRef.current = null;
     if (!searchDebounceRef.current) setQuery(params.query);
   }, [params.query]);
   useEffect(
@@ -926,7 +931,7 @@ export function RepositoryBrowser({
     );
   }
 
-  function FacetRail() {
+  function renderFacetRail() {
     return (
       <div className="mj-facet-rail">
         {/* Always visible, open or closed. See property 2 above. */}
@@ -1153,12 +1158,19 @@ export function RepositoryBrowser({
             onChange={(event) => {
               const next = event.target.value;
               setQuery(next);
+              requestedQueryRef.current = next;
               if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
               searchDebounceRef.current = setTimeout(() => {
                 navigate(browseHref({ query: next }));
               }, SEARCH_DEBOUNCE_MS);
             }}
             placeholder={copy.placeholder}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                navigate(browseHref({ query }));
+              }
+            }}
             type="search"
           />
         </label>
@@ -1194,7 +1206,7 @@ export function RepositoryBrowser({
             as a promise the way a bare "Optimization" can, and on this corpus
             that matters — those ten are eight width-scaled MaxCut ring
             benchmarks. */}
-        <FacetRail />
+        {renderFacetRail()}
       </div>
 
       {/* The assumption set is stated wherever the ordering it justifies is
@@ -1224,7 +1236,7 @@ export function RepositoryBrowser({
           <a
             className={params.category === option.value ? "is-active" : ""}
             key={option.value}
-            href={option.value === "all" ? "/repository" : `/repository?category=${option.value}`}
+            href={browseHref({ category: option.value })}
             aria-current={params.category === option.value ? "page" : undefined}
             title={locale === "ja" ? option.labelJa : option.label}
             onClick={(event) => {
@@ -1263,6 +1275,9 @@ export function RepositoryBrowser({
             : `${view.structureFilteredCount} public ${view.structureFilteredCount === 1 ? copy.entry : copy.entries}`}
       </p>
       <p className="mj-repository-star-note">{copy.starNote}</p>
+      <p className="mj-repository-search-status" role="status" aria-live="polite">
+        {isPending ? locale === "ja" ? "検索結果を更新中…" : "Updating results…" : ""}
+      </p>
 
       {!view.structureFilteredCount ? (
         <div className="mj-repository-empty">
