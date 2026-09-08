@@ -65,7 +65,7 @@ export function QappWorkspace({ qappId }: { qappId: string }) {
   const isPublic = detail.qapp.visibility === "public";
   const notice = rangeSmokeNotice(detail.version.range_smoke);
   return (
-    <main className="qapp-private-page">
+    <section className="qapp-private-page">
       <Link className="leona-workspace-back" href="/qapps">All Qapps</Link>
       <header className="qapp-private-header">
         <div>
@@ -93,6 +93,6 @@ export function QappWorkspace({ qappId }: { qappId: string }) {
         </p>
       ) : null}
       <QappRuntime slug={detail.qapp.slug} uiDocument={detail.version.ui_document} canExecute />
-    </main>
+    </section>
   );
 }

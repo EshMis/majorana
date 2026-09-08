@@ -802,17 +802,30 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
     }
   }
 
-  // The browser's own guard. It fires only on a real unload (tab close, reload,
-  // external link) — an in-app route change does not reach it, which is why
-  // `discardEdits` asks separately rather than relying on this.
+  // Unsaved edits use native navigation so the browser's unload guard also
+  // covers client-side links, including links in the surrounding sidebar.
   useEffect(() => {
     if (!dirty) return;
     function warn(event: BeforeUnloadEvent) {
       event.preventDefault();
       event.returnValue = "";
     }
+    function leaveThroughLink(event: MouseEvent) {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+      const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[href]") : null;
+      if (!link || link.hasAttribute("download") || (link.target && link.target !== "_self")) return;
+      const target = new URL(link.href, window.location.href);
+      if (target.origin !== window.location.origin || (target.pathname === window.location.pathname && target.search === window.location.search)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      window.location.assign(target.href);
+    }
     window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
+    document.addEventListener("click", leaveThroughLink, true);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      document.removeEventListener("click", leaveThroughLink, true);
+    };
   }, [dirty]);
 
   function submitMessage(event: FormEvent<HTMLFormElement>) {
@@ -1033,7 +1046,7 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
     version.seq === latestSeq;
 
   return (
-    <main className="mj-notebook-workspace">
+    <section className="mj-notebook-workspace">
       <Link className="mj-notebooks-back" href="/notebooks">{locale === "ja" ? "ノートブック一覧" : "All notebooks"}</Link>
       <header className="mj-notebook-workspace-header">
         <div className="mj-notebook-workspace-title">
@@ -1298,6 +1311,6 @@ export function NotebookWorkspace({ notebookId, locale = "en" }: { notebookId: s
           </form>
         </aside>
       </div>
-    </main>
+    </section>
   );
 }

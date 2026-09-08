@@ -977,7 +977,7 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
               </div>
               <button className="mj-primary-button" type="button" onClick={() => applyArtifact(null)}>{copy.new}</button>
             </div>
-            <label className="mj-studio-search mj-studio-search--dots">
+            <label className="mj-studio-search">
               <SearchIcon size={17} />
               <span className="sr-only">{copy.search}</span>
               {/* `id` and `name`. The accessible name was never missing — the
@@ -995,7 +995,6 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={copy.searchPlaceholder}
               />
-              <StudioDots />
             </label>
             {/* No tabs at all until the workspace has a project — a lone "All"
                 is a control that does nothing, and this pane looked exactly as
@@ -1085,7 +1084,7 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
                 </article>
                 );
               }) : artifactsLoading ? (
-                <div className="leona-workspace-state" role="status"><span>{copy.loadingArtifacts}</span></div>
+                <div className="leona-workspace-state" role="status"><span>{locale === "ja" ? "回路を読み込み中…" : "Loading circuits…"}</span></div>
               ) : artifactSyncError ? null : (
                 <p className="mj-studio-empty">
                   {/* Four different nothings. An empty project told the reader
@@ -1190,145 +1189,6 @@ function StudioStatusPill({ status, locale }: { status: LibraryArtifact["status"
   );
 }
 
-/**
- * Decorative studio companion (Owner Inbox 2026-07-19, replacing the walking
- * cat): a thin strip of superposition "dots" drifting along the top edge of the
- * discovery search bar. They periodically COLLAPSE toward a random point and
- * disperse again — a measurement motif — and while the bar is hovered/focused
- * they converge toward the pointer instead, so it stays interactive. Canvas so
- * many points stay cheap; reads --accent / --text-0 at runtime to theme with
- * light/dark, and holds a single static frame under prefers-reduced-motion.
- */
-function StudioDots() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const host = canvas.closest<HTMLElement>(".mj-studio-search--dots") ?? canvas.parentElement;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    const N = 30;
-    const dots = Array.from({ length: N }, (_, i) => ({
-      bx: (i + 0.5) / N,
-      by: 0.28 + Math.random() * 0.44,
-      phase: Math.random() * Math.PI * 2,
-      speed: 0.5 + Math.random() * 0.7,
-      amp: 0.05 + Math.random() * 0.06,
-      r: 0.8 + Math.random() * 1.3,
-      bright: Math.random() < 0.16,
-    }));
-
-    // Collapse cycle: drift, then converge to a random x, hold, disperse.
-    let collapseX = 0.5;
-    let cycleStart = 0;
-    const CYCLE = 480; // frames (~8s at 60fps)
-
-    let pointer: number | null = null;
-    let hovering = false;
-    const onMove = (event: PointerEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      pointer = rect.width ? (event.clientX - rect.left) / rect.width : null;
-    };
-    const onEnter = () => { hovering = true; };
-    const onLeave = () => { hovering = false; pointer = null; };
-    host?.addEventListener("pointermove", onMove);
-    host?.addEventListener("pointerenter", onEnter);
-    host?.addEventListener("pointerleave", onLeave);
-
-    function colors() {
-      const st = getComputedStyle(canvas!);
-      return {
-        accent: st.getPropertyValue("--accent").trim() || "olivedrab",
-        bright: st.getPropertyValue("--text-0").trim() || "black",
-      };
-    }
-
-    function resize() {
-      const w = canvas!.clientWidth, h = canvas!.clientHeight;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas!.width = Math.max(1, w * dpr);
-      canvas!.height = Math.max(1, h * dpr);
-      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-
-    const ease = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
-    let frame = 0;
-    let raf = 0;
-
-    function draw() {
-      const W = canvas!.clientWidth, H = canvas!.clientHeight;
-      const { accent, bright } = colors();
-      ctx!.clearRect(0, 0, W, H);
-
-      // Collapse strength + target for this frame.
-      let conv = 0;
-      let targetX = collapseX;
-      let targetY = 0.5;
-      if (hovering && pointer != null) {
-        conv = 0.85;
-        targetX = pointer;
-      } else if (!reduceMotion) {
-        const p = (frame - cycleStart) / CYCLE;
-        if (p >= 1) { cycleStart = frame; collapseX = 0.18 + Math.random() * 0.64; }
-        // converge over first 25%, hold to 45%, disperse to 70%, drift after.
-        const q = (frame - cycleStart) / CYCLE;
-        if (q < 0.25) conv = ease(q / 0.25);
-        else if (q < 0.45) conv = 1;
-        else if (q < 0.7) conv = 1 - ease((q - 0.45) / 0.25);
-        else conv = 0;
-      } else {
-        conv = 0.4;
-      }
-
-      const t = frame / 60;
-      dots.forEach((d) => {
-        const dx = reduceMotion ? d.bx : d.bx + Math.sin(t * d.speed + d.phase) * d.amp;
-        const dy = reduceMotion ? d.by : d.by + Math.cos(t * d.speed * 0.8 + d.phase) * d.amp * 1.4;
-        const x = (dx + (targetX - dx) * conv) * W;
-        const y = (dy + (targetY - dy) * conv) * H;
-        if (conv > 0.15 && !reduceMotion) {
-          ctx!.globalAlpha = 0.12 * conv;
-          ctx!.strokeStyle = accent;
-          ctx!.beginPath();
-          ctx!.moveTo(targetX * W, targetY * H);
-          ctx!.lineTo(x, y);
-          ctx!.stroke();
-        }
-        ctx!.globalAlpha = 0.45 + 0.5 * conv;
-        ctx!.fillStyle = d.bright ? bright : accent;
-        ctx!.beginPath();
-        ctx!.arc(x, y, d.r + (d.bright ? 0.8 : 0), 0, Math.PI * 2);
-        ctx!.fill();
-      });
-      ctx!.globalAlpha = 1;
-    }
-
-    function tick() { frame += 1; draw(); raf = window.requestAnimationFrame(tick); }
-
-    resize();
-    draw();
-    const ro = new ResizeObserver(() => { resize(); draw(); });
-    ro.observe(canvas);
-    if (!reduceMotion) raf = window.requestAnimationFrame(tick);
-
-    return () => {
-      window.cancelAnimationFrame(raf);
-      ro.disconnect();
-      host?.removeEventListener("pointermove", onMove);
-      host?.removeEventListener("pointerenter", onEnter);
-      host?.removeEventListener("pointerleave", onLeave);
-    };
-  }, []);
-
-  return (
-    <span className="mj-studio-dots" aria-hidden="true">
-      <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
-    </span>
-  );
-}
 
 const ANGLE_OPTIONS = ["pi/8", "pi/4", "pi/2", "pi", "3*pi/2", "2*pi"];
 

@@ -313,7 +313,7 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
   const generateAllDisabled = generatingAll || planRunActive || progress.ready === progress.total;
 
   return (
-    <main className="mj-course-workspace">
+    <section className="mj-course-workspace">
       <Link className="mj-notebooks-back" href="/notebooks/courses">{locale === "ja" ? "コース一覧" : "All courses"}</Link>
       <header className="mj-course-workspace-header">
         <div className="mj-course-workspace-title">
@@ -435,7 +435,7 @@ export function CourseWorkspace({ courseId, locale = "en" }: { courseId: string;
           </form>
         </aside>
       </div>
-    </main>
+    </section>
   );
 }
 

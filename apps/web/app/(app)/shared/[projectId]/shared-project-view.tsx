@@ -273,14 +273,14 @@ export function SharedProjectView({
 
   if (failed) {
     return (
-      <main className="mj-shared-project">
+      <section className="mj-shared-project">
         <p className="mj-share-error">{copy.loadFailed}</p>
         <p className="mj-shared-project-actions">
           <a className="mj-secondary-button" href="/studio">
             {copy.backToStudio}
           </a>
         </p>
-      </main>
+      </section>
     );
   }
 
@@ -288,11 +288,11 @@ export function SharedProjectView({
   // page does not jump the moment the grant resolves. It used to render an
   // empty <main>, which is why arriving here flashed a blank column and then
   // pushed everything down.
-  if (!project && loadError) return <main className="mj-shared-project">{retryNotice}</main>;
+  if (!project && loadError) return <section className="mj-shared-project">{retryNotice}</section>;
 
   if (!project) {
     return (
-      <main className="mj-shared-project" aria-busy="true">
+      <section className="mj-shared-project" aria-busy="true">
         <span className="sr-only" role="status">{copy.sharedWithMe}</span>
         <div className="mj-shared-project-header">
           <span className="mj-skeleton mj-skeleton--eyebrow" />
@@ -302,12 +302,12 @@ export function SharedProjectView({
         <div className="mj-shared-circuit-list">
           <span className="mj-skeleton mj-skeleton--panel" />
         </div>
-      </main>
+      </section>
     );
   }
 
   return (
-    <main className="mj-shared-project">
+    <section className="mj-shared-project">
       {/* The way out sits at the top, where a back link belongs, instead of at
           the bottom of the page as a full-width bar. */}
       <p className="mj-shared-project-back">
@@ -515,6 +515,6 @@ export function SharedProjectView({
           ))}
         </ul>
       )}
-    </main>
+    </section>
   );
 }

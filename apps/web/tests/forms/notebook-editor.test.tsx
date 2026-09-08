@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { NotebookWorkspace } from "../../app/(app)/notebooks/[notebookId]/notebook-workspace.tsx";
-import { stubFetch, type RecordedRequest } from "./dom-env.ts";
+import { stubFetch, waitForNavigationAttempt, type RecordedRequest } from "./dom-env.ts";
 
 const NOTEBOOK_ID = "11111111-1111-4111-8111-111111111111";
 
@@ -142,6 +142,28 @@ test("edit mode renders one textarea per cell, carrying each cell's source", asy
     // The reader's own text, in a real textarea — not a contenteditable div.
     assert.equal(first.tagName, "TEXTAREA");
   } finally {
+    fetchStub.restore();
+  }
+});
+
+test("unsaved notebook edits keep native leave protection for surrounding workspace links", async () => {
+  const fetchStub = stubWorkspace();
+  const exit = document.createElement("a");
+  exit.href = "/studio";
+  exit.textContent = "Studio";
+  document.body.append(exit);
+  try {
+    await openEditor();
+    fireEvent.change(screen.getByLabelText("Source of cell c02"), { target: { value: "keep my draft" } });
+    const unload = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(unload);
+    assert.equal(unload.defaultPrevented, true);
+    const navigation = waitForNavigationAttempt();
+    assert.equal(fireEvent.click(exit), false, "Client navigation must be intercepted while edits are unsaved");
+    await navigation;
+    assert.equal((screen.getByLabelText("Source of cell c02") as HTMLTextAreaElement).value, "keep my draft");
+  } finally {
+    exit.remove();
     fetchStub.restore();
   }
 });

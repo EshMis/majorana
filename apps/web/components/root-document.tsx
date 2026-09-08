@@ -51,6 +51,9 @@ import { canonicalOrigin } from "../lib/site-origin";
 import { OG_IMAGE, SITE_NAME, TITLE_TEMPLATE } from "../lib/public-metadata";
 import "../app/globals.css";
 import "../styles/ux-shell.css";
+import "../styles/ux-site.css";
+import "../styles/ux-nala.css";
+import "../styles/ux-workspace.css";
 import "../styles/ux-atlas.css";
 
 const themeScript = `(() => {

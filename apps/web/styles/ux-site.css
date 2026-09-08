@@ -93,6 +93,7 @@
 .lq-landing-prompt-section { padding-bottom: var(--sp-8); }
 .lq-landing-prompt-section .mj-landing-prompt {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: var(--sp-4);
   width: 100%;
@@ -128,10 +129,14 @@
   flex: 0 0 var(--control-h-cta);
   width: var(--control-h-cta);
   height: var(--control-h-cta);
+  padding: 0;
   border-radius: var(--radius-control);
   background: var(--accent);
   color: var(--bg-0);
 }
+.lq-landing-prompt-section .mj-landing-prompt-submit svg { flex-shrink: 0; }
+.lq-landing-prompt-section .mj-landing-prompt::before,
+.lq-landing-prompt-section .mj-landing-prompt::after { content: none; animation: none; }
 .lq-landing-prompt-section .mj-landing-prompt-submit:disabled { opacity: .5; cursor: default; }
 .lq-arrow-forward { transform: rotate(180deg); }
 .lq-prompt-example {
@@ -221,7 +226,8 @@
 .mj-legal-document section { scroll-margin-top: var(--sp-8); }
 
 @media (max-width: 1100px) {
-  .mj-public-site .mj-public-header { grid-template-columns: 1fr auto auto; gap: var(--sp-3); }
+  .mj-public-site .mj-public-header { grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--sp-3); }
+  .mj-public-brand { min-width: 0; }
   .lq-public-navigation { order: 3; }
   .lq-public-menu-trigger { display: inline-flex; align-items: center; justify-content: center; width: var(--control-h-cta); height: var(--control-h-cta); border: var(--border-hairline) solid var(--border-0); border-radius: var(--radius-control); background: var(--bg-0); color: var(--text-0); cursor: pointer; }
   .lq-public-menu-panel { display: none; position: absolute; top: 100%; right: 0; left: 0; padding: var(--sp-4); border: var(--border-hairline) solid var(--border-0); border-radius: var(--radius-card); background: var(--bg-0); }
@@ -246,8 +252,9 @@
 }
 @media (max-width: 620px) {
   .mj-public-site .mj-public-header { gap: var(--sp-2); }
-  .mj-public-header .lq-wordmark--public-header { width: calc(var(--sp-16) * 2); height: auto; }
+  .mj-public-header .lq-wordmark--public-header { width: calc(var(--sp-16) * 2); max-width: 100%; height: auto; }
   .mj-public-site .mj-public-nav-primary { padding-inline: var(--sp-2); font-size: var(--fs-12); }
+  .lq-public-auth,
   .lq-public-auth .mj-auth-slot[data-auth-slot="in"] { flex-direction: column-reverse; gap: var(--sp-1); }
   .mj-public-site .mj-public-footer-links { flex-wrap: wrap; }
   .lq-site-product-grid { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
