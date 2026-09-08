@@ -123,6 +123,12 @@ function TraceChart({ trace, locale }: { trace: ResultTraceView; locale: PublicL
           <dd>{formatResultNumber(trace.end - trace.start, locale)}</dd>
         </div>
       </dl>
+      <details className="mj-chart-data">
+        <summary>{locale === "ja" ? "表示点のデータ" : "Displayed point data"}</summary>
+        <div className="mj-chart-table-scroll" role="region" tabIndex={0} aria-label={trace.label}>
+          <table><thead><tr><th scope="col">{locale === "ja" ? "点" : "Point"}</th><th scope="col">{trace.label}</th></tr></thead><tbody>{trace.points.map((point) => <tr key={point.index}><td>{point.index}</td><td>{formatResultNumber(point.value, locale)}</td></tr>)}</tbody></table>
+        </div>
+      </details>
     </section>
   );
 }
@@ -223,6 +229,7 @@ function GenericChart({ chart, locale }: { chart: ResultChartView; locale: Publi
         <span className="mj-section-label">{chart.title}</span>
         <span>{chartKindLabel(chart.kind, locale)}</span>
       </div>
+      <div className="mj-chart-scroll" role="region" tabIndex={0} aria-label={chart.title}>
       <svg
         role="img"
         aria-label={chartSummary(chart, locale)}
@@ -316,11 +323,18 @@ function GenericChart({ chart, locale }: { chart: ResultChartView; locale: Publi
           </text>
         ) : null}
       </svg>
+      </div>
       <ul className="mj-generic-chart-legend" aria-label={locale === "ja" ? "系列" : "Series"}>
         {chart.series.map((series, index) => (
           <li data-series={index} key={`${series.label}-${index}`}><span aria-hidden="true" />{series.label}</li>
         ))}
       </ul>
+      <details className="mj-chart-data">
+        <summary>{locale === "ja" ? "グラフのデータ" : "Chart data"}</summary>
+        <div className="mj-chart-table-scroll" role="region" tabIndex={0} aria-label={chart.title}>
+          <table><thead><tr><th scope="col">{locale === "ja" ? "系列" : "Series"}</th><th scope="col">{chart.xLabel || "x"}</th><th scope="col">{chart.yLabel || "y"}</th></tr></thead><tbody>{chart.series.flatMap((series, seriesIndex) => series.points.map((point, index) => <tr key={`${seriesIndex}-${index}`}><th scope="row">{series.label}</th><td>{typeof point.x === "number" ? formatResultNumber(point.x, locale) : point.x}</td><td>{formatResultNumber(point.y, locale)}</td></tr>))}</tbody></table>
+        </div>
+      </details>
     </section>
   );
 }

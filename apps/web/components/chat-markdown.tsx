@@ -1,13 +1,14 @@
 "use client";
 
 import ReactMarkdown from "react-markdown";
+import { memo } from "react";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 
 import { renderableMarkdown } from "../lib/chat-markdown-source";
 
-export function MarkdownContent({ source, className }: { source: string; className: string }) {
+export const MarkdownContent = memo(function MarkdownContent({ source, className }: { source: string; className: string }) {
   return (
     <div className={className}>
       <ReactMarkdown
@@ -37,8 +38,8 @@ export function MarkdownContent({ source, className }: { source: string; classNa
       </ReactMarkdown>
     </div>
   );
-}
+});
 
-export function ChatMarkdown({ source }: { source: string }) {
+export const ChatMarkdown = memo(function ChatMarkdown({ source }: { source: string }) {
   return <MarkdownContent source={source} className="mj-chat-markdown" />;
-}
+});
