@@ -64,7 +64,7 @@ export const LOADING_COPY: Record<PublicLocale, {
 
 export const HOME_COPY: Record<PublicLocale, {
   hero: { label: string; title: string; lede: string; primary: string; secondary: string };
-  promptDemo: { label: string; submit: string; prompts: string[] };
+  promptDemo: { label: string; submit: string; retry: string; prompts: string[] };
   visual: { label: string; demoLabel: string; demoDescription: string; demoFallback: string };
   product: { label: string; title: string; items: Array<{ title: string; body: string; href: string }> };
   principles: { label: string; title: string; items: Array<{ title: string; body: string }> };
@@ -83,6 +83,7 @@ export const HOME_COPY: Record<PublicLocale, {
     promptDemo: {
       "label": "Describe a quantum task",
       "submit": "Continue in Nala",
+      "retry": "Try opening the workspace again.",
       "prompts": [
         "Build a Bell state and verify the measured distribution."
       ]
@@ -233,6 +234,7 @@ export const HOME_COPY: Record<PublicLocale, {
     promptDemo: {
       "label": "取り組みたい量子の課題を入力",
       "submit": "Nalaで続ける",
+      "retry": "もう一度ワークスペースを開いてください。",
       "prompts": [
         "ベル状態を作り、測定分布を検証してください。"
       ]

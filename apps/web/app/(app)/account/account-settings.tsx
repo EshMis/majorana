@@ -29,15 +29,15 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
   const [saving, setSaving] = useState(false);
   const [autoKeep, setAutoKeep] = useState(false);
   const [savingAutoKeep, setSavingAutoKeep] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageArea, setMessageArea] = useState<"profile" | "workspace">("profile");
-  const [messageError, setMessageError] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [profileFeedback, setProfileFeedback] = useState<{ message: string; error?: boolean } | null>(null);
+  const [workspaceFeedback, setWorkspaceFeedback] = useState<{ message: string; error?: boolean } | null>(null);
   const [reload, setReload] = useState(0);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
-    setMessage(null);
+    setLoadError(null);
     Promise.all([
       fetch("/api/me", { cache: "no-store" }).then((response) => parseJson<Me>(response, copy.requestFailed)),
       fetch("/api/workspace", { cache: "no-store" }).then((response) => parseJson<WorkspaceOverview>(response, copy.requestFailed)),
@@ -52,7 +52,7 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
       })
       .catch((cause) => {
         if (!active) return;
-        setMessage(cause instanceof AccountRequestError ? cause.message : copy.unavailable);
+        setLoadError(cause instanceof AccountRequestError ? cause.message : copy.unavailable);
         setLoading(false);
       });
     return () => {
@@ -64,9 +64,7 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
     event.preventDefault();
     if (saving) return;
     setSaving(true);
-    setMessage(null);
-    setMessageArea("profile");
-    setMessageError(false);
+    setProfileFeedback(null);
     try {
       const response = await fetch("/api/me", {
         method: "PATCH",
@@ -84,10 +82,9 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
       }
       setMe(payload);
       setDisplayName(payload.display_name ?? "");
-      setMessage(copy.profileSaved);
+      setProfileFeedback({ message: copy.profileSaved });
     } catch (cause) {
-      setMessageError(true);
-      setMessage(cause instanceof AccountRequestError ? cause.message : copy.profileSaveFailed);
+      setProfileFeedback({ message: cause instanceof AccountRequestError ? cause.message : copy.profileSaveFailed, error: true });
     } finally {
       setSaving(false);
     }
@@ -97,9 +94,7 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
     if (savingAutoKeep) return;
     setSavingAutoKeep(true);
     setAutoKeep(next);
-    setMessage(null);
-    setMessageArea("workspace");
-    setMessageError(false);
+    setWorkspaceFeedback(null);
     try {
       const response = await fetch("/api/workspace/settings", {
         method: "PATCH",
@@ -107,18 +102,17 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
         body: JSON.stringify({ auto_keep_artifacts: next }),
       });
       if (!response.ok) throw new AccountRequestError(copy.autoKeepFailed);
-      setMessage(next ? copy.autoKeepOn : copy.autoKeepOff);
+      setWorkspaceFeedback({ message: next ? copy.autoKeepOn : copy.autoKeepOff });
     } catch (cause) {
       setAutoKeep(!next);
-      setMessageError(true);
-      setMessage(cause instanceof AccountRequestError ? cause.message : copy.autoKeepFailed);
+      setWorkspaceFeedback({ message: cause instanceof AccountRequestError ? cause.message : copy.autoKeepFailed, error: true });
     } finally {
       setSavingAutoKeep(false);
     }
   }
 
   if (loading) return <p className="mj-page-lede" role="status">{copy.loading}</p>;
-  if (!workspace || !me) return <div className="leona-workspace-state"><p className="mj-page-lede" role="alert">{message ?? copy.unavailable}</p><button className="mj-secondary-button" type="button" onClick={() => setReload((value) => value + 1)}>{locale === "ja" ? "再試行" : "Try again"}</button></div>;
+  if (!workspace || !me) return <div className="leona-workspace-state"><p className="mj-page-lede" role="alert">{loadError ?? copy.unavailable}</p><button className="mj-secondary-button" type="button" onClick={() => setReload((value) => value + 1)}>{locale === "ja" ? "再試行" : "Try again"}</button></div>;
 
   const sharing = SHARING_COPY[locale];
   // `kind === "personal"` is NOT the test: a guest in someone else's personal
@@ -141,7 +135,7 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
           </label>
           <button className="mj-primary-button" disabled={saving} type="submit">{saving ? copy.saving : copy.saveName}</button>
         </form>
-        {message && messageArea === "profile" ? <p className="leona-workspace-feedback" role={messageError ? "alert" : "status"}>{message}</p> : null}
+        {profileFeedback ? <p className="leona-workspace-feedback" role={profileFeedback.error ? "alert" : "status"}>{profileFeedback.message}</p> : null}
       </section>
       {/* Titled by the workspace once there can be more than one: the counts
           below are the ACTIVE workspace's, and heading them "Personal
@@ -170,7 +164,7 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
             <small>{copy.autoKeepHelp}</small>
           </span>
         </label>
-        {message && messageArea === "workspace" ? <p className="leona-workspace-feedback" role={messageError ? "alert" : "status"}>{message}</p> : null}
+        {workspaceFeedback ? <p className="leona-workspace-feedback" role={workspaceFeedback.error ? "alert" : "status"}>{workspaceFeedback.message}</p> : null}
       </section>
       <WorkspaceSharing
         locale={locale}

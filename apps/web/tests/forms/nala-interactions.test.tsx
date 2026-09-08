@@ -55,6 +55,34 @@ test("attachments merge out-of-order reads and block same-frame submission", asy
   assert.deepEqual(result.current.attachments.map((item) => item.name), ["b.py"]);
 });
 
+test("the latest attachment selection wins when the same filename reads out of order", async () => {
+  const older = deferred<string>();
+  const newer = deferred<string>();
+  const { result } = renderHook(() => usePromptAttachments("en", () => {}));
+  let first!: Promise<void>;
+  let second!: Promise<void>;
+  act(() => {
+    first = result.current.addFiles([{ name: "circuit.py", size: 8, text: () => older.promise } as File]);
+    second = result.current.addFiles([{ name: "circuit.py", size: 8, text: () => newer.promise } as File]);
+  });
+  await act(async () => { newer.resolve("new circuit"); await second; });
+  await act(async () => { older.resolve("old circuit"); await first; });
+  assert.deepEqual(result.current.attachments.map(item => item.content), ["new circuit"]);
+});
+
+test("removing an attachment also cancels its pending replacement", async () => {
+  const replacement = deferred<string>();
+  const { result } = renderHook(() => usePromptAttachments("en", () => {}));
+  await act(async () => { await result.current.addFiles([{ name: "circuit.py", size: 8, text: async () => "original" } as File]); });
+  let reading!: Promise<void>;
+  act(() => {
+    reading = result.current.addFiles([{ name: "circuit.py", size: 8, text: () => replacement.promise } as File]);
+    result.current.removeAttachment("circuit.py");
+  });
+  await act(async () => { replacement.resolve("replacement"); await reading; });
+  assert.deepEqual(result.current.attachments, []);
+});
+
 test("delayed artifact context preserves an edited and deliberately cleared prompt", async () => {
   window.history.replaceState(null, "", "/run?artifact=custom-context");
   const response = deferred<{ status: number; body: unknown }>();

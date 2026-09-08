@@ -11,6 +11,7 @@ type Execution = {
   error_code?: string | null;
 };
 type PendingExecution = { execution: Execution; requestId: string };
+const MAX_STATUS_CHECKS = 150;
 
 export function QappRuntime({
   slug,
@@ -99,6 +100,13 @@ export function QappRuntime({
         setNotice(ok ? "Execution complete." : execution.error_code ?? "Execution failed.");
         runningRef.current = false;
         setPending(null);
+        return;
+      }
+      if (checks >= MAX_STATUS_CHECKS) {
+        // A polling limit is not an execution result. Keep its identity and
+        // submission lock so the next attempt only resumes status checks.
+        setNotice("Automatic updates paused. The execution may still be running.");
+        setMonitorError(true);
         return;
       }
       setNotice(execution.status === "queued" ? "Queued. Waiting for execution to start." : checks >= 48 ? "Still running. Results will appear here when ready." : "Running. Results will appear here.");

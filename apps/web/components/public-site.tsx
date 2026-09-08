@@ -184,8 +184,8 @@ export async function PublicSite({
               <span>{copy.footer.explore}</span>
               <Link href="/workspace">{copy.nav.workspace}</Link>
               <Link href="/repository">{copy.nav.repository}</Link>
-              <Link href="/notebooks">{resolvedLocale === "ja" ? "ノートブック" : "Notebooks"}</Link>
-              <Link href="/qapps">Qapps</Link>
+              <Link href="/notebooks">{copy.nav.notebooks}</Link>
+              <Link href="/qapps">{copy.nav.qapps}</Link>
             </div>
             <div>
               <span>{copy.footer.company}</span>

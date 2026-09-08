@@ -110,7 +110,7 @@ export async function UpgradeContent() {
                 {/* /contact, not a checkout: there is no payment path in this
                     deployment and a button implying one would be a lie about
                     what happens next. The panel below says so in words. */}
-                <Link className="mj-primary-button" href="/contact">
+                <Link className="mj-primary-button" href={`/contact?plan=${encodeURIComponent(plan.name)}`}>
                   {copy.cta}
                 </Link>
               </section>

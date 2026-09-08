@@ -21,6 +21,8 @@ export function QappWorkspace({ qappId }: { qappId: string }) {
     let active = true;
     const controller = new AbortController();
     setError(null);
+    setDetail(null);
+    setNotice(null);
     fetch(`/api/qapps/${encodeURIComponent(qappId)}`, { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Qapp could not be loaded.");

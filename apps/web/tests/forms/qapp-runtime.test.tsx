@@ -13,7 +13,7 @@ function start(frame: HTMLIFrameElement, requestId = "request-1") {
   }));
 }
 
-test("Qapp keeps following a job past 150 status checks and returns its actual result", async (t) => {
+test("Qapp pauses automatic polling and resumes the accepted job without resubmitting", async (t) => {
   const scheduled: (() => void)[] = [];
   const originalTimeout = globalThis.setTimeout;
   t.mock.method(globalThis, "setTimeout", ((callback: () => void, delay: number) => {
@@ -31,20 +31,26 @@ test("Qapp keeps following a job past 150 status checks and returns its actual r
       return Response.json({ id: "job-1", status: "queued" });
     }
     checks += 1;
-    return Response.json({ id: "job-1", status: checks === 165 ? "succeeded" : "running", result: { measured: 1 } });
+    return Response.json({ id: "job-1", status: checks === 151 ? "succeeded" : "running", result: { measured: 1 } });
   });
   const view = render(<QappRuntime slug="example" uiDocument="<p>Example</p>" canExecute />);
   const frame = view.getByTitle("Qapp") as HTMLIFrameElement;
   const response = t.mock.method(frame.contentWindow!, "postMessage");
   await act(async () => start(frame));
-  for (let index = 0; index < 165; index += 1) {
+  for (let index = 0; index < 150; index += 1) {
     const callback = scheduled.shift();
     assert.ok(callback, `status check ${index + 1} is scheduled`);
     await act(async () => callback());
   }
+  assert.equal(scheduled.length, 0, "automatic polling stops at its limit");
+  assert.equal(response.mock.calls.length, 0, "a polling limit is not a job failure");
+  assert.ok(view.getByText("Automatic updates paused. The execution may still be running."));
+  await act(async () => start(frame, "second-request"));
+  assert.equal(submissions, 1, "the accepted execution remains locked against duplicate submissions");
+  await act(async () => fireEvent.click(view.getByRole("button", { name: "Retry status" })));
   assert.equal(submissions, 1);
-  assert.equal(response.mock.calls.length, 1);
-  assert.equal(response.mock.calls[0]?.arguments[0]?.ok, true);
+  const completed = response.mock.calls.find(call => call.arguments[0]?.requestId === "request-1");
+  assert.equal(completed?.arguments[0]?.ok, true);
   assert.ok(view.getByText("Execution complete."));
 });
 

@@ -77,7 +77,7 @@ export function isPublicLocale(value: string | undefined): value is PublicLocale
 }
 
 export const PUBLIC_SHELL_COPY: Record<PublicLocale, {
-  nav: { product: string; about: string; pricing: string; repository: string; workspace: string; contact: string };
+  nav: { product: string; about: string; pricing: string; repository: string; workspace: string; contact: string; notebooks: string; qapps: string };
   footer: {
     promise: string;
     explore: string;
@@ -103,7 +103,7 @@ export const PUBLIC_SHELL_COPY: Record<PublicLocale, {
 }> = {
   en: {
     // Navigation uses the short name; the catalog page carries the full title.
-    nav: { product: "Product", about: "About", pricing: "Pricing", repository: "Atlas", workspace: "Workspace", contact: "Contact" },
+    nav: { product: "Product", about: "About", pricing: "Pricing", repository: "Atlas", workspace: "Workspace", contact: "Contact", notebooks: "Notebooks", qapps: "Qapps" },
     footer: {
       promise: "Generate, run, and use quantum circuits on one platform.",
       explore: "Explore",
@@ -119,7 +119,7 @@ export const PUBLIC_SHELL_COPY: Record<PublicLocale, {
   },
   ja: {
     // Keep the compact destination label consistent between navigation menus.
-    nav: { product: "プロダクト", about: "会社紹介", pricing: "料金", repository: "Atlas", workspace: "ワークスペース", contact: "お問い合わせ" },
+    nav: { product: "プロダクト", about: "会社紹介", pricing: "料金", repository: "Atlas", workspace: "ワークスペース", contact: "お問い合わせ", notebooks: "ノートブック", qapps: "Qapps" },
     footer: {
       promise: "量子回路の生成・実行・活用を、ひとつのプラットフォームで",
       explore: "公開研究を見る",

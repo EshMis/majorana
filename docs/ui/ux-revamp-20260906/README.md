@@ -12,7 +12,7 @@ The public website, workspace and Nala now use a simpler layout, clear primary a
 
 ## Verification
 
-The production build generated all 1046 static pages. The full TypeScript workspace checks passed, including 1557 web units. All 74 rendered form tests passed. Browser regressions cover dirty notebook exits, Studio editor-to-list navigation, mobile focus, open filters during search, duplicate submissions and attachments. Public browser checks cover eleven rendered routes, dark mode, Japanese, narrow header controls, and manual video playback under both motion preferences. The disabled public demo route is checked as an auth redirect, not reported as a rendered demo.
+The production build generated all 1046 static pages. The full TypeScript workspace checks passed, including 1557 web units. All 79 rendered form tests passed. Browser regressions cover dirty notebook exits, Studio editor-to-list navigation, mobile focus, open filters during search, duplicate submissions and attachments. Public browser checks cover eleven rendered routes, dark mode, Japanese, narrow header controls, and manual video playback under both motion preferences. The disabled public demo route is checked as an auth redirect, not reported as a rendered demo.
 
 Local workspace browser journeys use development auth and recorded fixtures; no production backend execution, billing or hardware run is claimed from those fixtures. Release identity and live-page checks are recorded separately after deployment.
 

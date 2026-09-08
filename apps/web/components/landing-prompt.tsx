@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeftIcon } from "./icons";
 import { writeLandingPromptHandoff } from "../lib/landing-prompt-handoff";
@@ -8,6 +8,7 @@ import { writeLandingPromptHandoff } from "../lib/landing-prompt-handoff";
 type LandingPromptCopy = {
   label: string;
   submit: string;
+  retry: string;
   prompts: string[];
 };
 
@@ -15,17 +16,35 @@ type LandingPromptCopy = {
 export function LandingPrompt({ copy }: { copy: LandingPromptCopy }) {
   const [value, setValue] = useState("");
   const [opening, setOpening] = useState(false);
+  const [retry, setRetry] = useState(false);
   const input = useRef<HTMLTextAreaElement>(null);
   const leaving = useRef(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!opening) return;
+    const timeout = setTimeout(() => {
+      leaving.current = false;
+      setOpening(false);
+      setRetry(true);
+    }, 8000);
+    return () => clearTimeout(timeout);
+  }, [opening]);
 
   function submit(event: FormEvent) {
     event.preventDefault();
     if (leaving.current || !value.trim()) return;
     leaving.current = true;
     setOpening(true);
+    setRetry(false);
     writeLandingPromptHandoff(value);
-    router.push("/run");
+    try {
+      router.push("/run");
+    } catch {
+      leaving.current = false;
+      setOpening(false);
+      setRetry(true);
+    }
   }
 
   return (
@@ -52,6 +71,7 @@ export function LandingPrompt({ copy }: { copy: LandingPromptCopy }) {
           <ArrowLeftIcon className="lq-arrow-forward" size={20} />
         </button>
       </form>
+      {retry ? <p className="mj-page-lede" role="status">{copy.retry}</p> : null}
       {copy.prompts[0] ? (
         <button className="lq-prompt-example" type="button" disabled={opening} onClick={() => { setValue(copy.prompts[0]!); input.current?.focus(); }}>
           {copy.prompts[0]}

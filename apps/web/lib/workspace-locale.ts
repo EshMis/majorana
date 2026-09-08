@@ -26,6 +26,10 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     studio: string;
     qapps: string;
     notebooks: string;
+    allNotebooks: string;
+    courses: string;
+    atlas: string;
+    openAtlas: string;
     myQapps: string;
     exploreQapps: string;
     createQapp: string;
@@ -756,6 +760,10 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       studio: "Studio",
       qapps: "Qapps",
       notebooks: "Notebooks",
+      allNotebooks: "All notebooks",
+      courses: "Courses",
+      atlas: "Quantum Atlas",
+      openAtlas: "Open Quantum Atlas",
       myQapps: "My Qapps",
       exploreQapps: "Explore Qapps",
       createQapp: "Create Qapp",
@@ -1576,6 +1584,10 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       studio: "Studio",
       qapps: "Qapps",
       notebooks: "ノートブック",
+      allNotebooks: "すべてのノートブック",
+      courses: "コース",
+      atlas: "量子アトラス",
+      openAtlas: "量子アトラスを開く",
       myQapps: "自分のQapp",
       exploreQapps: "公開Qappを探す",
       createQapp: "Qappを作る",

@@ -992,9 +992,9 @@ function WorkspaceSidebar({
         ) : null}
       </nav>
 
-      <Link className="mj-sidebar-atlas" href="/repository" prefetch={false} title={locale === "ja" ? "Quantum Atlasを開く" : "Open Quantum Atlas"}>
+      <Link className="mj-sidebar-atlas" href="/repository" prefetch={false} title={copy.openAtlas}>
         <LibraryIcon size={16} />
-        <span className="mj-sidebar-copy">Quantum Atlas</span>
+        <span className="mj-sidebar-copy">{copy.atlas}</span>
       </Link>
 
       {!collapsed && (surface === "run" || surface === "studio") ? (
@@ -1136,8 +1136,8 @@ function WorkspaceSidebar({
         </div>
       ) : surface === "notebooks" ? (
         <div className="mj-sidebar-scroll">
-          <Link className="mj-sidebar-library-link" href="/notebooks"><LibraryIcon size={16} /><span className="mj-sidebar-copy">{locale === "ja" ? "すべてのノートブック" : "All notebooks"}</span></Link>
-          <Link className="mj-sidebar-library-link" href="/notebooks/courses"><FolderIcon size={16} /><span className="mj-sidebar-copy">{locale === "ja" ? "コース" : "Courses"}</span></Link>
+          <Link className="mj-sidebar-library-link" href="/notebooks"><LibraryIcon size={16} /><span className="mj-sidebar-copy">{copy.allNotebooks}</span></Link>
+          <Link className="mj-sidebar-library-link" href="/notebooks/courses"><FolderIcon size={16} /><span className="mj-sidebar-copy">{copy.courses}</span></Link>
         </div>
       ) : (
         <div className="mj-sidebar-scroll">
