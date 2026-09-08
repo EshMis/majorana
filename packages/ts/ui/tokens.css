@@ -127,7 +127,7 @@
   --border-0: #332f2b; /* hairlines */
   --text-0: #eceae6; /* primary text — warm off-white */
   --text-1: #a29c93; /* secondary text — warm gray */
-  --text-2: #6a645b; /* placeholders, disabled */
+  --text-2: #91897d; /* tertiary text and placeholders; AA on all dark surfaces */
   --accent: #7ba05b; /* links, focus, primary buttons, running-stage — moss green */
   --accent-press: #688a4a;
   --ok: #34c077; /* verified / pass — emerald (paired with ✓ glyph) */
@@ -179,7 +179,7 @@
     --border-0: #332f2b;
     --text-0: #eceae6;
     --text-1: #a29c93;
-    --text-2: #6a645b;
+    --text-2: #91897d;
     --accent: #7ba05b;
     --accent-press: #688a4a;
     --ok: #34c077;

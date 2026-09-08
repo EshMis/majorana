@@ -102,12 +102,7 @@ export const PUBLIC_SHELL_COPY: Record<PublicLocale, {
   brandHome: string;
 }> = {
   en: {
-    // `repository` is the catalogue at `/repository`, and it is called the
-    // Quantum Atlas everywhere a reader meets its name (ai-ops#78). The nav
-    // said "Atlas", the page it opens is headed "The Quantum Atlas", and a
-    // fifth of the surfaces under it said something else again — the owner's
-    // ruling is that there is one name. The article is dropped here and only
-    // here: a nav bar reads as a list of destinations, not of sentences.
+    // Navigation uses the short name; the catalog page carries the full title.
     nav: { product: "Product", about: "About", pricing: "Pricing", repository: "Atlas", workspace: "Workspace", contact: "Contact" },
     footer: {
       promise: "Generate, run, and use quantum circuits on one platform.",
@@ -123,9 +118,7 @@ export const PUBLIC_SHELL_COPY: Record<PublicLocale, {
     brandHome: "Leona Quantum home",
   },
   ja: {
-    // 量子アトラス, not the Latin "Atlas" it said before: the page's own title,
-    // its heading and the folder breadcrumb are all 量子アトラス, so the nav was
-    // the one surface introducing a second name in this locale.
+    // Keep the compact destination label consistent between navigation menus.
     nav: { product: "プロダクト", about: "会社紹介", pricing: "料金", repository: "Atlas", workspace: "ワークスペース", contact: "お問い合わせ" },
     footer: {
       promise: "量子回路の生成・実行・活用を、ひとつのプラットフォームで",

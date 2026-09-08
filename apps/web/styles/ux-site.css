@@ -39,6 +39,17 @@
   animation: none;
   transition: none;
 }
+.mj-public-site :is(.mj-company-hero-copy, .mj-open-source-hero, .mj-public-page-hero, .mj-contact-hero) {
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+.mj-public-site :is(.mj-pricing-card, .mj-open-source-card, .mj-company-principle-card, .mj-company-capability-list article):hover {
+  transform: none;
+}
+.mj-public-site :is(.mj-primary-button, .mj-secondary-button) {
+  transition-property: transform;
+}
 .mj-public-site .mj-public-footer { margin-top: var(--sp-16); }
 .mj-public-site .mj-public-footer-links a { padding-block: var(--sp-2); }
 .mj-public-site .mj-public-footer-bottom { gap: var(--sp-4); flex-wrap: wrap; }
