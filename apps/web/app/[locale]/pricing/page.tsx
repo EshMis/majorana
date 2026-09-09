@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { PublicSite } from "../../../components/public-site";
-import Link from "next/link";
 import { PRICING_COPY } from "../../../lib/public-copy";
 import { parsePublicLocale, PUBLIC_LOCALES } from "../../../lib/public-locale";
 import { canonicalMetadata } from "../../../lib/public-metadata";
@@ -38,12 +37,9 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
           <article className={`mj-pricing-card mj-pricing-card--${plan.tone}`} key={plan.name}>
             <div className="mj-pricing-card-head">
               <h2>{plan.name}</h2>
-              {plan.tone === "featured" ? <span className="mj-pricing-mark">{locale === "ja" ? "おすすめ" : "Recommended"}</span> : null}
             </div>
-            <p className="mj-pricing-price">{plan.price}</p>
-            <p className="mj-pricing-cadence">{plan.cadence}</p>
             <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
-            <Link className={plan.tone === "featured" ? "mj-primary-button" : "mj-secondary-button"} href={plan.name === "Free" ? "/run" : `/contact?plan=${encodeURIComponent(plan.name)}`}>{plan.action}</Link>
+            <a className={plan.tone === "featured" ? "mj-primary-button" : "mj-secondary-button"} href={plan.name === "Free" ? "/run" : `/contact?plan=${encodeURIComponent(plan.name)}`}>{plan.action}</a>
           </article>
         ))}
       </section>

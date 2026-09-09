@@ -9,6 +9,7 @@ import { LeonaWordmark } from "./leona-wordmark";
 import { ThemeToggle } from "./theme-toggle";
 import { AuthStatus } from "./auth-status";
 import { PublicNavigation } from "./public-navigation";
+import { PublicHeader } from "./public-header";
 
 // The repository moved to the Leona-Quantum organisation on 2026-08-14. The old
 // address still 301s, so nothing was broken — it was just the pre-move name, on
@@ -138,7 +139,7 @@ export async function PublicSite({
     // same source the page body and, since PR 710, the page metadata read.
     <main lang={resolvedLocale} className={["mj-public-site", className].filter(Boolean).join(" ")}>
       <div className="mj-public-frame">
-        <header className="mj-public-header">
+        <PublicHeader>
           <Link className="mj-public-brand" href="/" aria-label={copy.brandHome} title={copy.brandHome}>
             <LeonaWordmark className="lq-wordmark--public-header" />
           </Link>
@@ -168,7 +169,7 @@ export async function PublicSite({
             </>
           )}
           </div>
-        </header>
+        </PublicHeader>
 
         {children}
 
@@ -184,8 +185,8 @@ export async function PublicSite({
               <span>{copy.footer.explore}</span>
               <Link href="/workspace">{copy.nav.workspace}</Link>
               <Link href="/repository">{copy.nav.repository}</Link>
-              <Link href="/notebooks">{copy.nav.notebooks}</Link>
-              <Link href="/qapps">{copy.nav.qapps}</Link>
+              <a href="/notebooks">{copy.nav.notebooks}</a>
+              <a href="/qapps">{copy.nav.qapps}</a>
             </div>
             <div>
               <span>{copy.footer.company}</span>

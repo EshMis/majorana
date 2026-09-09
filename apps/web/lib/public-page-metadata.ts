@@ -110,7 +110,7 @@ export function contactMetadataCopy(locale: PublicLocale): Pick<Metadata, "title
 export function pricingMetadataCopy(locale: PublicLocale): Pick<Metadata, "title" | "description"> {
   return locale === "ja"
     ? { title: PUBLIC_SHELL_COPY.ja.nav.pricing, description: PRICING_COPY.ja.hero.body }
-    : { title: "Pricing", description: "Early-access Leona Quantum plans for individual researchers and teams." };
+    : { title: "Pricing", description: PRICING_COPY.en.hero.body };
 }
 
 export function privacyMetadataCopy(locale: PublicLocale): Pick<Metadata, "title" | "description"> {

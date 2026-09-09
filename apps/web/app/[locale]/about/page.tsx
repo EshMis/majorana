@@ -48,27 +48,11 @@ export default async function AboutPage({
       locale={locale}
       chrome="static"
     >
-      <section className="mj-about-hero" aria-labelledby="about-hero-heading">
-        <div className="mj-about-hero-copy">
-          <p className="mj-section-label">{copy.hero.label}</p>
-          <h1 id="about-hero-heading">
-            {copy.hero.title.split("\n").map((line) => (
-              <span className="mj-about-hero-line" key={line}>{line}</span>
-            ))}
-          </h1>
-          <p className="mj-about-hero-lede">{copy.hero.body}</p>
-        </div>
-
-      </section>
-
       <section className="mj-about-section mj-about-team" aria-labelledby="about-team-heading">
-        <Reveal>
-          <div className="mj-about-team-heading">
-            <p className="mj-section-label">{copy.team.label}</p>
-            <h2 id="about-team-heading">{copy.team.title}</h2>
-            <p>{copy.team.body}</p>
-          </div>
-        </Reveal>
+        <div className="mj-about-team-heading">
+          <div><p className="mj-section-label">Leona Quantum</p><h1 id="about-team-heading">{copy.team.title}</h1></div>
+          <p>{copy.team.body}</p>
+        </div>
         <div className="mj-about-team-grid">
           {copy.team.members.map((member, index) => (
             <Reveal delay={index * 90} key={member.name}>
@@ -77,7 +61,7 @@ export default async function AboutPage({
                   <Image
                     alt={copy.team.portraitAlt.replace("{name}", member.name)}
                     placeholder="blur"
-                    sizes="(max-width: 620px) 128px, 192px"
+                    sizes="(max-width: 720px) 90vw, (max-width: 1000px) 45vw, 350px"
                     src={TEAM_PORTRAITS[member.number]}
                   />
                 </div>
@@ -103,36 +87,9 @@ export default async function AboutPage({
       </section>
 
       <Reveal>
-        <section className="mj-about-section mj-about-manifesto" aria-labelledby="about-why-heading">
-          <div className="mj-about-section-marker">
-            <p className="mj-section-label">{copy.why.label}</p>
-          </div>
-          <div className="mj-about-section-copy">
-            <h2 id="about-why-heading">{copy.why.title}</h2>
-            <div className="mj-about-prose">
-              {copy.why.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-            </div>
-          </div>
-        </section>
-      </Reveal>
-
-      <Reveal>
-        <section className="mj-about-section mj-about-direction" aria-labelledby="about-direction-heading">
-          <div className="mj-about-direction-copy">
-            <p className="mj-section-label">{copy.direction.label}</p>
-            <h2 id="about-direction-heading">{copy.direction.title}</h2>
-            <div className="mj-about-prose">
-              {copy.direction.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-            </div>
-          </div>
-          <ul className="mj-about-audiences" aria-label={copy.direction.title}>
-            {copy.direction.audiences.map((audience, index) => (
-              <li key={audience}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                {audience}
-              </li>
-            ))}
-          </ul>
+        <section className="lq-about-research" aria-labelledby="about-direction-heading">
+          <div><p className="mj-section-label">{copy.direction.label}</p><h2 id="about-direction-heading">{copy.direction.title}</h2></div>
+          <ul>{copy.direction.audiences.map((audience) => <li key={audience}>{audience}</li>)}</ul>
         </section>
       </Reveal>
 
@@ -145,7 +102,7 @@ export default async function AboutPage({
           </div>
           <div className="mj-public-actions">
             <Link className="mj-primary-button" href="/contact">{copy.cta.primary}</Link>
-            <Link className="mj-secondary-button" href="/run">{copy.cta.secondary}</Link>
+            <a className="mj-secondary-button" href="/run">{copy.cta.secondary}</a>
           </div>
         </section>
       </Reveal>

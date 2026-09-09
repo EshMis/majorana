@@ -84,6 +84,7 @@ export function LiquidGridBackground() {
     let bounds = canvas.getBoundingClientRect();
     let queuedPoint: { x: number; y: number } | null = null;
     let lastCollide: boolean | null = null;
+    let inView = false;
 
     function resize() {
       const deviceScale = Math.min(window.devicePixelRatio || 1, 2);
@@ -335,7 +336,7 @@ export function LiquidGridBackground() {
     }
 
     function requestTick() {
-      if (!frame && !reduceMotion) frame = window.requestAnimationFrame(tick);
+      if (!frame && !reduceMotion && inView && !document.hidden) frame = window.requestAnimationFrame(tick);
     }
 
     function tick() {
@@ -360,13 +361,15 @@ export function LiquidGridBackground() {
     }
 
     function onPointerMove(event: PointerEvent) {
-      if (reduceMotion) return;
+      if (reduceMotion || !inView || document.hidden) return;
+      bounds = canvas.getBoundingClientRect();
       queuedPoint = toLocal(event.clientX, event.clientY);
       if (queuedPoint) requestTick();
     }
 
     function onClick(event: MouseEvent) {
-      if (reduceMotion) return;
+      if (reduceMotion || !inView || document.hidden) return;
+      bounds = canvas.getBoundingClientRect();
       const point = toLocal(event.clientX, event.clientY);
       if (!point) return;
       addDrop(point.x, point.y, RIPPLE_RADIUS * 1.6, CLICK_STRENGTH, true);
@@ -382,6 +385,20 @@ export function LiquidGridBackground() {
       drawFrame();
     });
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const pause = () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = 0;
+      queuedPoint = null;
+    };
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      inView = entry?.isIntersecting ?? false;
+      if (inView && ripple.live) requestTick();
+      else if (!inView) pause();
+    });
+    const onVisibilityChange = () => {
+      if (document.hidden) pause();
+      else if (ripple.live) requestTick();
+    };
     const onMotionPreferenceChange = (event: MediaQueryListEvent) => {
       reduceMotion = event.matches;
       queuedPoint = null;
@@ -396,6 +413,8 @@ export function LiquidGridBackground() {
     resize();
     drawFrame();
     resizeObserver.observe(canvas);
+    visibilityObserver.observe(canvas);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     themeObserver.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["data-theme"],
@@ -407,6 +426,8 @@ export function LiquidGridBackground() {
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
       resizeObserver.disconnect();
+      visibilityObserver.disconnect();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       themeObserver.disconnect();
       motionPreference.removeEventListener("change", onMotionPreferenceChange);
       window.removeEventListener("pointermove", onPointerMove);

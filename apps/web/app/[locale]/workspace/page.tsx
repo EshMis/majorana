@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { PublicSite } from "../../../components/public-site";
 import Link from "next/link";
+import { ProductGlyph } from "../../../components/product-glyph";
+import { Reveal } from "../../../components/reveal";
 import { HOME_COPY, WORKSPACE_LANDING_COPY } from "../../../lib/public-copy";
 import { parsePublicLocale, PUBLIC_LOCALES } from "../../../lib/public-locale";
 import { canonicalMetadata } from "../../../lib/public-metadata";
@@ -30,32 +32,35 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function WorkspacePage({ params }: { params: Promise<{ locale: string }> }) {
   const locale = parsePublicLocale((await params).locale);
   const copy = WORKSPACE_LANDING_COPY[locale];
+  const tools = HOME_COPY[locale].product.items;
   return (
     <PublicSite activePath="/workspace" className="mj-open-source lq-site-workspace" locale={locale} chrome="static">
-      <section className="mj-public-page-hero">
-        <p className="mj-section-label">{copy.overline}</p>
-        <h1>{copy.title}</h1>
-        <p>{copy.body}</p>
-        <div className="mj-public-actions">
-          <Link className="mj-primary-button" href="/run">{copy.primary}</Link>
-          <Link className="mj-secondary-button" href="/repository">{copy.secondary}</Link>
+      <section className="lq-workspace-intro" aria-labelledby="workspace-heading">
+        <div>
+          <p className="mj-section-label">{copy.overline}</p>
+          <h1 id="workspace-heading">{copy.title}</h1>
+          <p>{copy.body}</p>
+          <a className="mj-primary-button" href="/run">{copy.primary}</a>
         </div>
-      </section>
-      <section className="lq-site-products" aria-labelledby="workspace-surfaces-heading">
-        <div className="lq-site-section-heading"><h2 id="workspace-surfaces-heading">{HOME_COPY[locale].product.title}</h2></div>
-        <div className="lq-site-product-grid">
-          {HOME_COPY[locale].product.items.map((item) => (
-            <Link className="lq-site-product" href={item.href} key={item.title}>
-              <div><h3>{item.title}</h3><p>{item.body}</p></div><span aria-hidden="true">↗</span>
-            </Link>
+        <div className="lq-workspace-map" aria-label={HOME_COPY[locale].product.title}>
+          {tools.map((item, index) => (
+            <a className={`lq-workspace-node lq-workspace-node--${index}`} href={item.href} key={item.href}>
+              <ProductGlyph kind={item.title} /><span>{item.title}</span>
+              <span className="lq-node-arrow" aria-hidden="true">↗</span>
+            </a>
           ))}
+          <svg className="lq-workspace-connections" viewBox="0 0 600 430" preserveAspectRatio="none" aria-hidden="true"><path d="M150 80H450V215H150V350H450M150 80V350M450 215V350" /></svg>
         </div>
       </section>
-      <section className="lq-site-evidence" aria-labelledby="workspace-flow-heading">
+      <section className="lq-workspace-tool-list" aria-label={HOME_COPY[locale].product.title}>
+        {tools.map((item, index) => <Reveal key={item.href} delay={index * 35}><a href={item.href}><span className="mj-section-label">{String(index + 1).padStart(2, "0")}</span><h2>{item.title}</h2><p>{item.body}</p><span aria-hidden="true">↗</span></a></Reveal>)}
+      </section>
+      <section className="lq-workspace-loop" aria-labelledby="workspace-flow-heading">
         <div className="lq-site-section-heading"><p className="mj-section-label">{copy.loopLabel}</p><h2 id="workspace-flow-heading">{copy.loopTitle}</h2></div>
-        <div className="lq-site-principles">
-          {copy.loop.map((item) => <article key={item.title}><h3>{item.title}</h3><p>{item.body}</p></article>)}
-        </div>
+        <ol>
+          {copy.loop.map((item, index) => <li key={item.title}><span>{String(index + 1).padStart(2, "0")}</span><div><h3>{item.title}</h3><p>{item.body}</p></div></li>)}
+        </ol>
+        <Link className="mj-text-link" href="/repository">{copy.secondary} <span aria-hidden="true">→</span></Link>
       </section>
     </PublicSite>
   );

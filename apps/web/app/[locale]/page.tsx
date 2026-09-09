@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { LandingCircuit } from "../../components/landing-circuit";
+import { LiquidGridBackground } from "../../components/liquid-grid-background";
+import { ProductGlyph } from "../../components/product-glyph";
+import { Reveal } from "../../components/reveal";
 import type { Metadata } from "next";
 import { LandingDemoVideo } from "../../components/landing-demo-video";
 import { LandingBenchmark } from "../../components/landing-benchmark";
@@ -60,19 +63,31 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   return (
     <PublicSite activePath="/" className="mj-company-site lq-site-home" locale={locale} chrome="static">
       <section className="lq-site-hero" aria-labelledby="home-heading">
+        <LiquidGridBackground />
+        <div className="lq-hero-orbits" aria-hidden="true"><i /><i /><i /></div>
         <div className="lq-site-hero-copy">
           <p className="mj-section-label">{copy.hero.label}</p>
-          <h1 id="home-heading">{copy.hero.title}</h1>
+          <h1 id="home-heading">{copy.hero.title.split("\n").map((line) => <span key={line}>{line}</span>)}</h1>
           <p>{copy.hero.lede}</p>
+          <LandingPrompt copy={copy.promptDemo} />
           <div className="mj-public-actions">
-            <Link className="mj-primary-button" href="/run">{copy.hero.primary}</Link>
+            <a className="mj-primary-button" href="/run">{copy.hero.primary}</a>
             <Link className="mj-text-link" href="/repository">{copy.hero.secondary} <span aria-hidden="true">→</span></Link>
           </div>
         </div>
-        <LandingCircuit locale={locale} />
       </section>
 
-      <LandingPrompt copy={copy.promptDemo} />
+      <Reveal>
+        <section className="lq-home-example" aria-labelledby="home-example-heading">
+          <div className="lq-home-example-copy">
+            <p className="mj-section-label">{locale === "ja" ? "アイデアから実装へ" : "From idea to implementation"}</p>
+            <h2 id="home-example-heading">{locale === "ja" ? "回路を見て、コードを理解する。" : "See the circuit. Understand the code."}</h2>
+            <p>{locale === "ja" ? "Nalaに問いを伝え、Studioで回路を編集。コードと結果を保存し、次の実験につなげます。" : "Start with a question in Nala. Refine the circuit in Studio, then keep the code and results for your next experiment."}</p>
+            <a className="mj-text-link" href="/studio">{locale === "ja" ? "Studioを開く" : "Explore Studio"} <span aria-hidden="true">→</span></a>
+          </div>
+          <LandingCircuit locale={locale} />
+        </section>
+      </Reveal>
 
       <section className="lq-site-products" aria-labelledby="surfaces-heading">
         <div className="lq-site-section-heading">
@@ -81,10 +96,11 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         </div>
         <div className="lq-site-product-grid">
           {copy.product.items.map((item) => (
-            <Link className="lq-site-product" href={item.href} key={item.title}>
+            <a className="lq-site-product" href={item.href} key={item.title}>
+              <ProductGlyph kind={item.title} />
               <div><h3>{item.title}</h3><p>{item.body}</p></div>
               <span aria-hidden="true">↗</span>
-            </Link>
+            </a>
           ))}
         </div>
       </section>
@@ -125,7 +141,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           <p>{copy.cta.body}</p>
         </div>
         <div className="mj-public-actions">
-          <Link className="mj-primary-button" href="/run">{copy.cta.primary}</Link>
+          <a className="mj-primary-button" href="/run">{copy.cta.primary}</a>
           <Link className="mj-secondary-button" href="/repository">{copy.cta.secondary}</Link>
         </div>
       </section>
