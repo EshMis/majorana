@@ -549,7 +549,7 @@ export const PRICING_COPY: Record<PublicLocale, {
   plans: Array<{ name: string; price: string; cadence: string; features: string[]; action: string; tone: "quiet" | "featured" }>;
 }> = {
   en: {
-    hero: { title: "Pricing and plans are under review.", body: "Pricing has not been finalized. The plans and features below are under consideration and may change. Contact us to discuss your needs." },
+    hero: { title: "A clear path from first run to team work.", body: "Explore plans for your research needs. Pricing is still under consideration, and features may change. Contact us to discuss your needs." },
     plans: [
       { name: "Free", price: "TBD", cadence: "Proposed plan · subject to change", features: ["Full public Atlas", "Weekly agent runs", "Private artifacts", "Browser simulation"], action: "Try the preview", tone: "quiet" },
       { name: "Plus", price: "TBD", cadence: "Proposed plan · subject to change", features: ["Everything in Free", "More weekly runs", "More private artifacts", "Wider browser simulation"], action: "Contact us", tone: "featured" },
@@ -558,7 +558,7 @@ export const PRICING_COPY: Record<PublicLocale, {
     ],
   },
   ja: {
-    hero: { title: "料金・プランは検討中です。", body: "料金はまだ決まっていません。以下は検討中のプランと機能で、今後変更する場合があります。ご利用についてはお問い合わせください。" },
+    hero: { title: "まずは個人で試し、そのままチームで研究へ。", body: "研究の用途に合わせたプランをご紹介します。料金は現在検討中で、機能構成は今後変更する場合があります。ご利用についてはお問い合わせください。" },
     plans: [
       { name: "Free", price: "未定", cadence: "プラン内容は検討中です", features: ["公開Atlasのすべて", "週ごとのエージェント実行", "非公開の回路・実行記録", "ブラウザ実行"], action: "プレビューを試す", tone: "quiet" },
       { name: "Plus", price: "未定", cadence: "プラン内容は検討中です", features: ["Freeのすべて", "実行回数を拡大", "保存件数を拡大", "より広いブラウザ実行"], action: "お問い合わせ", tone: "featured" },

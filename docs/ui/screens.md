@@ -127,9 +127,9 @@ existing authentication actions. Compact gaps and icon-only theme buttons keep
 it on one row. On narrow screens the header scrolls horizontally so every action
 remains reachable without wrapping or shrinking text to an unreadable size.
 
-### Pricing proposal presentation — 2026-09-08
+### Pricing cards without prices — 2026-09-08
 
-The undecided-pricing notice leads a split introductory section. Proposed plans
-use an open four-column comparison (two columns on tablets, one on phones),
-with one shared inquiry section instead of repeated TBD prices and card buttons.
-No plan is recommended or presented as a finalized offer.
+The original plan cards, feature lists and per-plan actions remain. Numeric prices,
+repeated TBD labels, billing cadence and recommendation badges are omitted. The
+introduction explains once that pricing is undecided and features may change.
+Cards use a shorter minimum height to avoid leaving an empty price area.
