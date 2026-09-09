@@ -549,21 +549,21 @@ export const PRICING_COPY: Record<PublicLocale, {
   plans: Array<{ name: string; price: string; cadence: string; features: string[]; action: string; tone: "quiet" | "featured" }>;
 }> = {
   en: {
-    hero: { title: "A clear path from first run to team work.", body: "Start free, keep private work in Studio, and move up when you need more verification capacity, export tooling, or shared R&D controls." },
+    hero: { title: "Pricing and plans are under review.", body: "Pricing has not been finalized. The plans and features below are under consideration and may change. Contact us to discuss your needs." },
     plans: [
-      { name: "Free", price: "$0", cadence: "per user, per month", features: ["Full public Atlas", "Weekly agent runs", "Private artifacts", "Browser simulation"], action: "Try the preview", tone: "quiet" },
-      { name: "Plus", price: "$50", cadence: "per user, per month", features: ["Everything in Free", "More weekly runs", "More private artifacts", "Wider browser simulation"], action: "Join early access", tone: "featured" },
-      { name: "Professional", price: "$240", cadence: "per user, per month", features: ["Everything in Plus", "Share outside your workspace", "Read-only or editable sharing", "More runs and artifacts", "Widest browser simulation"], action: "Contact us", tone: "quiet" },
-      { name: "Enterprise", price: "$420+", cadence: "per user, per month", features: ["Everything in Professional", "Allowances agreed with you", "Private-corpus conversations", "Named onboarding contact"], action: "Talk to sales", tone: "quiet" },
+      { name: "Free", price: "TBD", cadence: "Proposed plan · subject to change", features: ["Full public Atlas", "Weekly agent runs", "Private artifacts", "Browser simulation"], action: "Try the preview", tone: "quiet" },
+      { name: "Plus", price: "TBD", cadence: "Proposed plan · subject to change", features: ["Everything in Free", "More weekly runs", "More private artifacts", "Wider browser simulation"], action: "Contact us", tone: "featured" },
+      { name: "Professional", price: "TBD", cadence: "Proposed plan · subject to change", features: ["Everything in Plus", "Share outside your workspace", "Read-only or editable sharing", "More runs and artifacts", "Widest browser simulation"], action: "Contact us", tone: "quiet" },
+      { name: "Enterprise", price: "TBD", cadence: "Proposed plan · subject to change", features: ["Everything in Professional", "Allowances agreed with you", "Private-corpus conversations", "Named onboarding contact"], action: "Contact us", tone: "quiet" },
     ],
   },
   ja: {
-    hero: { title: "まずは個人で試し、そのままチームで研究へ。", body: "無料で始め、非公開の研究はStudioに保存できます。検証できる実行回数、エクスポート、共同研究の管理が必要になったら次のプランへ進めます。" },
+    hero: { title: "料金・プランは検討中です。", body: "料金はまだ決まっていません。以下は検討中のプランと機能で、今後変更する場合があります。ご利用についてはお問い合わせください。" },
     plans: [
-      { name: "Free", price: "$0", cadence: "1ユーザーあたり月額", features: ["公開Atlasのすべて", "週ごとのエージェント実行", "非公開の回路・実行記録", "ブラウザ実行"], action: "プレビューを試す", tone: "quiet" },
-      { name: "Plus", price: "$50", cadence: "1ユーザーあたり月額", features: ["Freeのすべて", "実行回数を拡大", "保存件数を拡大", "より広いブラウザ実行"], action: "早期アクセスに参加", tone: "featured" },
-      { name: "Professional", price: "$240", cadence: "1ユーザーあたり月額", features: ["Plusのすべて", "ワークスペース外への共有", "閲覧のみ／編集可を選択", "実行と保存をさらに拡大", "最も広いブラウザ実行"], action: "お問い合わせ", tone: "quiet" },
-      { name: "Enterprise", price: "$420+", cadence: "1ユーザーあたり月額", features: ["Professionalのすべて", "利用上限は個別に調整", "社内データに関する相談", "導入と評価の担当窓口"], action: "営業担当に相談", tone: "quiet" },
+      { name: "Free", price: "未定", cadence: "プラン内容は検討中です", features: ["公開Atlasのすべて", "週ごとのエージェント実行", "非公開の回路・実行記録", "ブラウザ実行"], action: "プレビューを試す", tone: "quiet" },
+      { name: "Plus", price: "未定", cadence: "プラン内容は検討中です", features: ["Freeのすべて", "実行回数を拡大", "保存件数を拡大", "より広いブラウザ実行"], action: "お問い合わせ", tone: "featured" },
+      { name: "Professional", price: "未定", cadence: "プラン内容は検討中です", features: ["Plusのすべて", "ワークスペース外への共有", "閲覧のみ／編集可を選択", "実行と保存をさらに拡大", "最も広いブラウザ実行"], action: "お問い合わせ", tone: "quiet" },
+      { name: "Enterprise", price: "未定", cadence: "プラン内容は検討中です", features: ["Professionalのすべて", "利用上限は個別に調整", "社内データに関する相談", "導入と評価の担当窓口"], action: "お問い合わせ", tone: "quiet" },
     ],
   },
 };
@@ -602,8 +602,8 @@ export const UPGRADE_COPY: Record<PublicLocale, {
   backToAccount: string;
 }> = {
   en: {
-    title: "Move up a plan",
-    lede: "What each plan adds, measured against what you are using now.",
+    title: "Plans under review",
+    lede: "Pricing and future plan details have not been finalized and may change.",
     currentLabel: "Your plan",
     currentSuffix: "— what you have today",
     usageTitle: "Where you are this week",
@@ -612,7 +612,7 @@ export const UPGRADE_COPY: Record<PublicLocale, {
     usageExhausted: "This week's allowance is used. Browser simulation in Studio stays available.",
     topOfLadderTitle: "You are on the top published plan.",
     topOfLadderBody:
-      "Professional is the highest plan with prices set here. Anything beyond it — larger allowances, private-corpus work, terms agreed with your organisation — is arranged directly.",
+      "Professional is the highest current account tier. Future pricing and plan details remain under review. Contact us about larger allowances or organisation-specific needs.",
     developerTitle: "Your account is unmetered.",
     developerBody:
       "Developer accounts are an operator grant, not a purchase. No allowance on this page applies to you.",
@@ -624,8 +624,8 @@ export const UPGRADE_COPY: Record<PublicLocale, {
     backToAccount: "Back to account",
   },
   ja: {
-    title: "プランを変更する",
-    lede: "現在の使用状況と照らして、各プランで何が増えるかを示します。",
+    title: "検討中のプラン",
+    lede: "料金と今後のプラン内容はまだ決まっておらず、変更する場合があります。",
     currentLabel: "現在のプラン",
     currentSuffix: "— 現在ご利用中の内容",
     usageTitle: "今週の使用状況",
@@ -635,7 +635,7 @@ export const UPGRADE_COPY: Record<PublicLocale, {
       "今週分の上限に達しました。Studioのブラウザ実行は引き続きご利用いただけます。",
     topOfLadderTitle: "公開されている最上位のプランをご利用中です。",
     topOfLadderBody:
-      "価格を公開しているプランではProfessionalが最上位です。これを超える利用上限、社内データを扱う運用、組織ごとの契約条件については個別にご相談ください。",
+      "現在のアカウント区分ではProfessionalが最上位です。今後の料金とプラン内容は検討中です。利用上限や組織ごとのご要望についてはお問い合わせください。",
     developerTitle: "このアカウントには上限がありません。",
     developerBody:
       "開発者アカウントは購入ではなく運営側による付与です。このページの上限はいずれも適用されません。",

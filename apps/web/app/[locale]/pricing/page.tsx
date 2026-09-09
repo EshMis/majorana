@@ -57,7 +57,7 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
             <article className={`mj-pricing-card mj-pricing-card--${plan.tone}`}>
             <div className="mj-pricing-card-head">
               <h2>{plan.name}</h2>
-              {plan.tone === "featured" ? <span className="mj-pricing-mark">{locale === "ja" ? "おすすめ" : "Recommended"}</span> : null}
+              <span className="mj-pricing-mark">{locale === "ja" ? "検討中" : "Proposed"}</span>
             </div>
             <p className="mj-pricing-price">{plan.price}</p>
             <p className="mj-pricing-cadence">{plan.cadence}</p>
