@@ -103,8 +103,10 @@ overrides:
   # commit (591215e9) with no advisory recorded, which is why this line now
   # carries one. 4.3.1 published 2026-07-31, so it clears `minimumReleaseAge`
   # above without the exclude hatch.
-  js-yaml: 4.3.1
-  sharp: 0.35.3
+  # GHSA-2883-xcg3-v3hh: merge-source CPU exhaustion, patched in 4.3.2.
+  js-yaml: 4.3.2
+  # GHSA-rgj7-g3m4-5g8c: patched libheif binaries ship with sharp 0.35.4.
+  sharp: 0.35.4
   # postcss advisories keep landing on the version Next/Tailwind pull in:
   # GHSA-6g55-p6wh-862q flagged 8.4.31, then GHSA-r28c-9q8g-f849 (CVSS 7.5,
   # source-map path traversal) flagged everything <= 8.5.17. A targeted

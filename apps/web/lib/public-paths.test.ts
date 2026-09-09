@@ -152,3 +152,12 @@ test("publishing the public Qapp list also un-gates the two dynamic siblings", (
     assert.equal(isUnauthenticatedForAuthKit(path), true, `${path} is inside the published subtree`);
   }
 });
+
+
+test("the Keio event is public without exposing other event routes", () => {
+  for (const matcher of [isPublicPath, isUnauthenticatedForAuthKit]) {
+    assert.equal(matcher("/events/qiskit-fall-fest-2026"), true);
+    assert.equal(matcher("/events/private-event"), false);
+    assert.equal(matcher("/events/qiskit-fall-fest-2026-attendees"), false);
+  }
+});

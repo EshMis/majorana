@@ -188,3 +188,35 @@
     --mono-tint: #bdb4a4;
   }
 }
+
+/* Qiskit Fall Fest: owner-requested event poster surface (2026-09-08).
+ * Scoped to the event page; Qiskit's supplied purple-60 pictogram is unchanged. */
+[data-surface="qff-keio"] {
+  --qff-paper: #fcfcfa;
+  --qff-ink: #202021;
+  --qff-muted: #606066;
+  --qff-line: #d7d7da;
+  --qff-accent: #6929c4;
+  --qff-tint: #eee8f7;
+  --qff-white: #ffffff;
+  --qff-dark: #202021;
+  --qff-dark-muted: #c6c6ce;
+  --qff-title: clamp(3.5rem, 6.6vw, 6rem);
+  --qff-heading: clamp(1.75rem, 3.1vw, 2.75rem);
+  --qff-date: clamp(2.75rem, 4.3vw, 4rem);
+  --qff-gutter: clamp(1.25rem, 4.5vw, 5rem);
+  --qff-section: clamp(3.5rem, 7vw, 6rem);
+  --qff-space: 2rem;
+  --qff-small: 0.875rem;
+  --qff-body: 1rem;
+  --qff-lead: 1.25rem;
+  --qff-subtitle: 1.5rem;
+  --qff-sticky: 1;
+}
+:root[data-theme="dark"] [data-surface="qff-keio"] {
+  --qff-paper: #202021;
+  --qff-ink: #f5f5f7;
+  --qff-muted: #bebec7;
+  --qff-line: #4b4b51;
+  --qff-accent: #c4a1ff;
+}
