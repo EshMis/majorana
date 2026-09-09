@@ -26,7 +26,7 @@ export function LandingCircuit({ locale }: { locale: PublicLocale }) {
           <text x="352" y="51" textAnchor="middle">M</text><text x="352" y="111" textAnchor="middle">M</text>
         </g>
       </svg>
-      <pre aria-label={locale === "ja" ? "ベル回路のQiskitコード" : "Qiskit Bell circuit code"}><code>{BELL_CODE}</code></pre>
+      <pre tabIndex={0} aria-label={locale === "ja" ? "ベル回路のQiskitコード" : "Qiskit Bell circuit code"}><code>{BELL_CODE}</code></pre>
       <p>{locale === "ja" ? "Hゲートで重ね合わせをつくり、制御Xゲートで2つの量子ビットをもつれさせてから測定します。" : "Create a superposition with H, entangle the two qubits with a controlled X, then measure."}</p>
     </figure>
   );

@@ -1,55 +1,51 @@
 /* Public website UX, 2026-09-06. Uses the shared theme and type scale.
    Imported after the base styles by RootDocument during integration. */
+/* A single row is scrollable at narrow widths; preferences stay in the row. */
 .mj-public-site .mj-public-header {
   position: relative;
   z-index: 20;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: var(--sp-6);
-  padding: var(--sp-2) 0 var(--sp-6);
+  flex-wrap: nowrap;
+  gap: var(--sp-5);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-0) transparent;
+  scroll-padding-inline: var(--sp-3);
+  padding: var(--sp-2) var(--sp-1) var(--sp-5);
   border-bottom: var(--border-hairline) solid var(--border-0);
 }
-.lq-public-navigation { min-width: 0; }
+.mj-public-header .mj-public-brand { display: inline-flex; align-items: center; flex: 0 0 auto; min-height: var(--control-h-cta); }
+.mj-public-header :is(a, button) { scroll-margin-inline: var(--sp-3); }
+.lq-public-navigation { flex: 1 0 auto; min-width: 0; }
 .lq-public-menu-panel, .lq-public-preferences, .lq-public-auth {
   display: flex;
   align-items: center;
-  gap: var(--sp-4);
+  flex-wrap: nowrap;
+  gap: var(--sp-3);
+  white-space: nowrap;
 }
 .lq-public-menu-panel { justify-content: flex-end; }
-.mj-public-site .mj-public-nav { margin: 0; gap: var(--sp-1); }
+.mj-public-site .mj-public-nav { display: flex; flex: 0 0 auto; order: 0; flex-wrap: nowrap; overflow: visible; width: auto; margin: 0; gap: var(--sp-1); }
 .mj-public-site .mj-public-nav a {
   display: inline-flex;
   align-items: center;
   min-height: var(--control-h-cta);
   padding: 0 var(--sp-2);
 }
+.lq-public-auth { flex: 0 0 auto; }
 .mj-public-site .mj-public-nav-primary { min-height: var(--control-h-cta); }
-.lq-public-menu-trigger { display: none; }
 .lq-public-preferences .mj-theme-toggle button,
-.lq-public-preferences .mj-language-toggle button { min-height: var(--sp-8); }
+.lq-public-preferences .mj-language-toggle button { min-width: var(--control-h-cta); min-height: var(--control-h-cta); }
 .lq-public-preferences .mj-theme-toggle span { display: none; }
 .mj-public-site :where(a, button, input, textarea, select, summary):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: var(--sp-1);
 }
-.mj-public-site .mj-reveal {
-  opacity: 1;
-  transform: none;
-  animation: none;
-  transition: none;
-}
-.mj-public-site :is(.mj-company-hero-copy, .mj-open-source-hero, .mj-public-page-hero, .mj-contact-hero) {
-  animation: none;
-  opacity: 1;
-  transform: none;
-}
-.mj-public-site :is(.mj-pricing-card, .mj-open-source-card, .mj-company-principle-card, .mj-company-capability-list article):hover {
-  transform: none;
-}
-.mj-public-site :is(.mj-primary-button, .mj-secondary-button) {
-  transition-property: transform;
-}
+.mj-public-site .mj-reveal { opacity: 1; transform: none; transition: none; }
+.mj-public-site :is(.mj-primary-button, .mj-secondary-button) { transition: transform var(--dur-hover) var(--ease-out-ui); }
+.mj-public-site :is(.mj-primary-button, .mj-secondary-button):active { transform: translateY(1px); }
 .mj-public-site .mj-public-footer { margin-top: var(--sp-16); }
 .mj-public-site .mj-public-footer-links a { padding-block: var(--sp-2); }
 .mj-public-site .mj-public-footer-bottom { gap: var(--sp-4); flex-wrap: wrap; }
@@ -237,17 +233,8 @@
 .mj-legal-document section { scroll-margin-top: var(--sp-8); }
 
 @media (max-width: 1100px) {
-  .mj-public-site .mj-public-header { grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--sp-3); }
-  .mj-public-brand { min-width: 0; }
-  .lq-public-navigation { order: 3; }
-  .lq-public-menu-trigger { display: inline-flex; align-items: center; justify-content: center; width: var(--control-h-cta); height: var(--control-h-cta); border: var(--border-hairline) solid var(--border-0); border-radius: var(--radius-control); background: var(--bg-0); color: var(--text-0); cursor: pointer; }
-  .lq-public-menu-panel { display: none; position: absolute; top: 100%; right: 0; left: 0; padding: var(--sp-4); border: var(--border-hairline) solid var(--border-0); border-radius: var(--radius-card); background: var(--bg-0); }
-  .lq-public-menu-panel.is-open { display: grid; gap: var(--sp-4); }
-  .mj-public-site .mj-public-nav { display: grid; grid-template-columns: minmax(0, 1fr); justify-content: stretch; width: 100%; order: 0; overflow: visible; }
-  .mj-public-site .mj-public-nav a { padding-inline: var(--sp-3); }
-  .lq-public-preferences { padding-top: var(--sp-3); border-top: var(--border-hairline) solid var(--border-0); }
-  .lq-public-preferences .mj-theme-toggle button, .lq-public-preferences .mj-language-toggle button { min-height: var(--control-h-cta); }
-  .lq-public-preferences .mj-theme-toggle span { display: inline; }
+  .mj-public-header .lq-wordmark--public-header { width: 128px; }
+  .mj-public-site .mj-public-header { gap: var(--sp-3); }
 }
 @media (max-width: 760px) {
   .lq-site-hero { grid-template-columns: minmax(0, 1fr); gap: var(--sp-8); padding-block: var(--sp-8); }
@@ -266,7 +253,7 @@
   .mj-public-header .lq-wordmark--public-header { width: calc(var(--sp-16) * 2); max-width: 100%; height: auto; }
   .mj-public-site .mj-public-nav-primary { padding-inline: var(--sp-2); font-size: var(--fs-12); }
   .lq-public-auth,
-  .lq-public-auth .mj-auth-slot[data-auth-slot="in"] { flex-direction: column-reverse; gap: var(--sp-1); }
+  .lq-public-auth .mj-auth-slot[data-auth-slot="in"] { flex-direction: row; gap: var(--sp-3); }
   .mj-public-site .mj-public-footer-links { flex-wrap: wrap; }
   .lq-site-product-grid { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
   .mj-about-site .mj-about-person-card { display: block; }

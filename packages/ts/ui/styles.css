@@ -3235,11 +3235,12 @@ a.mj-facet-option:hover {
   opacity: 0.65;
 }
 .mj-command-hint {
-  color: var(--text-1);
+  /* A quiet hint that still reads: --text-2 is AA on every surface; the 0.7 opacity
+     it used to carry dropped it to 3.4:1 (light) and 4.0:1 (dark). */
+  color: var(--text-2);
   font-family: var(--font-mono);
   font-size: var(--fs-12);
   font-weight: 400;
-  opacity: 0.7;
 }
 
 /* ---------- Nameko run home + fixed composer ---------- */

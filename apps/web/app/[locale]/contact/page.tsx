@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PublicSite } from "../../../components/public-site";
-import { Reveal } from "../../../components/reveal";
+import { ProductGlyph } from "../../../components/product-glyph";
 import { CONTACT_COPY } from "../../../lib/public-copy";
 import { ContactForm } from "./contact-form";
 import { parsePublicLocale, PUBLIC_LOCALES } from "../../../lib/public-locale";
@@ -33,33 +33,21 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
   const copy = CONTACT_COPY[locale];
   return (
     <PublicSite activePath="/contact" className="mj-contact-site" locale={locale} chrome="static">
-      <Reveal>
-        <section className="mj-contact-hero">
-          <div>
-            <p className="mj-public-overline">{copy.overline}</p>
-            <h1>{copy.title}</h1>
-            <p>{copy.body}</p>
-          </div>
-        </section>
-      </Reveal>
-
-      <Reveal>
-        <section className="mj-contact-layout" aria-label={copy.overline}>
-          <div className="mj-contact-form-section mj-contact-form-section--solo">
-            {/* The note moved INSIDE the form (ai-ops issue 125). It describes
-                what the button does, and what the button does is now decided at
-                runtime by whether a transactional sender is configured — which
-                this server-rendered, CDN-cached page cannot know. Rendering it
-                here would have left "opens a prepared email in your email app"
-                on the page after the form stopped doing that. */}
-            <ContactForm locale={locale} />
-          </div>
-          <aside className="lq-contact-help" aria-labelledby="contact-help-heading">
+      <section className="lq-contact-split" aria-labelledby="contact-heading">
+        <div className="lq-contact-intro">
+          <p className="mj-section-label">{copy.overline}</p>
+          <h1 id="contact-heading">{copy.title}</h1>
+          <p>{copy.body}</p>
+          <ProductGlyph kind="Nala" />
+          <section className="lq-contact-help" aria-labelledby="contact-help-heading">
             <h2 id="contact-help-heading">{copy.panelTitle}</h2>
             <ul>{copy.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul>
-          </aside>
-        </section>
-      </Reveal>
+          </section>
+        </div>
+        <div className="mj-contact-form-section mj-contact-form-section--solo">
+          <ContactForm locale={locale} />
+        </div>
+      </section>
     </PublicSite>
   );
 }

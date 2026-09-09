@@ -114,9 +114,7 @@ test("no enforced card states an allowance number, in either language", async ()
   // `TIER_LIMITS.pro` says something else has no symptom on the page — the
   // symptom reaches the person who hits the cap.
   //
-  // Prices are untouched and deliberately outside this: `$0`, `$50`, `$240` and
-  // `$420+` are what the owner kept, and they are read from `plan.price`, not
-  // from `plan.features`.
+  // Owner update 2026-09-08: prices are undecided; do not publish old figures.
   const { PRICING_COPY } = await import("./public-copy.ts");
   for (const language of ["en", "ja"] as const) {
     for (const name of ENFORCED_CARDS) {
@@ -131,11 +129,10 @@ test("no enforced card states an allowance number, in either language", async ()
       }
     }
   }
-  // And the prices did stay, which is the half of the ruling a digit ban could
-  // quietly undo.
-  for (const [name, price] of [["Free", "$0"], ["Plus", "$50"], ["Professional", "$240"], ["Enterprise", "$420+"]] as const) {
-    const plan = PRICING_COPY.en.plans.find((entry) => entry.name === name);
-    assert.equal(plan?.price, price, `${name} lost its price`);
+  for (const locale of ["en", "ja"] as const) {
+    for (const plan of PRICING_COPY[locale].plans) {
+      assert.equal(plan.price, locale === "ja" ? "未定" : "TBD");
+    }
   }
 });
 
@@ -418,15 +415,13 @@ test("a plan costs the same in both languages", async () => {
   // stays wrong on the other until somebody reads both — that is exactly how
   // the JA privacy section disappeared in PR 194.
   //
-  // This used to compare the allowance figures across the two scripts as well.
-  // There are none left to compare (ai-ops#82); the price is what remains, and
-  // a plan that costs $50 in one language and $240 in the other is worse than a
-  // plan with no price.
+  // Both locales must withhold prices until the owner finalizes them.
   const { PRICING_COPY } = await import("./public-copy.ts");
   for (const plan of PRICING_COPY.en.plans) {
     const ja = PRICING_COPY.ja.plans.find((entry) => entry.name === plan.name);
     assert.ok(ja, `the ${plan.name} plan disappeared from the Japanese pricing page`);
-    assert.equal(plan.price, ja.price, `${plan.name} is priced differently per language`);
+    assert.equal(plan.price, "TBD");
+    assert.equal(ja.price, "未定");
   }
 });
 
