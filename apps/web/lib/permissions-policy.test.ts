@@ -45,8 +45,7 @@ test("the features this origin needs are allowed to it and to nobody else", () =
   for (const feature of SELF_ONLY_FEATURES) {
     assert.equal(policy.get(feature), "(self)", `${feature} is not self-only`);
   }
-  // The regression this file exists for. `()` here is the landing-page video
-  // not playing; `(*)` is a cross-origin frame being handed the feature.
+  // Keep the explicit same-origin boundary established for media playback.
   assert.equal(policy.get("autoplay"), "(self)");
 });
 
@@ -72,12 +71,12 @@ test("the denied list is sorted, because it is read by eye against a scanner", (
 });
 
 test("the landing demo asks for no feature this header refuses", () => {
-  // The connection nothing made before. The demo starts itself with a bare
-  // `play()` and no user gesture, which is exactly what the `autoplay` feature
-  // governs — so if that feature ever returns to the denied list, the video
-  // stops starting and this fails instead of shipping silently.
+  // Native controls offer fullscreen. Any programmatic features added later
+  // must also remain compatible with the response policy.
   const video = readFileSync(join(WEB_ROOT, "components", "landing-demo-video.tsx"), "utf8");
+  const markup = video.slice(video.indexOf("return ("));
   const asked = new Set<string>();
+  if (/\bcontrols\b/.test(markup)) asked.add("fullscreen");
   if (/\.play\(\)/.test(video) || /\bautoPlay\b/.test(video)) asked.add("autoplay");
   if (/requestPictureInPicture/.test(video)) asked.add("picture-in-picture");
   if (/requestFullscreen/.test(video)) asked.add("fullscreen");
@@ -99,19 +98,17 @@ test("the landing demo asks for no feature this header refuses", () => {
   assert.match(page, /<LandingDemoVideo\b/, "the landing page no longer renders the demo");
 });
 
-test("the demo does not autoplay past a reader who asked for less motion", () => {
-  // CSS cannot stop a video, so the reduced-motion rules in globals.css do not
-  // reach this and the check has to be on the component. Two halves: it must
-  // consult the preference, and the markup must carry no `autoplay` attribute —
-  // an attribute would start playback before the preference could be read,
-  // which is the flash of motion this exists to prevent.
+test("the demo starts only through its playback controls", () => {
+  // Manual playback respects reduced motion before hydration as well as after
+  // it. Neither HTML nor a later effect may start or loop the video.
   const video = readFileSync(join(WEB_ROOT, "components", "landing-demo-video.tsx"), "utf8");
-  assert.match(video, /prefers-reduced-motion: reduce/, "the demo no longer consults the preference");
-  assert.match(video, /addEventListener\("change"/, "the preference is read once and never re-read");
+  assert.doesNotMatch(video, /\.play\s*\(/, "the demo starts playback without its native controls");
   // The RENDERED markup only. The doc comment above it names the attribute it
   // is explaining, and a whole-file search reads that as the defect.
   const markup = video.slice(video.indexOf("return ("));
   assert.ok(markup.includes("<video"), "could not locate the rendered markup");
+  assert.match(markup, /\bcontrols\b/, "the reader needs playback controls");
+  assert.match(markup, /preload="none"/, "the demo downloads before the reader starts it");
   assert.doesNotMatch(
     markup,
     /\bautoPlay\b/,

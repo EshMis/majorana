@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, type Ref } from "react";
+import { useId, useRef, type FormEvent, type Ref } from "react";
 import { ChevronIcon, PaperclipIcon } from "./icons";
-import { ComposerGhostOverlay } from "./composer-ghost-overlay";
 import type { PublicLocale } from "../lib/public-locale";
 import { COMPOSER_MODES, type ComposerMode } from "../lib/run-mode";
-import { DELETE_MS_PER_CHARACTER, TYPE_MS_PER_CHARACTER, composerGhost, type GhostFrame } from "../lib/composer-ghost";
 import {
   COMPOSER_FRAMEWORKS,
   type ComposerFramework,
@@ -38,7 +36,8 @@ export function RunComposer({
   onFrameworkChange,
   onStop,
   stopping = false,
-  suggestions,
+  disabled = false,
+  readingAttachments = false,
   inputRef,
   centered = false,
   locale = "en",
@@ -61,14 +60,16 @@ export function RunComposer({
   /** Present only where a run can actually be cancelled. */
   onStop?: () => void;
   stopping?: boolean;
-  /** Prompts the placeholder types out; Tab accepts the one on screen. */
-  suggestions?: readonly string[];
+  /** Loading conversation/context or attachments must block submission only. */
+  disabled?: boolean;
+  readingAttachments?: boolean;
   /** Lets a prompt suggestion return focus to the shared conversation input. */
   inputRef?: Ref<HTMLTextAreaElement>;
   centered?: boolean;
   locale?: PublicLocale;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const helpId = useId();
   const labels = locale === "ja"
     ? {
         task: "メッセージ",
@@ -84,10 +85,11 @@ export function RunComposer({
         modeAuto: "自動",
         modeExecute: "実行",
         modeQapp: "Qapp",
-        modeIdeate: "考える",
+        modeIdeate: "学ぶ",
         modeExplain: "解説",
         framework: "回路フレームワーク",
-        tabHint: "Tab キーで例を入力できます",
+        keyboard: "⌘ / Ctrl + Enter で送信",
+        reading: "添付ファイルを読み込み中…",
       }
     : {
         task: "Message",
@@ -103,16 +105,16 @@ export function RunComposer({
         modeAuto: "Auto",
         modeExecute: "Execute",
         modeQapp: "Qapp",
-        modeIdeate: "Ideate",
+        modeIdeate: "Learn",
         modeExplain: "Explain",
         framework: "Circuit framework",
-        tabHint: "Press Tab to use the suggested prompt",
+        keyboard: "⌘ / Ctrl + Enter to send",
+        reading: "Reading attachments…",
       };
-  const ghost = useGhostPrompt(suggestions, value);
 
   return (
     <div className={`mj-composer-dock${centered ? " mj-composer-dock--centered" : ""}`}>
-      <form className="mj-composer" onSubmit={onSubmit} aria-busy={pending}>
+      <form className="mj-composer" onSubmit={onSubmit} aria-busy={pending || disabled || readingAttachments}>
         {pending ? (
           <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
             {stopping ? labels.stopping : labels.pending}
@@ -147,7 +149,6 @@ export function RunComposer({
           </div>
         ) : null}
         <div className="mj-composer-ghost-wrap">
-          {ghost ? <ComposerGhostOverlay frame={ghost} /> : null}
           <textarea
             ref={inputRef}
             className="mj-composer-input"
@@ -163,37 +164,17 @@ export function RunComposer({
                 event.currentTarget.form?.requestSubmit();
                 return;
               }
-              // Tab only steals focus movement while there is something to accept
-              // and the box is empty, so the composer never becomes a keyboard trap.
-              if (
-                event.key === "Tab"
-                && !event.shiftKey
-                && !event.nativeEvent.isComposing
-                && !value
-                && ghost
-              ) {
-                event.preventDefault();
-                onChange(ghost.suggestion);
-              }
             }}
-            // Never `ghost?.text || basePlaceholder(locale)`: `""` is the frame
-            // that plays during the pause between prompts, and `||` treats it
-            // as absent, flashing the generic placeholder into that gap on
-            // every rotation — the "text that appears in between each
-            // rotation" the owner asked to have removed (ai-ops 108). Once a
-            // ghost animation is running at all, `ComposerGhostOverlay` above
-            // is what draws it; the native placeholder only covers the case
-            // where there is no ghost (reduced motion off, no suggestions).
-            placeholder={ghost ? "" : basePlaceholder(locale)}
+            placeholder={basePlaceholder(locale)}
             aria-label={labels.task}
-            aria-describedby={ghost ? "mj-composer-tab-hint" : undefined}
+            aria-describedby={helpId}
             rows={1}
           />
         </div>
-        {ghost ? <span className="sr-only" id="mj-composer-tab-hint">{labels.tabHint}</span> : null}
+        <span className="sr-only" id={helpId}>{labels.keyboard}</span>
         <div className="mj-composer-controls">
           <div className="mj-composer-left">
-            <button
+            {onFiles || onAttach ? <button
               className="mj-icon-button"
               type="button"
               aria-label={labels.attach}
@@ -204,7 +185,7 @@ export function RunComposer({
               }}
             >
               <PaperclipIcon size={16} />
-            </button>
+            </button> : null}
             {onFiles ? (
               <input
                 ref={fileInputRef}
@@ -261,7 +242,6 @@ export function RunComposer({
             ) : null}
           </div>
           <div className="mj-composer-right">
-            {error ? <span className="mj-composer-error" role="alert">{error}</span> : null}
             {/* Stop takes the send button's place rather than sitting beside it:
                 the control the reader is already looking at is the one that has
                 to cancel, and two buttons here would mean deciding which is
@@ -279,13 +259,15 @@ export function RunComposer({
             ) : (
               <>
                 {!pending ? <kbd className="mj-command-hint">⌘/Ctrl ↵</kbd> : null}
-                <button className="mj-primary-button" type="submit" disabled={pending || !value.trim()}>
+                <button className="mj-primary-button" type="submit" disabled={pending || disabled || readingAttachments || !value.trim()}>
                   {pending ? labels.pending : labels.send}
                 </button>
               </>
             )}
           </div>
         </div>
+        {readingAttachments ? <p className="mj-composer-feedback" role="status">{labels.reading}</p> : null}
+        {error ? <p className="mj-composer-feedback mj-composer-feedback--error" role="alert">{error}</p> : null}
       </form>
     </div>
   );
@@ -297,54 +279,6 @@ function formatAttachmentSize(size: number): string {
 
 function basePlaceholder(locale: PublicLocale): string {
   return locale === "ja"
-    ? "作りたい回路や検証したいことを入力してください…"
-    : "Ask anything about quantum algorithms…";
-}
-
-/**
- * The typed-and-backspaced placeholder, driven off a clock rather than a counter.
- *
- * A 60 Hz animation frame would re-render the whole composer sixty times a
- * second for a placeholder; the interval is set to the typing cadence instead.
- * Under `prefers-reduced-motion` the suggestion is still offered — Tab accepts
- * it exactly the same way — it just stops typing itself out.
- */
-function useGhostPrompt(suggestions: readonly string[] | undefined, typedValue: string): GhostFrame | null {
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const [reduceMotion, setReduceMotion] = useState(false);
-  const hasSuggestions = Boolean(suggestions?.length);
-  const active = typedValue.length === 0;
-
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setReduceMotion(query.matches);
-    sync();
-    query.addEventListener("change", sync);
-    return () => query.removeEventListener("change", sync);
-  }, []);
-
-  useEffect(() => {
-    if (!hasSuggestions || !active || reduceMotion) return;
-    // Restart the cycle from its first character rather than resuming wherever
-    // the clock was left — the same reset the landing composer does, and for
-    // the same reason: a visitor who types and then clears the box would
-    // otherwise get one frame of the stale `elapsedMs`, flashing a
-    // half-finished sentence in before the interval's first tick corrects it.
-    setElapsedMs(0);
-    const started = Date.now();
-    // Sampled at the faster of the two per-character durations, not a fixed
-    // 55ms: at 30ms/typed-character and 12ms/deleted-character (ai-ops 108),
-    // a slower poll would skip characters — deletion in particular would jump
-    // several at once instead of reading as "quick" one at a time.
-    const timer = window.setInterval(
-      () => setElapsedMs(Date.now() - started),
-      Math.min(TYPE_MS_PER_CHARACTER, DELETE_MS_PER_CHARACTER),
-    );
-    return () => window.clearInterval(timer);
-  }, [hasSuggestions, active, reduceMotion]);
-
-  // The visibility rule and the reduced-motion frame both live in
-  // `composerGhost` now, shared with the landing page — see ai-ops 112 for what
-  // it cost to have each composer carry its own copy of this.
-  return composerGhost({ elapsedMs, suggestions, typedValue, reduceMotion });
+    ? "作りたい回路や調べたいことを入力"
+    : "Describe your quantum task";
 }

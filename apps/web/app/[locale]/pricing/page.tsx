@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { PublicSite } from "../../../components/public-site";
-import { Reveal } from "../../../components/reveal";
+import Link from "next/link";
 import { PRICING_COPY } from "../../../lib/public-copy";
-import { isPublicDemoEnabled } from "../../../lib/public-demo";
 import { parsePublicLocale, PUBLIC_LOCALES } from "../../../lib/public-locale";
 import { canonicalMetadata } from "../../../lib/public-metadata";
 import { pricingMetadataCopy } from "../../../lib/public-page-metadata";
@@ -31,50 +30,22 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function PricingPage({ params }: { params: Promise<{ locale: string }> }) {
   const locale = parsePublicLocale((await params).locale);
   const copy = PRICING_COPY[locale];
-  const demoEnabled = isPublicDemoEnabled();
   return (
     <PublicSite activePath="/pricing" className="mj-pricing-site" locale={locale} chrome="static">
-      <Reveal>
-        <section className="mj-public-page-hero">
-          <h1>{copy.hero.title}</h1>
-          <p>{copy.hero.body}</p>
-        </section>
-      </Reveal>
-
+      <section className="mj-public-page-hero"><h1>{copy.hero.title}</h1><p>{copy.hero.body}</p></section>
       <section className="mj-pricing-grid" aria-label={locale === "ja" ? "Leona Quantumのプラン" : "Leona Quantum plans"}>
-        {copy.plans.map((plan, index) => {
-          // With the demo off the Free plan's button goes to /contact, so its
-          // copy label ("Try the preview") is stale — computed once here and
-          // used for BOTH the visible text and the tooltip. They used to be
-          // computed separately, which shipped a button reading "Talk to us"
-          // whose hover tooltip still said "Try the preview".
-          const toDemo = plan.name === "Free" && demoEnabled;
-          const actionLabel = plan.name === "Free" && !demoEnabled
-            ? (locale === "ja" ? "お問い合わせ" : "Talk to us")
-            : plan.action;
-          return (
-          <Reveal delay={index * 90} key={plan.name}>
-            <article className={`mj-pricing-card mj-pricing-card--${plan.tone}`}>
+        {copy.plans.map((plan) => (
+          <article className={`mj-pricing-card mj-pricing-card--${plan.tone}`} key={plan.name}>
             <div className="mj-pricing-card-head">
               <h2>{plan.name}</h2>
               {plan.tone === "featured" ? <span className="mj-pricing-mark">{locale === "ja" ? "おすすめ" : "Recommended"}</span> : null}
             </div>
             <p className="mj-pricing-price">{plan.price}</p>
             <p className="mj-pricing-cadence">{plan.cadence}</p>
-            <ul>
-              {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
-            </ul>
-            <a
-              className={plan.tone === "featured" ? "mj-primary-button" : "mj-secondary-button"}
-              href={toDemo ? "/demo" : "/contact"}
-              title={actionLabel}
-            >
-              {actionLabel}
-            </a>
-            </article>
-          </Reveal>
-          );
-        })}
+            <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+            <Link className={plan.tone === "featured" ? "mj-primary-button" : "mj-secondary-button"} href={plan.name === "Free" ? "/run" : `/contact?plan=${encodeURIComponent(plan.name)}`}>{plan.action}</Link>
+          </article>
+        ))}
       </section>
     </PublicSite>
   );

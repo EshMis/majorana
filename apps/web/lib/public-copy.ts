@@ -63,122 +63,99 @@ export const LOADING_COPY: Record<PublicLocale, {
 };
 
 export const HOME_COPY: Record<PublicLocale, {
-  hero: {
-    title: string;
-    lede: string;
-    primary: string;
-    secondary: string;
-    contact: string;
-    scrollCue: string;
-  };
-  promptDemo: {
-    label: string;
-    attach: string;
-    mode: string;
-    submit: string;
-    prompts: string[];
-    modalLabel: string;
-    modalTitle: string;
-    modalBody: string;
-    modalPrimary: string;
-    close: string;
-  };
-  visual: {
-    label: string;
-    status: string;
-    demoLabel: string;
-    demoDescription: string;
-    demoFallback: string;
-    pipeline: Array<{ number: string; label: string; detail: string }>;
-    footer: string;
-    meta: string;
-  };
-  intro: { label: string; title: string };
+  hero: { label: string; title: string; lede: string; primary: string; secondary: string };
+  promptDemo: { label: string; submit: string; retry: string; prompts: string[] };
+  visual: { label: string; demoLabel: string; demoDescription: string; demoFallback: string };
+  product: { label: string; title: string; items: Array<{ title: string; body: string; href: string }> };
+  principles: { label: string; title: string; items: Array<{ title: string; body: string }> };
+  frameworks: { label: string; items: string[] };
   benchmark: HomeBenchmarkCopy;
-  product: {
-    label: string;
-    title: string;
-    items: Array<{ index: string; title: string; body: string; action: string; href: string }>;
-  };
-  atlas: { label: string; title: string; body: string; action: string };
-  trace: {
-    label: string;
-    title: string;
-    body: string;
-    items: Array<{ title: string; body: string }>;
-  };
-  frameworks: { label: string; title: string; body: string; items: string[] };
-  // Required (not optional): PublicLocale parity for this field is enforced only
-  // by TypeScript here — the JA object silently lost its principles section,
-  // including its only privacy statement, when this was briefly `principles?:`
-  // (2026-08-01 review). Do not reintroduce `?` without also adding a runtime
-  // check, or a future locale can drop this section again with no compiler error.
-  principles: {
-    label: string;
-    title: string;
-    items: Array<{ title: string; body: string }>;
-  };
-  cta: { label: string; title: string; body: string; primary: string; secondary: string };
+  cta: { title: string; body: string; primary: string; secondary: string };
 }> = {
   en: {
     hero: {
-      title: "A self-evolving quantum solution platform.",
-      lede: "Generate, run, and reuse quantum circuits.",
-      primary: "Open the workspace",
-      secondary: "Explore the Atlas",
-      contact: "Get in touch",
-      scrollCue: "Scroll",
+      "label": "Quantum software development",
+      "title": "From a quantum idea to a circuit you can use.",
+      "lede": "Build with Nala, inspect results, and keep your code and experiments in Studio.",
+      "primary": "Open workspace",
+      "secondary": "Explore the Atlas"
     },
     promptDemo: {
-      label: "Describe the quantum circuit you want to build",
-      attach: "Attach context",
-      mode: "Plan",
-      submit: "Build now",
-      // Mostly plain English a non-specialist would type, with a couple that
-      // reach for quantum vocabulary — mix and match, not all-technical
-      // (owner, ai-ops#94). The natural-language ones are shared verbatim with
-      // `workspace-locale.ts`'s `run.examples`, so the same prompt that types
-      // itself out here is proven to work once a visitor signs in.
-      prompts: [
-        "Split 6 suppliers into two groups, cutting the fewest links.",
-        "Pick 8 stocks for the best return at a fixed risk.",
-        "Build a Bell state and verify the measured distribution.",
-        "Schedule 6 jobs on 3 machines to finish soonest.",
-        "Use QAOA to solve MaxCut on a five-node ring.",
-      ],
-      modalLabel: "Start building",
-      modalTitle: "Create an account to run this prompt.",
-      // Was "Sign up to generate the circuit, run it in a guarded simulator,
-      // and keep the result" — read together with the blockquote below, which
-      // quotes the exact words back, that promised the three things would
-      // happen as part of signing up. They no longer do: ai-ops 102 carries
-      // the prompt into the workspace composer and stops there, deliberately
-      // — the owner's ruling was pre-fill only, never auto-run, so a real run
-      // still costs a press of the button and one of the free tier's five
-      // weekly runs. This says what actually happens now (flagged by
-      // team-lead, corrected in the same PR that changed the behaviour).
-      modalBody: "Your prompt carries over. Sign up and it will be waiting in your workspace — press run when you are ready.",
-      modalPrimary: "Create an account",
-      close: "Close",
+      "label": "Describe a quantum task",
+      "submit": "Continue in Nala",
+      "retry": "Try opening the workspace again.",
+      "prompts": [
+        "Build a Bell state and verify the measured distribution."
+      ]
     },
     visual: {
-      label: "LEONA QUANTUM / PRODUCT",
-      status: "AI-POWERED CIRCUIT DEVELOPMENT",
-      demoLabel: "Leona Quantum product demo",
-      demoDescription: "A product walkthrough showing Agent Run, Atlas, and Studio from generation and verification through reuse and editing.",
-      demoFallback: "Open the product demo video",
-      pipeline: [
-        { number: "01", label: "Describe", detail: "Express the circuit in natural language" },
-        { number: "02", label: "Generate", detail: "Create the circuit, code, and diagram" },
-        { number: "03", label: "Run & verify", detail: "Execute the circuit and review the checks" },
-        { number: "04", label: "Save & use", detail: "Keep the work in your Studio workspace" },
-      ],
-      footer: "Quantum circuit development, in one flow",
-      meta: "GENERATE · VERIFY · USE",
+      "label": "Product walkthrough",
+      "demoLabel": "See Leona in action",
+      "demoDescription": "Follow a circuit from generation and verification to editing in Studio and reuse through the Atlas.",
+      "demoFallback": "Open the product demo video"
     },
-    intro: {
-      label: "The platform",
-      title: "Generate, run, verify, and use quantum circuits in one environment.",
+    product: {
+      "label": "The workspace",
+      "title": "Choose where to start",
+      "items": [
+        {
+          "title": "Nala",
+          "body": "Describe a problem, generate quantum code, and review its execution and checks.",
+          "href": "/run"
+        },
+        {
+          "title": "Studio",
+          "body": "Edit circuits, run simulations, and organize your saved work.",
+          "href": "/studio"
+        },
+        {
+          "title": "Quantum Atlas",
+          "body": "Browse quantum concepts, algorithms, and reference implementations.",
+          "href": "/repository"
+        },
+        {
+          "title": "Notebooks",
+          "body": "Work through lessons and combine code, notes, and results.",
+          "href": "/notebooks"
+        },
+        {
+          "title": "Qapps",
+          "body": "Explore quantum applications with guided inputs and results.",
+          "href": "/qapps"
+        }
+      ]
+    },
+    principles: {
+      "label": "Code and evidence",
+      "title": "Keep the work behind each result",
+      "items": [
+        {
+          "title": "Inspect the checks",
+          "body": "Review the code, execution settings, results, and verification record. Checks that fail or could not run stay visible."
+        },
+        {
+          "title": "Continue your research",
+          "body": "Save a circuit in Studio, edit its implementation, and build on the next version. The public Atlas provides reusable references."
+        },
+        {
+          "title": "Choose what to share",
+          "body": "Your Studio work is private by default. Publishing is a separate action you control."
+        }
+      ]
+    },
+    frameworks: {
+      "label": "Work in familiar frameworks:",
+      "items": [
+        "Qiskit",
+        "Cirq",
+        "PennyLane"
+      ]
+    },
+    cta: {
+      "title": "Start with a question or a circuit.",
+      "body": "Describe your task to Nala, or find a starting point in the Atlas.",
+      "primary": "Open workspace",
+      "secondary": "Explore the Atlas"
     },
     benchmark: {
       label: "Model performance / Qiskit HumanEval",
@@ -245,103 +222,91 @@ export const HOME_COPY: Record<PublicLocale, {
         ],
       },
     },
-    product: {
-      label: "Our product",
-      title: "Everything needed to develop and use quantum circuits.",
-      items: [
-        { index: "01", title: "AI quantum circuit generation", body: "Leona Quantum generates quantum circuits from natural-language input and outputs code and circuit diagrams.", action: "Open the workspace", href: "/workspace" },
-        { index: "02", title: "Verified circuit execution", body: "Run generated or existing circuits on the supported simulator, then review the verification checks for that result before you rely on it.", action: "Open the workspace", href: "/workspace" },
-        { index: "03", title: "Research and circuit repository", body: "Search and use quantum circuits, algorithms, and implementation code in the Atlas. Save your own code and execution settings in Studio for later editing and use.", action: "Explore the Atlas", href: "/repository" },
-      ],
-    },
-    atlas: {
-      label: "Atlas",
-      title: "Put quantum circuits to work.",
-      body: "Search and use quantum circuits, algorithms, and implementation code in one place with Atlas.",
-      action: "Explore the Atlas",
-    },
-    trace: {
-      label: "Execution record",
-      title: "Trace how each result was produced.",
-      body: "Leona Quantum keeps the circuit, execution settings, results, checks, and related information together. Review what was generated, how it was executed, and how the result was produced.",
-      items: [
-        { title: "Circuit", body: "The generated or selected quantum circuit." },
-        { title: "Code", body: "The implementation used for the run." },
-        { title: "Execution settings", body: "Framework, simulator, shots, seed, and other conditions." },
-        { title: "Results", body: "The outputs returned by the recorded execution." },
-        { title: "Checks", body: "The checks completed for that result." },
-        { title: "Sources", body: "References and context connected to the work." },
-      ],
-    },
-    frameworks: {
-      label: "Frameworks",
-      title: "Supports a range of quantum frameworks",
-      body: "Generate and inspect quantum circuits using supported frameworks such as Qiskit, Cirq, and PennyLane. Select the framework that fits your development environment and purpose.",
-      items: ["Qiskit", "Cirq", "PennyLane"],
-    },
-    principles: {
-      label: "Our principles",
-      title: "What we won't trade away.",
-      items: [
-        { title: "Evidence first", body: "A result you cannot inspect is a claim. The check ships with the answer, including when the check could not run." },
-        { title: "Open by default", body: "The Atlas is public because shared groundwork makes private work faster." },
-        { title: "Privacy by design", body: "Studio content is yours. Nothing you build there feeds anything public." },
-        { title: "Supports a range of quantum frameworks", body: "Work with supported frameworks such as Qiskit, Cirq, and PennyLane, and choose the environment that fits the task." },
-      ],
-    },
-    cta: {
-      label: "Get started",
-      title: "Develop your next quantum circuit with Leona Quantum.",
-      body: "Start from natural language or use an existing circuit from the Atlas.",
-      primary: "Open the workspace",
-      secondary: "Explore the Atlas",
-    },
   },
   ja: {
     hero: {
-      title: "次世代\n量子コンピューティングプラットフォーム",
-      lede: "量子回路の開発から活用まで、ひとつのプラットフォームで",
-      primary: "ワークスペースを開く",
-      secondary: "Atlasを見る",
-      contact: "お問い合わせ",
-      scrollCue: "スクロール",
+      "label": "量子ソフトウェア開発",
+      "title": "量子のアイデアを、使える回路へ。",
+      "lede": "Nalaで回路を作成し、結果を確認。コードと実験をStudioに保存して、開発を続けられます。",
+      "primary": "ワークスペースを開く",
+      "secondary": "Atlasを見る"
     },
     promptDemo: {
-      label: "作りたい量子回路を入力",
-      attach: "コンテキストを添付",
-      mode: "プラン",
-      submit: "生成する",
-      prompts: [
-        "6社の取引先を2組に分け、切る取引を最少にしてください。",
-        "リスク一定で、8銘柄の最適な組み合わせを選んでください。",
-        "ベル状態を作り、測定分布を検証してください。",
-        "6件の作業を3台の機械に割り当て、最短で終わらせてください。",
-        "5ノードのリンググラフのMaxCut問題をQAOAで解いてください。",
-      ],
-      modalLabel: "量子回路開発を始める",
-      modalTitle: "アカウントを作成して、このプロンプトを実行",
-      modalBody: "入力したプロンプトはそのまま引き継がれます。アカウントを作成すると、ワークスペースにその内容が用意されているので、準備ができたら実行してください。",
-      modalPrimary: "アカウントを作成",
-      close: "閉じる",
+      "label": "取り組みたい量子の課題を入力",
+      "submit": "Nalaで続ける",
+      "retry": "もう一度ワークスペースを開いてください。",
+      "prompts": [
+        "ベル状態を作り、測定分布を検証してください。"
+      ]
     },
     visual: {
-      label: "LEONA QUANTUM / PRODUCT",
-      status: "AIで量子回路を生成",
-      demoLabel: "Leona Quantum プロダクトデモ",
-      demoDescription: "Agent Runでの生成と検証から、Atlasでの再利用、Studioでの編集までを紹介するプロダクトデモです。",
-      demoFallback: "プロダクトデモ動画を開く",
-      pipeline: [
-        { number: "01", label: "自然言語で表現", detail: "生成したい量子回路を入力" },
-        { number: "02", label: "量子回路を生成", detail: "コードや回路図を出力" },
-        { number: "03", label: "実行・検証", detail: "回路を実行し、検証結果を確認" },
-        { number: "04", label: "保存・活用", detail: "情報をStudioに保存" },
-      ],
-      footer: "量子回路の開発を、ひとつの流れに",
-      meta: "生成 · 検証 · 活用",
+      "label": "プロダクト紹介",
+      "demoLabel": "Leonaの操作を見る",
+      "demoDescription": "回路の生成と検証から、Studioでの編集、Atlasを使った再利用までを紹介します。",
+      "demoFallback": "プロダクトデモ動画を開く"
     },
-    intro: {
-      label: "プラットフォーム",
-      title: "量子回路の生成、実行、検証、活用までを一つの環境で実行",
+    product: {
+      "label": "ワークスペース",
+      "title": "目的に合わせて始める",
+      "items": [
+        {
+          "title": "Nala",
+          "body": "課題を伝えて量子コードを生成し、実行結果と検証内容を確認できます。",
+          "href": "/run"
+        },
+        {
+          "title": "Studio",
+          "body": "回路を編集してシミュレーションを実行し、保存した研究を整理できます。",
+          "href": "/studio"
+        },
+        {
+          "title": "量子Atlas",
+          "body": "量子の概念、アルゴリズム、実装例を調べられます。",
+          "href": "/repository"
+        },
+        {
+          "title": "ノートブック",
+          "body": "教材で学びながら、コード、ノート、結果をまとめられます。",
+          "href": "/notebooks"
+        },
+        {
+          "title": "Qapps",
+          "body": "入力項目に沿って、量子アプリケーションを試せます。",
+          "href": "/qapps"
+        }
+      ]
+    },
+    principles: {
+      "label": "コードと検証記録",
+      "title": "結果に至る過程も残す",
+      "items": [
+        {
+          "title": "検証内容を確認",
+          "body": "コード、実行条件、結果、検証記録を確認できます。失敗した検証や実施できなかった検証も表示します。"
+        },
+        {
+          "title": "研究を続ける",
+          "body": "回路をStudioに保存し、実装を編集して次の実験へ進めます。公開Atlasでは再利用できる資料を探せます。"
+        },
+        {
+          "title": "共有範囲を選ぶ",
+          "body": "Studioの内容は初期状態では非公開です。公開するかどうかは、自分で決められます。"
+        }
+      ]
+    },
+    frameworks: {
+      "label": "対応フレームワーク:",
+      "items": [
+        "Qiskit",
+        "Cirq",
+        "PennyLane"
+      ]
+    },
+    cta: {
+      "title": "問いや回路から、開発を始める。",
+      "body": "Nalaに課題を伝えるか、Atlasで出発点となる実装を探せます。",
+      "primary": "ワークスペースを開く",
+      "secondary": "Atlasを見る"
     },
     benchmark: {
       label: "モデル性能 / QISKIT HUMANEVAL",
@@ -407,57 +372,6 @@ export const HOME_COPY: Record<PublicLocale, {
           { label: "QuanBench+論文 · Table 3", href: "https://arxiv.org/html/2604.08570v2" },
         ],
       },
-    },
-    product: {
-      label: "プロダクト",
-      title: "量子回路の開発から活用まで、ひとつのプラットフォームで",
-      items: [
-        { index: "01", title: "量子回路生成", body: "Leona Quantumは自然言語から量子回路を生成し、コードや回路図を出力", action: "ワークスペースを開く", href: "/workspace" },
-        { index: "02", title: "検証済みの回路実行", body: "生成した回路や既存の回路を、対応シミュレータで実行　結果を利用する前に、検証内容を確認できます", action: "ワークスペースを開く", href: "/workspace" },
-        { index: "03", title: "研究・量子回路リポジトリ", body: "Atlasで量子回路、アルゴリズム、実装コードをまとめて検索し、活用　コード、実行条件などの情報は、あとから編集・活用するためにStudioに保存", action: "Atlasを見る", href: "/repository" },
-      ],
-    },
-    atlas: {
-      label: "Atlas",
-      title: "量子回路を活用する",
-      body: "Atlasで量子回路、アルゴリズム、実装コードをまとめて検索し、活用",
-      action: "Atlasを見る",
-    },
-    trace: {
-      label: "実行記録",
-      title: "結果に至った過程を確認",
-      body: "量子回路、実行条件、実行結果、確認内容などをまとめて保存　何が生成され、どのように実行され、結果に至ったかをあとから確認",
-      items: [
-        { title: "量子回路", body: "生成または選択した量子回路" },
-        { title: "コード", body: "実行に使用した実装コード" },
-        { title: "実行条件", body: "フレームワーク、シミュレータ、ショット数、シードなどの条件" },
-        { title: "実行結果", body: "記録された実行から得られた出力" },
-        { title: "確認内容", body: "実行結果に対して完了した確認" },
-        { title: "出典", body: "量子回路に関連する参考情報" },
-      ],
-    },
-    frameworks: {
-      label: "フレームワーク",
-      title: "さまざまな量子フレームワークに対応",
-      body: "Qiskit、Cirq、PennyLaneなど、さまざまな量子フレームワークに対応　開発環境や目的に合わせて、使用するフレームワークを選択",
-      items: ["Qiskit", "Cirq", "PennyLane"],
-    },
-    principles: {
-      label: "原則",
-      title: "Leona Quantumが大切にすること",
-      items: [
-        { title: "結果だけでなく、検証内容も示す", body: "確認できない結果は、検証済みとして扱いません。検証できなかった場合も、そのまま記録します。" },
-        { title: "公開できる研究は、誰でも確認できる形に", body: "共有された研究を再利用できるよう、Atlasは公開しています。" },
-        { title: "非公開の研究データは、初めから保護", body: "Studioの内容は利用者のものです。非公開ワークスペースの作業が自動的に公開されることはありません。" },
-        { title: "さまざまな量子フレームワークに対応", body: "Qiskit、Cirq、PennyLaneなど、対応フレームワークで作業し、目的に合った環境を選べます。" },
-      ],
-    },
-    cta: {
-      label: "始める",
-      title: "次の量子回路開発を、Leona Quantumで",
-      body: "Leona Quantumで全く新しい量子回路生成を体験",
-      primary: "ワークスペースを開く",
-      secondary: "Atlasを見る",
     },
   },
 };
@@ -549,18 +463,18 @@ export const PRICING_COPY: Record<PublicLocale, {
   plans: Array<{ name: string; price: string; cadence: string; features: string[]; action: string; tone: "quiet" | "featured" }>;
 }> = {
   en: {
-    hero: { title: "A clear path from first run to team work.", body: "Start free, keep private work in Studio, and move up when you need more verification capacity, export tooling, or shared R&D controls." },
+    hero: { title: "A plan for your quantum work.", body: "Start free. Choose more capacity or sharing options as your work grows." },
     plans: [
-      { name: "Free", price: "$0", cadence: "per user, per month", features: ["Full public Atlas", "Weekly agent runs", "Private artifacts", "Browser simulation"], action: "Try the preview", tone: "quiet" },
+      { name: "Free", price: "$0", cadence: "per user, per month", features: ["Full public Atlas", "Weekly agent runs", "Private artifacts", "Browser simulation"], action: "Open workspace", tone: "quiet" },
       { name: "Plus", price: "$50", cadence: "per user, per month", features: ["Everything in Free", "More weekly runs", "More private artifacts", "Wider browser simulation"], action: "Join early access", tone: "featured" },
       { name: "Professional", price: "$240", cadence: "per user, per month", features: ["Everything in Plus", "Share outside your workspace", "Read-only or editable sharing", "More runs and artifacts", "Widest browser simulation"], action: "Contact us", tone: "quiet" },
       { name: "Enterprise", price: "$420+", cadence: "per user, per month", features: ["Everything in Professional", "Allowances agreed with you", "Private-corpus conversations", "Named onboarding contact"], action: "Talk to sales", tone: "quiet" },
     ],
   },
   ja: {
-    hero: { title: "まずは個人で試し、そのままチームで研究へ。", body: "無料で始め、非公開の研究はStudioに保存できます。検証できる実行回数、エクスポート、共同研究の管理が必要になったら次のプランへ進めます。" },
+    hero: { title: "研究に合ったプランを選ぶ。", body: "無料で始められます。研究の規模に合わせて、実行・保存件数や共有機能を選べます。" },
     plans: [
-      { name: "Free", price: "$0", cadence: "1ユーザーあたり月額", features: ["公開Atlasのすべて", "週ごとのエージェント実行", "非公開の回路・実行記録", "ブラウザ実行"], action: "プレビューを試す", tone: "quiet" },
+      { name: "Free", price: "$0", cadence: "1ユーザーあたり月額", features: ["公開Atlasのすべて", "週ごとのエージェント実行", "非公開の回路・実行記録", "ブラウザ実行"], action: "ワークスペースを開く", tone: "quiet" },
       { name: "Plus", price: "$50", cadence: "1ユーザーあたり月額", features: ["Freeのすべて", "実行回数を拡大", "保存件数を拡大", "より広いブラウザ実行"], action: "早期アクセスに参加", tone: "featured" },
       { name: "Professional", price: "$240", cadence: "1ユーザーあたり月額", features: ["Plusのすべて", "ワークスペース外への共有", "閲覧のみ／編集可を選択", "実行と保存をさらに拡大", "最も広いブラウザ実行"], action: "お問い合わせ", tone: "quiet" },
       { name: "Enterprise", price: "$420+", cadence: "1ユーザーあたり月額", features: ["Professionalのすべて", "利用上限は個別に調整", "社内データに関する相談", "導入と評価の担当窓口"], action: "営業担当に相談", tone: "quiet" },
@@ -677,9 +591,9 @@ export const CONTACT_COPY: Record<PublicLocale, {
   topics: string[];
 }> = {
   en: {
-    overline: "Contact queue",
-    title: "Tell us what you are trying to build or validate.",
-    body: "Leona Quantum is building an evidence layer around quantum software: public research, private workspaces, and execution that can be inspected. Send a short brief and we’ll take it from there.",
+    overline: "Contact",
+    title: "Tell us what you are working on.",
+    body: "Get in touch about product access, a research project, or working together.",
     panelTitle: "Good reasons to write",
     reasons: ["Research workflows and early product access", "Enterprise R&D and private-corpus conversations", "Public research contributions and technical feedback", "Press, partnerships, and speaking"],
     // One sentence, and it is the one a sender needs: what the button does.
@@ -697,13 +611,13 @@ export const CONTACT_COPY: Record<PublicLocale, {
       message: "Message",
       placeholder: "What are you building, and what evidence or access would help?",
       submit: "Prepare inquiry",
-      status: "Your email app should open with the inquiry prepared. Send it to add the note to the queue.",
+      status: "Your message is ready in your email app. Review it and send it there.",
       send: "Send inquiry",
       sending: "Sending…",
-      sent: "Thanks — that reached us. We reply from a person, usually within a couple of days.",
-      failed: "That did not send. Try again in a moment, or write to us directly.",
+      sent: "Your message has been sent. We will reply to the email address you provided.",
+      failed: "Your message could not be sent. Your text is still here; please try again.",
     },
-    noteSends: "We reply to the address you give us. Nothing else is collected.",
+    noteSends: "We use the details you provide to respond to your inquiry.",
     topics: ["Product access", "Research workflow", "Enterprise R&D", "Public research contribution", "Other"],
   },
   ja: {
@@ -724,88 +638,46 @@ export const CONTACT_COPY: Record<PublicLocale, {
       status: "内容を確認してメールを送信してください。",
       send: "送信",
       sending: "送信中…",
-      sent: "送信しました。担当者より数日以内にご返信します。",
+      sent: "送信しました。ご記入のメールアドレスに返信します。",
       failed: "送信できませんでした。しばらくしてからもう一度お試しください。",
     },
-    noteSends: "ご記入のメールアドレスにご返信します。その他の情報は取得しません。",
+    noteSends: "お問い合わせへの返信に、ご記入の情報を使用します。",
     topics: ["プロダクトへのアクセス", "研究ワークフロー", "企業R&D", "公開研究への投稿", "その他"],
   },
 };
 
 export const WORKSPACE_LANDING_COPY: Record<PublicLocale, {
-  overline: string;
-  title: string;
-  body: string;
-  primary: string;
-  /**
-   * The same call to action for a reader who already has what `primary` asks
-   * them to request. Both ship in the cached HTML; CSS picks one — see the
-   * comment on this page's hero actions for why it cannot be picked here.
-   */
-  primarySignedIn: string;
-  secondary: string;
-  loopLabel: string;
-  loopTitle: string;
-  loop: Array<{ kicker: string; title: string; body: string }>;
-  computeLabel: string;
-  computeTitle: string;
-  compute: Array<{ title: string; body: string }>;
-  foundationsLabel: string;
-  foundationsTitle: string;
-  foundationsBody: string;
-  codeLink: string;
+  overline: string; title: string; body: string; primary: string; secondary: string;
+  loopLabel: string; loopTitle: string;
+  loop: Array<{ title: string; body: string }>;
 }> = {
   en: {
-    overline: "Personal quantum workspace",
-    title: "Turn a quantum question into work you can reopen.",
-    body: "Leona Quantum connects a guided workflow to a guarded simulator, verification evidence, and a personal Studio for editing and keeping saved work. Every account starts with its own workspace; prompts, runs, and saved artifacts are private by default.",
-    primary: "Request workspace access",
-    primarySignedIn: "Open your workspace",
-    secondary: "Start from the Atlas",
-    loopLabel: "One personal loop",
-    loopTitle: "Research, Studio, and execution stay connected.",
+    overline: "Your quantum workspace",
+    title: "Build, inspect, and continue your research.",
+    body: "Use Nala to develop quantum code, Studio to edit and run circuits, and notebooks to keep notes alongside your results. Your work is private by default.",
+    primary: "Open workspace",
+    secondary: "Explore the Atlas",
+    loopLabel: "From question to saved work",
+    loopTitle: "Keep each experiment connected",
     loop: [
-      { kicker: "01 / RUN", title: "Ask in natural language", body: "Turn a question into a visible plan, generated implementation, simulation, verification, and a readable answer." },
-      { kicker: "02 / STUDIO", title: "Inspect and continue", body: "Open a saved circuit, switch framework variants, edit the implementation, and send the next version through the same evidence path." },
-      { kicker: "03 / RECORD", title: "Keep the record", body: "Private artifacts keep code, run records, verification, exports, provenance, resources, and limitations together." },
+      { title: "Describe the task", body: "Give Nala the problem, constraints, and framework you want to use. Review the plan before execution." },
+      { title: "Inspect the result", body: "Read the code, execution settings, outputs, and checks for the recorded run, including failures and limitations." },
+      { title: "Save and continue", body: "Organize circuits in Studio, edit the next version, and choose what to share." },
     ],
-    computeLabel: "Compute roadmap",
-    computeTitle: "Use the right execution lane when the product is ready.",
-    compute: [
-      { title: "CPU simulation", body: "Current supported path for small, reproducible verified workflows." },
-      { title: "GPU simulation", body: "Planned heavy-compute lane for larger circuits; provider, limits, and cost remain explicit." },
-      { title: "QPU access", body: "Planned hardware lane with estimates, attestation, and confirmation before spend." },
-    ],
-    foundationsLabel: "Open foundations",
-    foundationsTitle: "Review the engineering boundary.",
-    foundationsBody: "The public research surface is open for review, while authenticated workspaces, credentials, and saved artifacts remain account-scoped.",
-    codeLink: "Read the public contribution notes",
   },
   ja: {
-    overline: "個人量子ワークスペース",
-    title: "量子の問いを、再現できる研究成果へ。",
-    body: "Leona Quantumは、ガイド付きのワークフローをシミュレータ、検証記録、そして編集と保存を担う個人用Studioにつなぎます。各アカウントには専用ワークスペースが用意され、質問、実行、保存した回路・実行結果は初期状態で非公開です。",
-    primary: "利用を相談する",
-    primarySignedIn: "ワークスペースを開く",
-    secondary: "Atlasから始める",
-    loopLabel: "個人の研究ループ",
-    loopTitle: "RunとStudioをひとつにつなぐ。",
+    overline: "量子ワークスペース",
+    title: "作成、検証から、次の研究へ。",
+    body: "Nalaで量子コードを作成し、Studioで回路を編集・実行。ノートブックで結果とノートをまとめられます。作業内容は初期状態では非公開です。",
+    primary: "ワークスペースを開く",
+    secondary: "Atlasを見る",
+    loopLabel: "問いから研究記録へ",
+    loopTitle: "実験の過程をつなぐ",
     loop: [
-      { kicker: "01 / RUN", title: "自然言語でたずねる", body: "質問から回路の作成、シミュレーション、検証、回答までを一貫して支援します。" },
-      { kicker: "02 / STUDIO", title: "確認して続ける", body: "保存した回路を開き、フレームワークを切り替えて編集し、同じ手順で再実行・再検証できます。" },
-      { kicker: "03 / RECORD", title: "記録を残す", body: "コード、実行条件、検証結果、エクスポート、出典、利用した計算資源、制限事項を非公開の研究記録にまとめます。" },
+      { title: "課題を伝える", body: "Nalaに課題、条件、使用するフレームワークを伝え、実行前に計画を確認します。" },
+      { title: "結果を確認する", body: "コード、実行条件、出力、検証内容を確認できます。失敗や制限事項も記録します。" },
+      { title: "保存して続ける", body: "Studioで回路を整理し、次のバージョンを編集。共有する内容も自分で選べます。" },
     ],
-    computeLabel: "計算ロードマップ",
-    computeTitle: "用途に合わせて実行先を選べます。",
-    compute: [
-      { title: "CPUシミュレーション", body: "小規模で再現可能な検証に、現在利用できる実行環境です。" },
-      { title: "GPUシミュレーション", body: "大きな回路向けの実行環境を予定しています。提供元、上限、費用を明示します。" },
-      { title: "量子コンピュータで実行", body: "見積り、実行証明、利用前の確認を備えた実機実行を予定しています。" },
-    ],
-    foundationsLabel: "公開技術を基盤に",
-    foundationsTitle: "公開情報と非公開データの扱いを確認する。",
-    foundationsBody: "Atlasの公開研究は誰でも確認できます。非公開ワークスペースの情報は、参加者だけがアクセスできます。",
-    codeLink: "公開の貢献ガイドを見る",
   },
 };
 

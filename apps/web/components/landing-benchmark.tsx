@@ -27,18 +27,12 @@ export function LandingBenchmark({ copy }: { copy: HomeBenchmarkCopy }) {
             <div className="mj-company-benchmark-score">
               <div className="mj-company-benchmark-score-head">
                 <span>{copy.internalLabel}</span>
-                <span>LEONAQ / 01</span>
               </div>
               <strong>
                 {featured.score.toFixed(1)}
                 <span>%</span>
               </strong>
               <p>{copy.scoreLabel}</p>
-              <div className="mj-company-benchmark-signal" aria-hidden="true">
-                <span />
-                <span />
-                <span />
-              </div>
             </div>
 
             <div className="mj-company-benchmark-chart" role="group" aria-label={copy.chartAria}>

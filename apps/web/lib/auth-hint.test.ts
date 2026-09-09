@@ -178,24 +178,12 @@ test("the stylesheet defaults to the signed-out control when the attribute is ab
   );
 });
 
-test("the workspace landing page does not tell a signed-in reader to request access", () => {
-  // The header was fixed for issue 114; this page's own hero was not, and it
-  // asked a reader who already HAS a workspace to go and request one. It is the
-  // same cached-HTML problem and it reuses the same slots rather than a second
-  // mechanism — so what this pins is that the page keeps BOTH controls and
-  // routes the signed-in one at the app instead of at the contact form.
-  assert.match(workspacePage, /data-auth-slot="out"/);
-  assert.match(workspacePage, /data-auth-slot="in"/);
-  assert.match(workspacePage, /href="\/run">\{copy\.primarySignedIn\}/);
-  assert.match(workspacePage, /href="\/contact">\{copy\.primary\}/);
-
-  // Both locales must carry the signed-in string, or the JA page falls back to
-  // `undefined` and renders an empty button rather than a wrong one — which is
-  // harder to notice, not easier.
+test("the workspace landing page opens the app for every reader", () => {
+  // /run owns the auth gate. The public CTA can serve both states without
+  // a second copy or a contact detour for a new visitor.
+  assert.match(workspacePage, /href="\/run">\{copy\.primary\}/);
+  assert.doesNotMatch(workspacePage, /href="\/contact"/);
   for (const locale of ["en", "ja"] as const) {
-    assert.ok(
-      WORKSPACE_LANDING_COPY[locale].primarySignedIn.length > 0,
-      `${locale} is missing the signed-in call to action`,
-    );
+    assert.ok(WORKSPACE_LANDING_COPY[locale].primary.length > 0);
   }
 });

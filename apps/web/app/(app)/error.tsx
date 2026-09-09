@@ -18,12 +18,12 @@ export default function AppError({
   reset: () => void;
 }) {
   return (
-    <main className="mj-app-error">
+    <div className="mj-app-error">
       <section className="mj-app-error-card" role="alert">
         <p className="mj-eyebrow">Leona Quantum</p>
         <h1>Something went wrong</h1>
         <p className="mj-app-error-body">
-          This page failed to load. Nothing was saved or lost; you can try again.
+          This page could not load. Try again to continue.
         </p>
         <div className="mj-app-error-actions">
           <button type="button" onClick={reset} className="mj-primary-button">
@@ -40,6 +40,6 @@ export default function AppError({
           </details>
         ) : null}
       </section>
-    </main>
+    </div>
   );
 }

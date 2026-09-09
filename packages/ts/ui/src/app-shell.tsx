@@ -17,6 +17,8 @@ export function AppShell({
   headerRight,
   sidebar,
   sidebarCollapsed = false,
+  sidebarReady = true,
+  sidebarIsModal = false,
   onToggleSidebar,
   surfaceLabel,
   locale = "en",
@@ -29,6 +31,8 @@ export function AppShell({
   /** Workspace navigation/history rail. Kept as a slot so the shell stays domain-agnostic. */
   sidebar?: ReactNode;
   sidebarCollapsed?: boolean;
+  sidebarReady?: boolean;
+  sidebarIsModal?: boolean;
   onToggleSidebar?: () => void;
   surfaceLabel?: string;
   locale?: "en" | "ja";
@@ -42,9 +46,19 @@ export function AppShell({
     <div
       className={`mj-shell${sidebar ? " mj-shell--workspace" : ""}`}
       data-sidebar-collapsed={sidebar ? String(sidebarCollapsed) : undefined}
+      data-sidebar-ready={sidebar ? String(sidebarReady) : undefined}
     >
-      {sidebar ? <aside className="mj-shell-sidebar">{sidebar}</aside> : null}
-      <div className="mj-shell-body">
+      <a className="mj-skip-link" href="#workspace-main">{locale === "ja" ? "メインコンテンツへ" : "Skip to content"}</a>
+      {sidebar ? (
+        <>
+          <aside className="mj-shell-sidebar" id="workspace-navigation" role={sidebarIsModal ? "dialog" : undefined} aria-modal={sidebarIsModal || undefined} aria-label={locale === "ja" ? "ワークスペース" : "Workspace"}>
+            {onToggleSidebar ? <button className="mj-sidebar-mobile-close mj-icon-button" type="button" onClick={onToggleSidebar} aria-label={locale === "ja" ? "ナビゲーションを閉じる" : "Close navigation"}>×</button> : null}
+            {sidebar}
+          </aside>
+          {!sidebarCollapsed && onToggleSidebar ? <button className="mj-sidebar-backdrop" type="button" tabIndex={-1} aria-label={locale === "ja" ? "ナビゲーションを閉じる" : "Close navigation"} onClick={onToggleSidebar} /> : null}
+        </>
+      ) : null}
+      <div className="mj-shell-body" inert={sidebarIsModal || undefined}>
         <header className="mj-shell-header">
           {sidebar && onToggleSidebar ? (
             <button
@@ -53,6 +67,7 @@ export function AppShell({
               aria-label={sidebarToggleLabel}
               title={sidebarToggleLabel}
               aria-expanded={!sidebarCollapsed}
+              aria-controls="workspace-navigation"
               onClick={onToggleSidebar}
             >
               <SidebarChevron direction={sidebarCollapsed ? "right" : "left"} />
@@ -84,7 +99,7 @@ export function AppShell({
           ) : null}
           {headerRight ? <div className="mj-shell-right">{headerRight}</div> : null}
         </header>
-        <main className="mj-shell-main">{children}</main>
+        <main className="mj-shell-main" id="workspace-main" tabIndex={-1}>{children}</main>
       </div>
     </div>
   );

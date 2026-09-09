@@ -1,7 +1,7 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
-import { CONTACT_COPY } from "../../../lib/public-copy";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import { CONTACT_COPY, PRICING_COPY } from "../../../lib/public-copy";
 import type { PublicLocale } from "../../../lib/public-locale";
 
 /**
@@ -19,10 +19,14 @@ import type { PublicLocale } from "../../../lib/public-locale";
  */
 
 type Delivery = "sends" | "mailto";
-type Status = { kind: "idle" | "sending" | "sent" | "failed"; detail?: string };
+type Status = { kind: "idle" | "sending" | "sent" | "prepared" | "failed"; detail?: string };
 
 export function ContactForm({ locale }: { locale: PublicLocale }) {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [mailtoHref, setMailtoHref] = useState<string | null>(null);
+  const inFlight = useRef(false);
+  const messageRef = useRef<HTMLTextAreaElement>(null);
+  const controllerRef = useRef<AbortController | null>(null);
   // What the button will actually do. Fetched rather than built in, because
   // this page is served from the CDN and cannot know it at render time.
   //
@@ -33,6 +37,14 @@ export function ContactForm({ locale }: { locale: PublicLocale }) {
   // already claimed this behaviour and the code did not have it.
   const [delivery, setDelivery] = useState<Delivery>("mailto");
   const copy = CONTACT_COPY[locale];
+
+  useEffect(() => {
+    const plan = new URLSearchParams(window.location.search).get("plan");
+    if (plan && PRICING_COPY[locale].plans.some((entry) => entry.name === plan) && messageRef.current && !messageRef.current.value) {
+      messageRef.current.value = locale === "ja" ? `${plan}プランについて相談したいです。` : `I'd like to learn more about the ${plan} plan.`;
+    }
+    return () => controllerRef.current?.abort();
+  }, [locale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,12 +84,16 @@ export function ContactForm({ locale }: { locale: PublicLocale }) {
     // The route hands back a mailto URL with a placeholder subject; keep the
     // address it chose and replace the query with this submission's own.
     const address = mailto.trim().slice("mailto:".length).split("?")[0];
-    window.location.href = `mailto:${address}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setStatus({ kind: "sent", detail: copy.fields.status });
+    const href = `mailto:${address}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setMailtoHref(href);
+    window.location.href = href;
+    setStatus({ kind: "prepared", detail: copy.fields.status });
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // A ref closes the gap before React disables the button on the next render.
+    if (inFlight.current) return;
     const form = event.currentTarget;
     const data = new FormData(form);
     const inquiry = {
@@ -88,41 +104,49 @@ export function ContactForm({ locale }: { locale: PublicLocale }) {
       website: String(data.get("website") ?? ""),
     };
 
+    inFlight.current = true;
+    setMailtoHref(null);
     setStatus({ kind: "sending" });
-    let response: Response;
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    const timeout = window.setTimeout(() => controller.abort(), 20_000);
     try {
-      response = await fetch("/api/contact", {
+      const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(inquiry),
+        signal: controller.signal,
       });
-    } catch {
-      setStatus({ kind: "failed", detail: copy.fields.failed });
-      return;
-    }
 
-    if (response.ok) {
-      setStatus({ kind: "sent", detail: copy.fields.sent });
-      form.reset();
-      return;
-    }
+      if (response.ok) {
+        setStatus({ kind: "sent", detail: copy.fields.sent });
+        form.reset();
+        return;
+      }
 
     // 503 means the route is reachable but has no sender wired up. That is the
     // one failure the visitor can still route around, so hand them the mailto.
-    if (response.status === 503) {
-      const body = (await response.json().catch(() => null)) as { mailto?: string } | null;
-      openMailto(body?.mailto ?? null, inquiry);
-      return;
-    }
+      if (response.status === 503) {
+        const body = (await response.json().catch(() => null)) as { mailto?: string } | null;
+        openMailto(body?.mailto ?? null, inquiry);
+        return;
+      }
 
-    const body = (await response.json().catch(() => null)) as { error?: string } | null;
-    setStatus({
-      kind: "failed",
+      const body = (await response.json().catch(() => null)) as { error?: string } | null;
+      setStatus({
+        kind: "failed",
       // A 400 carries a specific, human reason ("that email address does not
       // look right"); anything else gets the generic line, because the server's
       // wording for a 502 is about our plumbing, not about their message.
-      detail: response.status === 400 && body?.error ? body.error : copy.fields.failed,
-    });
+        detail: response.status === 400 && body?.error ? body.error : copy.fields.failed,
+      });
+    } catch {
+      setStatus({ kind: "failed", detail: copy.fields.failed });
+    } finally {
+      window.clearTimeout(timeout);
+      controllerRef.current = null;
+      inFlight.current = false;
+    }
   }
 
   const sending = status.kind === "sending";
@@ -133,11 +157,11 @@ export function ContactForm({ locale }: { locale: PublicLocale }) {
       : copy.fields.submit;
 
   return (
-    <form className="mj-contact-form" onSubmit={submit}>
-      <label><span>{copy.fields.name}</span><input name="name" required autoComplete="name" maxLength={200} /></label>
-      <label><span>{copy.fields.email}</span><input name="email" required type="email" autoComplete="email" maxLength={320} /></label>
-      <label><span>{copy.fields.topic}</span><select name="topic" defaultValue={copy.topics[0]}>{copy.topics.map((topic) => <option key={topic}>{topic}</option>)}</select></label>
-      <label className="mj-contact-form-wide"><span>{copy.fields.message}</span><textarea name="message" required rows={7} maxLength={5000} placeholder={copy.fields.placeholder} /></label>
+    <form className="mj-contact-form" onSubmit={submit} aria-busy={sending}>
+      <label><span>{copy.fields.name}</span><input name="name" required autoComplete="name" maxLength={200} disabled={sending} /></label>
+      <label><span>{copy.fields.email}</span><input name="email" required type="email" autoComplete="email" maxLength={320} disabled={sending} /></label>
+      <label><span>{copy.fields.topic}</span><select name="topic" defaultValue={copy.topics[0]} disabled={sending}>{copy.topics.map((topic) => <option key={topic}>{topic}</option>)}</select></label>
+      <label className="mj-contact-form-wide"><span>{copy.fields.message}</span><textarea ref={messageRef} name="message" required rows={6} maxLength={5000} placeholder={copy.fields.placeholder} disabled={sending} /></label>
       {/*
         Honeypot. Hidden from people and from assistive technology, so anything
         that arrives filled in came from something that filled every input it
@@ -163,6 +187,7 @@ export function ContactForm({ locale }: { locale: PublicLocale }) {
           Raised by CodeRabbit on PR 661.
         */}
         <p role="status" aria-live="polite">{status.detail ?? ""}</p>
+        {mailtoHref ? <a className="mj-text-link" href={mailtoHref}>{locale === "ja" ? "メール作成画面を開く" : "Open prepared email"}</a> : null}
       </div>
       {/* Describes what the button does, so it has to live where that is known.
           Until the probe resolves it stays on the mailto wording, which is the

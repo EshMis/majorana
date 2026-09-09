@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { getMajoranaAuth, isMajoranaAuthConfigured } from "../lib/auth";
 import { majoranaSignInPath } from "../lib/sign-in";
 import { PUBLIC_SHELL_COPY, type PublicLocale } from "../lib/public-locale";
@@ -7,6 +8,7 @@ import { LanguageToggle } from "./language-toggle";
 import { LeonaWordmark } from "./leona-wordmark";
 import { ThemeToggle } from "./theme-toggle";
 import { AuthStatus } from "./auth-status";
+import { PublicNavigation } from "./public-navigation";
 
 // The repository moved to the Leona-Quantum organisation on 2026-08-14. The old
 // address still 301s, so nothing was broken — it was just the pre-move name, on
@@ -83,11 +85,10 @@ export async function PublicSite({
   }
   const copy = PUBLIC_SHELL_COPY[resolvedLocale];
   const publicNav = [
-    { href: "/", label: copy.nav.product },
+    { href: "/workspace", label: copy.nav.product },
+    { href: "/repository", label: copy.nav.repository },
     { href: "/about", label: copy.nav.about },
     { href: "/pricing", label: copy.nav.pricing },
-    { href: "/repository", label: copy.nav.repository },
-    { href: "/workspace", label: copy.nav.workspace },
     { href: "/contact", label: copy.nav.contact },
   ];
   // `getMajoranaAuth()` → `withAuth()` → `headers()` reaches a Dynamic API, and
@@ -112,7 +113,7 @@ export async function PublicSite({
   const primaryAction = user
     ? { href: "/run", label: copy.actions.workspace }
     : signInHref
-      ? { href: signInHref, label: copy.actions.signIn }
+      ? { href: signInHref, label: copy.actions.workspace }
       : { href: "/contact", label: copy.actions.talk };
 
   return (
@@ -138,26 +139,18 @@ export async function PublicSite({
     <main lang={resolvedLocale} className={["mj-public-site", className].filter(Boolean).join(" ")}>
       <div className="mj-public-frame">
         <header className="mj-public-header">
-          <a className="mj-public-brand" href="/" aria-label={copy.brandHome} title={copy.brandHome}>
+          <Link className="mj-public-brand" href="/" aria-label={copy.brandHome} title={copy.brandHome}>
             <LeonaWordmark className="lq-wordmark--public-header" />
-          </a>
-          <nav className="mj-public-nav" aria-label={resolvedLocale === "ja" ? "公開ナビゲーション" : "Public navigation"}>
-            {publicNav.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                aria-current={activePath === item.href ? "page" : undefined}
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
-          {showLanguageToggle ? <LanguageToggle locale={resolvedLocale} /> : null}
-          <ThemeToggle locale={resolvedLocale} />
+          </Link>
+          <PublicNavigation items={publicNav} activePath={activePath} locale={resolvedLocale}>
+            {showLanguageToggle ? <LanguageToggle locale={resolvedLocale} label={resolvedLocale === "ja" ? "言語" : "Language"} /> : null}
+            <ThemeToggle locale={resolvedLocale} />
+          </PublicNavigation>
+          <div className="lq-public-auth">
           {chrome === "static" ? (
             <AuthStatus
               signOutLabel={copy.actions.signOut}
-              signInLabel={copy.actions.signIn}
+              signInLabel={copy.actions.workspace}
               workspaceLabel={copy.actions.workspace}
               talkLabel={copy.actions.talk}
               fallbackSignInHref={signInHref ?? "/auth/sign-in"}
@@ -174,33 +167,36 @@ export async function PublicSite({
               </a>
             </>
           )}
+          </div>
         </header>
 
         {children}
 
         <footer className="mj-public-footer">
           <div className="mj-public-footer-brand">
-            <a className="mj-public-brand" href="/" aria-label={copy.brandHome}>
+            <Link className="mj-public-brand" href="/" aria-label={copy.brandHome}>
               <LeonaWordmark className="lq-wordmark--public-footer" />
-            </a>
+            </Link>
             <p>{copy.footer.promise}</p>
           </div>
           <div className="mj-public-footer-links">
             <div>
               <span>{copy.footer.explore}</span>
-              <a href="/repository">{copy.nav.repository}</a>
-              <a href="/workspace">{copy.nav.workspace}</a>
-              <a href="/pricing">{copy.nav.pricing}</a>
+              <Link href="/workspace">{copy.nav.workspace}</Link>
+              <Link href="/repository">{copy.nav.repository}</Link>
+              <Link href="/notebooks">{copy.nav.notebooks}</Link>
+              <Link href="/qapps">{copy.nav.qapps}</Link>
             </div>
             <div>
               <span>{copy.footer.company}</span>
-              <a href="/about">{copy.nav.about}</a>
-              <a href="/contact">{copy.footer.contact}</a>
+              <Link href="/about">{copy.nav.about}</Link>
+              <Link href="/pricing">{copy.nav.pricing}</Link>
+              <Link href="/contact">{copy.footer.contact}</Link>
             </div>
             <div>
               <span>{copy.footer.legal}</span>
-              <a href="/privacy">{copy.footer.privacy}</a>
-              <a href="/terms">{copy.footer.terms}</a>
+              <Link href="/privacy">{copy.footer.privacy}</Link>
+              <Link href="/terms">{copy.footer.terms}</Link>
             </div>
           </div>
           <div className="mj-public-footer-bottom">

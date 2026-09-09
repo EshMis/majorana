@@ -56,6 +56,7 @@ export function NotebookView({
   onCellAction,
   grades,
   gradingCellIds,
+  busy = false,
 }: {
   cells: NotebookCellView[];
   locale?: PublicLocale;
@@ -67,6 +68,7 @@ export function NotebookView({
   grades?: Record<string, NotebookCellGrade>;
   /** Cells whose attempt is in the sandbox right now. */
   gradingCellIds?: ReadonlySet<string>;
+  busy?: boolean;
 }) {
   const copy = WORKSPACE_COPY[locale].notebooks;
   if (!cells.length) return null;
@@ -78,6 +80,7 @@ export function NotebookView({
           cell={cell}
           copy={copy}
           framework={framework}
+          busy={busy}
           onCellAction={onCellAction}
           grade={grades?.[cell.id]}
           grading={gradingCellIds?.has(cell.id) ?? false}
@@ -87,7 +90,7 @@ export function NotebookView({
           // cell would sit on "Running your code…" and its finished verdict would
           // never arrive. Greptile caught it on PR 832. One at a time is also the
           // honest reading of a single sandbox dispatch per attempt.
-          locked={(gradingCellIds?.size ?? 0) > 0}
+          locked={busy || (gradingCellIds?.size ?? 0) > 0}
         />
       ))}
     </div>
@@ -102,6 +105,7 @@ function NotebookCellCard({
   grade,
   grading,
   locked,
+  busy,
 }: {
   cell: NotebookCellView;
   copy: NotebookCopy;
@@ -110,6 +114,7 @@ function NotebookCellCard({
   grade?: NotebookCellGrade;
   grading?: boolean;
   locked?: boolean;
+  busy?: boolean;
 }) {
   const [attemptOpen, setAttemptOpen] = useState(false);
   const [attemptText, setAttemptText] = useState("");
@@ -117,10 +122,9 @@ function NotebookCellCard({
   const showCheckAttempt = cell.role !== null && CHECKABLE_ROLES.has(cell.role);
 
   function submitAttempt() {
-    if (!onCellAction || !attemptText.trim()) return;
+    if (!onCellAction || !attemptText.trim() || locked) return;
     onCellAction(cell.id, "checkAttempt", attemptText);
     setAttemptOpen(false);
-    setAttemptText("");
   }
 
   return (
@@ -130,12 +134,12 @@ function NotebookCellCard({
         <span className="mj-notebook-cell-pill" data-status={cell.status}>{copy.cellStatus[cell.status]}</span>
         {onCellAction ? (
           <div className="mj-notebook-cell-actions mj-library-row-actions">
-            <button type="button" onClick={() => onCellAction(cell.id, "explain")}>{copy.actionExplain}</button>
-            <button type="button" onClick={() => onCellAction(cell.id, "simplify")}>{copy.actionSimplify}</button>
-            <button type="button" onClick={() => onCellAction(cell.id, "figure")}>{copy.actionAddFigure}</button>
-            <button type="button" onClick={() => onCellAction(cell.id, "exercise")}>{copy.actionExercise}</button>
+            <button type="button" disabled={busy} onClick={() => onCellAction(cell.id, "explain")}>{copy.actionExplain}</button>
+            <button type="button" disabled={busy} onClick={() => onCellAction(cell.id, "simplify")}>{copy.actionSimplify}</button>
+            <button type="button" disabled={busy} onClick={() => onCellAction(cell.id, "figure")}>{copy.actionAddFigure}</button>
+            <button type="button" disabled={busy} onClick={() => onCellAction(cell.id, "exercise")}>{copy.actionExercise}</button>
             {showExplainError ? (
-              <button type="button" onClick={() => onCellAction(cell.id, "explainError")}>
+              <button type="button" disabled={busy} onClick={() => onCellAction(cell.id, "explainError")}>
                 {copy.actionExplainError}
               </button>
             ) : null}

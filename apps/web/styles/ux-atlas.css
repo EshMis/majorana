@@ -1,0 +1,22 @@
+.mj-atlas-overview { display: grid; gap: var(--sp-3); margin-block: var(--sp-3) var(--sp-6); }
+.mj-atlas-overview > p { margin: 0; max-width: 68ch; color: var(--text-1); }
+.mj-atlas-overview nav { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); }
+.mj-atlas-overview a { display: inline-flex; align-items: center; min-height: var(--sp-10); color: var(--accent); font-weight: 500; text-decoration: underline; text-underline-offset: var(--sp-1); }
+.mj-repository-controls { gap: var(--sp-3); }
+.mj-repository-controls input { min-height: calc(var(--sp-10) + var(--sp-1)); }
+.mj-repository-category-nav { overflow-x: auto; flex-wrap: nowrap; padding-bottom: var(--sp-2); }
+.mj-repository-category-nav a { flex-shrink: 0; min-height: var(--sp-10); padding-inline: var(--sp-4); display: inline-flex; align-items: center; }
+.mj-repository-search-status { min-height: var(--sp-5); margin: 0; color: var(--text-1); font-size: var(--fs-12); }
+.mj-repo-card { padding: var(--sp-5); }
+.mj-repo-card h3 { font-size: var(--fs-16); line-height: 1.5; }
+.mj-repo-card-top { row-gap: var(--sp-2); }
+.mj-repo-card-foot, .mj-repo-card-links { flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
+.mj-repo-card-links :is(a, button) { min-height: var(--sp-8); }
+.mj-repository-browser :is(button, a, input, summary):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 720px) {
+  .mj-repo-card { padding: var(--sp-4); }
+  .mj-repo-card-foot { align-items: flex-start; flex-direction: column; }
+  .mj-repo-card-links { width: 100%; }
+  .mj-repo-card-links :is(a, button), .mj-facet-chip, .mj-facet-option { min-height: var(--sp-10); }
+  .mj-facet-groups { grid-template-columns: minmax(0, 1fr); }
+}

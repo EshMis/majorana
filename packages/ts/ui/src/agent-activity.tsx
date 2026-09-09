@@ -148,7 +148,7 @@ function ActivityDisclosure<TDetail>({
           </span>
         </span>
       </summary>
-      <div className="mj-agent-activity-body">{renderDetail(item)}</div>
+      {open ? <div className="mj-agent-activity-body">{renderDetail(item)}</div> : null}
     </details>
   );
 }

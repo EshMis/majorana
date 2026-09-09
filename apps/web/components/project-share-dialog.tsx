@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ShareRefused,
+  SharedProjectUnavailable,
   expiresSoon,
   grantProjectShare,
   hasExpired,
@@ -55,24 +56,29 @@ export function ProjectShareDialog({
   const [error, setError] = useState<string | null>(null);
   const [confirmingStopAll, setConfirmingStopAll] = useState(false);
   const [forbidden, setForbidden] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loading, setLoading] = useState(true);
   // null until read, and null FOREVER against an API that predates contracts
   // 2.8.0 — the control stays hidden rather than rendering a guessed number that
   // saving would then make real.
   const [limit, setLimit] = useState<number | null>(null);
   const [limitDraft, setLimitDraft] = useState("");
   const emailRef = useRef<HTMLInputElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
   const refresh = useCallback(async () => {
+    setLoading(true);
+    setLoadFailed(false);
     try {
       const rows = await loadProjectShares(projectId);
       setShares(rows);
       onCountChange?.(rows.length);
       setForbidden(false);
-    } catch {
-      // Indistinguishable here from a refusal, so it is reported as the thing
-      // that is true either way: this list could not be read.
-      setShares([]);
-      setForbidden(true);
+    } catch (cause) {
+      if (cause instanceof SharedProjectUnavailable) setForbidden(true);
+      else setLoadFailed(true);
+    } finally {
+      setLoading(false);
     }
   }, [projectId, onCountChange]);
 
@@ -82,7 +88,28 @@ export function ProjectShareDialog({
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+      if (event.key !== "Tab") return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const controls = [...dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), a[href], [tabindex="0"]',
+      )].filter((element) => element.getClientRects().length > 0 && !element.closest('[hidden], [inert]'));
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (!first || !last) {
+        event.preventDefault();
+        dialog.focus();
+      } else if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -96,7 +123,7 @@ export function ProjectShareDialog({
   // returns to whatever opened it, which is the share button on that row.
   useEffect(() => {
     const opener = document.activeElement;
-    emailRef.current?.focus();
+    (emailRef.current ?? dialogRef.current)?.focus();
     return () => {
       if (opener instanceof HTMLElement && document.contains(opener)) opener.focus();
     };
@@ -216,8 +243,10 @@ export function ProjectShareDialog({
         if (event.target === event.currentTarget) onClose();
       }}>
       <div
+        ref={dialogRef}
         className="mj-share-dialog"
         role="dialog"
+        tabIndex={-1}
         aria-modal="true"
         aria-label={copy.title(projectName)}
         onMouseDown={(event) => event.stopPropagation()}
@@ -228,6 +257,7 @@ export function ProjectShareDialog({
             read once the decision is already made. */}
         <p className="mj-share-warning">{copy.outsideWarning}</p>
 
+        {loadFailed ? <div className="leona-workspace-retry" role="alert"><p>{locale === "ja" ? "共有設定を読み込めませんでした。" : "Sharing settings could not be loaded."}</p><button type="button" className="mj-secondary-button" disabled={loading} onClick={() => void refresh()}>{locale === "ja" ? "再試行" : "Retry"}</button></div> : null}
         {forbidden ? (
           <p className="mj-share-error">{copy.adminOnly}</p>
         ) : (
@@ -277,8 +307,8 @@ export function ProjectShareDialog({
           </>
         )}
 
-        {error ? <p className="mj-share-error">{error}</p> : null}
-        {notice ? <p className="mj-share-notice">{notice}</p> : null}
+        {error ? <p className="mj-share-error" role="alert">{error}</p> : null}
+        {notice ? <p className="mj-share-notice" role="status">{notice}</p> : null}
 
         {!forbidden ? (
           <>
@@ -289,9 +319,7 @@ export function ProjectShareDialog({
                 difference between waiting and believing you revoked something
                 you did not. */}
             {shares === null ? (
-              <p className="mj-share-empty" aria-busy="true">
-                {copy.loading}
-              </p>
+              loading ? <p className="mj-share-empty" role="status">{copy.loading}</p> : null
             ) : shares.length === 0 ? (
               <p className="mj-share-empty">{copy.nobody}</p>
             ) : (

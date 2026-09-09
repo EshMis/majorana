@@ -3,6 +3,9 @@ import { describe, it } from "node:test";
 
 import {
   ShareRefused,
+  SharedProjectUnavailable,
+  loadSharedProject,
+  loadSharedProjectArtifacts,
   canContribute,
   loadProjectArtifactLimit,
   setProjectArtifactLimit,
@@ -439,4 +442,17 @@ describe("leaving a project somebody shared with you", () => {
       restore();
     }
   });
+});
+
+
+describe("shared project read failures", () => {
+  for (const read of [loadSharedProject, loadSharedProjectArtifacts]) {
+    it(`${read.name} distinguishes access loss from a temporary server error`, async (t) => {
+      t.mock.method(globalThis, "fetch", async () => new Response(null, { status: 503 }));
+      await assert.rejects(() => read("p-1"), (error) => error instanceof Error && !(error instanceof SharedProjectUnavailable));
+      t.mock.restoreAll();
+      t.mock.method(globalThis, "fetch", async () => new Response(null, { status: 404 }));
+      await assert.rejects(() => read("p-1"), SharedProjectUnavailable);
+    });
+  }
 });

@@ -219,8 +219,9 @@ overrides:
   # installed file, not inferred: the contracts codegen still passed with the
   # override in place because a plain JSON spec never reaches minimatch's glob
   # path, so the break was latent rather than loud.
-# 05-security supply chain: build scripts stay blocked. sharp (next/image) is
-# explicitly denied - we do not use image optimization yet; revisit in Phase 3.
+# 05-security supply chain: build scripts stay blocked. sharp (next/image)
+# uses optional prebuilt binaries for the checked-in About portraits; its
+# postinstall is not required and stays denied.
 allowBuilds:
   '@sentry/cli': false # only used for source-map upload; we don't
   # esbuild (ui-visual render step) ships its platform binary in the @esbuild/<host>

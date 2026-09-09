@@ -1,0 +1,127 @@
+/* Workspace UX, 2026-09-06. Shared colors, type, spacing, and controls only.
+   Disclosures are immediate; this lane introduces no animation. */
+.leona-workspace-state,
+.mj-notebooks-retry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+}
+.leona-workspace-state { min-height: 120px; justify-content: center; }
+.leona-workspace-state p,
+.mj-notebooks-retry p,
+.leona-workspace-retry p { margin: 0; }
+.mj-notebooks-retry { border: 1px solid var(--border-0); border-radius: var(--radius-control); }
+.leona-workspace-retry,
+.leona-workspace-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
+.leona-workspace-retry > :first-child { flex: 1 1 240px; }
+.leona-workspace-feedback { margin: var(--sp-3) 0 0; font-size: var(--fs-13); color: var(--text-1); }
+.leona-workspace-feedback[role="alert"] { color: var(--err); }
+.leona-workspace-back,
+.mj-notebooks-back { display: inline-block; margin-bottom: var(--sp-4); color: var(--text-2); font-size: var(--fs-13); }
+.leona-workspace-back:hover,
+.mj-notebooks-back:hover { color: var(--text-0); }
+
+.leona-workspace-disclosure > summary,
+.leona-studio-qapp-disclosure > summary,
+.mj-notebooks-disclosure > summary {
+  padding: var(--sp-2) 0;
+  color: var(--text-1);
+  cursor: pointer;
+  font-size: var(--fs-13);
+  font-weight: 500;
+  line-height: 1.5;
+}
+.leona-workspace-disclosure > summary:focus-visible,
+.leona-studio-qapp-disclosure > summary:focus-visible,
+.mj-notebooks-disclosure > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-control);
+}
+.leona-workspace-disclosure[open] > summary,
+.mj-notebooks-disclosure[open] > summary { margin-bottom: var(--sp-3); }
+.leona-workspace-disclosure > p { line-height: 1.6; color: var(--text-2); }
+.leona-studio-qapp-disclosure { border-bottom: 1px solid var(--border-0); padding: 0 var(--sp-5); }
+.leona-studio-qapp-disclosure .mj-studio-qapp-request { margin: var(--sp-2) 0 var(--sp-4); padding: var(--sp-4); }
+.mj-studio-empty .mj-secondary-button { margin-inline-start: var(--sp-3); }
+
+.mj-notebooks-scroll { padding-top: var(--sp-6); }
+.mj-notebooks-hero h1 { margin-top: 0; }
+.mj-notebooks-composer { padding: var(--sp-5); gap: 0; }
+.mj-notebooks-composer-content { display: grid; min-width: 0; margin: 0; padding: 0; gap: var(--sp-3); border: 0; }
+.mj-notebooks-disclosure { min-width: 0; }
+.mj-notebooks-composer .mj-notebooks-disclosure { padding-top: var(--sp-2); border-top: 1px solid var(--border-0); }
+.mj-notebooks-disclosure.mj-notebooks-starters { display: block; }
+.mj-notebooks-option-summary { margin-inline-start: var(--sp-3); color: var(--text-2); font-size: var(--fs-12); font-weight: 400; }
+.mj-notebooks-fields { align-items: start; }
+.mj-notebooks-field { align-content: start; }
+.mj-notebooks-pill-group { align-items: flex-start; align-content: flex-start; }
+.mj-notebooks-pill { align-self: start; justify-self: start; min-height: 34px; }
+.mj-notebooks-select { min-height: 36px; }
+.mj-notebooks-seed + .mj-notebooks-seed { margin-top: var(--sp-3); }
+.mj-notebooks-composer-actions { padding-top: var(--sp-2); }
+.mj-notebooks-library-toolbar { align-items: center; gap: var(--sp-4); }
+.mj-notebooks-library-toolbar h2 { margin: 0; font-size: var(--fs-16); font-weight: 500; white-space: nowrap; }
+.mj-notebooks-library-toolbar .mj-library-search { flex: 1 1 240px; }
+.mj-notebook-workspace-meta { flex-wrap: wrap; }
+.mj-notebook-workspace-header { gap: var(--sp-4); }
+.mj-notebook-toolbar-more { position: relative; }
+.mj-notebook-toolbar-more > summary { padding: var(--sp-2) var(--sp-3); border: 1px solid var(--border-0); border-radius: var(--radius-control); }
+.mj-notebook-toolbar-options { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); padding: var(--sp-3); border: 1px solid var(--border-0); border-radius: var(--radius-control); background: var(--bg-1); }
+.mj-notebook-workspace-actions { align-items: flex-start; }
+.mj-notebook-workspace-notebook { overflow-wrap: anywhere; }
+.mj-notebook-version-picker select,
+.mj-notebook-compare-picker select { min-height: 36px; max-width: 100%; }
+.mj-notebook-chat-composer textarea { min-height: 84px; }
+.mj-notebook-chat-thread { overflow-wrap: anywhere; }
+.mj-notebook-structure-notes ul { margin: 0; padding-inline-start: var(--sp-5); }
+.mj-course-module-list { min-width: 0; }
+.mj-course-module-title { overflow-wrap: anywhere; }
+.mj-course-reorder-button { min-width: 34px; min-height: 34px; }
+
+.mj-qapps-hero { margin-bottom: var(--sp-5); }
+.mj-qapps-hero h1 { margin-top: 0; }
+.mj-qapp-card-copy h2 a { color: inherit; text-decoration: none; }
+.mj-qapp-card-copy h2 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.qapp-private-header { align-items: flex-start; }
+.qapp-private-header h1 { font-size: clamp(1.5rem, 3vw, 2.25rem); line-height: 1.2; overflow-wrap: anywhere; }
+.qapp-private-header > div > p:last-child { font-size: var(--fs-14); }
+.qapp-runtime-status { flex-wrap: wrap; align-items: center; line-height: 1.5; }
+.qapp-runtime-status > span { flex: 1 1 240px; }
+.leona-billing-panel .leona-workspace-actions { margin: var(--sp-4) 0; }
+.leona-upgrade-contact-note { margin: var(--sp-5) 0; }
+.mj-share-dialog { max-height: calc(100dvh - var(--sp-8)); overflow-y: auto; overscroll-behavior: contain; }
+
+@media (min-width: 1101px) {
+  .mj-notebook-toolbar-more[open] .mj-notebook-toolbar-options { position: absolute; inset-inline-end: 0; top: 100%; width: 360px; z-index: 5; box-shadow: 0 8px 24px color-mix(in srgb, var(--text-0) 8%, transparent); }
+}
+@media (max-width: 1100px) {
+  .mj-notebook-workspace-body,
+  .mj-course-workspace-body { grid-template-columns: minmax(0, 1fr); }
+  .mj-notebook-workspace-chat { position: static; max-height: none; }
+  .mj-notebook-chat-thread { max-height: 440px; }
+}
+@media (max-width: 720px) {
+  .mj-notebooks-scroll,
+  .mj-notebook-workspace,
+  .mj-course-workspace { padding: var(--sp-5) var(--sp-4) var(--sp-8); }
+  .mj-notebooks-composer { padding: var(--sp-4); }
+  .mj-notebooks-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+  .mj-notebooks-library-toolbar { flex-wrap: wrap; }
+  .mj-notebooks-library-toolbar h2 { width: 100%; }
+  .mj-notebook-workspace-actions { width: 100%; }
+  .mj-notebook-toolbar-options { position: static; }
+  .mj-notebook-title-edit-form { flex-wrap: wrap; }
+  .mj-notebook-title-edit-form input { flex-basis: 100%; }
+  .mj-notebooks-option-summary { display: block; margin: var(--sp-1) 0 0 var(--sp-4); }
+  .leona-studio-qapp-disclosure { padding: 0 var(--sp-3); }
+  .mj-share-dialog { width: calc(100vw - var(--sp-6)); max-height: calc(100dvh - var(--sp-6)); padding: var(--sp-4); }
+  .qapp-private-actions { justify-content: flex-start; }
+  .mj-notebooks-page input,
+  .mj-notebooks-page textarea,
+  .mj-notebooks-page select,
+  .mj-notebook-workspace textarea,
+  .mj-course-workspace textarea { font-size: var(--fs-16); }
+}

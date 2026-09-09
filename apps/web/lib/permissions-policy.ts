@@ -67,10 +67,12 @@ export const DENIED_FEATURES = [
  *
  * This header shipped with `autoplay=()`, which denies the feature to
  * EVERYONE — this origin included. That was correct while the site had no
- * media at all. The landing page now carries a muted, looping, inline product
- * demo, and under `autoplay=()` a browser ignores the `autoplay` attribute
+ * media at all. An earlier landing page added a muted, looping, inline product
+ * demo, and under `autoplay=()` a browser ignored the `autoplay` attribute
  * outright: the reader gets a poster frame and a play button, and the video
  * only ever starts on a click.
+ * The current demo uses manual playback. The explicit same-origin permission
+ * remains in place for media that may need it elsewhere.
  *
  * Measured rather than reasoned about, on leonaqt.com in Chrome:
  *

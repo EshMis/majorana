@@ -6,45 +6,8 @@ import { useEffect, useState } from "react";
 // file is a client component and the suite cannot import one.
 import { paneForHash } from "../../../lib/account-pane-selection";
 
-/**
- * Settings as a sidebar of sections plus one large detail pane (ai-ops 134).
- *
- * The owner asked for the shape the map's information card already uses, so
- * this is deliberately the same construction as `components/map-info-popup.tsx`
- * rather than a second one invented here: a `<details>` rail that collapses on
- * a narrow viewport, a scrolling body beside it, and every section present in
- * the document with the inactive ones `hidden`. The class names are new because
- * the two live in differently-sized dialogs, but the idiom is not.
- *
- * ## Every pane stays mounted
- *
- * Only one is visible, but all six render. Three panels here own live state —
- * `QpuCredentials` and `UsageNow` fetch on mount, `ArchivedChats` holds a
- * pending-delete — and unmounting the inactive ones would re-run those fetches
- * every time someone clicked back to a section they had already opened, and
- * would silently discard a half-finished edit in `AccountSettings`. `hidden`
- * costs one paint and keeps all of that.
- *
- * It also keeps the modal's focus trap correct for free. `account-modal.tsx`
- * filters its tab stops through `getClientRects().length > 0`, and a `hidden`
- * subtree has no client rects, so the controls inside a pane nobody is looking
- * at are already excluded from Tab — no second mechanism, and nothing to keep
- * in sync with this file.
- *
- * ## Why the hash is replaced and never pushed
- *
- * `/account#usage` and `/account#archived` are real entry points: the profile
- * menu links to the first and the archive banner to the second. Those now have
- * to select a pane rather than scroll to one, which is what `paneForHash` does
- * on mount.
- *
- * Clicking a rail item updates the hash so the section stays linkable — with
- * `replaceState`, NOT `pushState`. The modal IS a history entry and closes with
- * `router.back()`; pushing a hash per click would mean the close button walked
- * back through the sections a reader had visited instead of closing the dialog,
- * and the browser's own Back button would do the same. Measured on the map
- * surface first, where the sections are anchors and closing is an href, so the
- * same mistake would not have shown up there.
+/** Settings panes load on first visit and remain mounted to preserve edits.
+ * Fragment changes replace history so closing the modal returns to the workspace.
  */
 
 export type AccountPane = {
@@ -78,6 +41,11 @@ export function AccountPanes({
   // does not read anything from a pane except its id.
   const paneKey = panes.map((pane) => pane.id).join(",");
   const [active, setActive] = useState(first);
+  const [visited, setVisited] = useState(() => new Set([first]));
+
+  useEffect(() => {
+    setVisited((current) => current.has(active) ? current : new Set([...current, active]));
+  }, [active]);
   // Held in state rather than left to the browser so a re-render cannot spring
   // the rail back open under someone who just shut it — the same reason
   // `map-info-popup.tsx` holds its own.
@@ -146,10 +114,13 @@ export function AccountPanes({
     // there is nothing to scroll, so the query gates it rather than a bare
     // scrollIntoView that would yank a desktop layout for no reason.
     if (!window.matchMedia("(max-width: 720px)").matches) return;
+    setNavOpen(false);
     // After paint: the pane is `hidden` until React commits this state, and a
     // hidden element has no box to scroll to.
     requestAnimationFrame(() => {
-      document.getElementById(paneDomId(id))?.scrollIntoView({ block: "start", behavior: "smooth" });
+      const panel = document.getElementById(paneDomId(id));
+      panel?.focus({ preventScroll: true });
+      panel?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     });
   };
 
@@ -160,7 +131,7 @@ export function AccountPanes({
         open={navOpen}
         onToggle={(event) => setNavOpen(event.currentTarget.open)}
       >
-        <summary>{navLabel}</summary>
+        <summary>{panes.find((pane) => pane.id === active)?.label ?? navLabel}</summary>
         <nav aria-label={navLabel}>
           <ul>
             {panes.map((pane) => (
@@ -196,9 +167,10 @@ export function AccountPanes({
             // change, so announcing it is noise. A plain region with the name
             // of the section it holds is what a screen reader needs here.
             role="region"
+            tabIndex={-1}
             aria-label={pane.label}
           >
-            {pane.panel}
+            {pane.id === active || visited.has(pane.id) ? pane.panel : null}
           </div>
         ))}
       </div>

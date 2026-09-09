@@ -125,3 +125,7 @@ a bar, a chevron, a state between them. Three shapes on one baseline, so it surv
 16 px, and it reads to quantum researchers rather than as another orbit-and-electron logo.
 It shipped as the first real favicon this product has had: `apps/web/app/icon.svg` and
 `apple-icon.svg`. There was none before.
+
+### Dark tertiary text (2026-09-08)
+
+The dark `--text-2` token now meets AA for normal text on all three dark surfaces: 5.42:1 on `--bg-0`, 5.07:1 on `--bg-1`, and 4.52:1 on `--bg-2`. This covers captions, axis labels, footer text, and placeholders that share the token. The explicit dark theme and system-theme fallback use the same value.

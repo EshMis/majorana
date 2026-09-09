@@ -56,18 +56,18 @@ type AboutCopy = {
 export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
   en: {
     hero: {
-      label: "LEONA QUANTUM / ABOUT",
-      title: "Quantum technology,\nfor more minds.",
-      body: "Leona Quantum is building a next-generation quantum operating system that carries a problem from natural language through algorithm design, execution, and verification.",
+      label: "About Leona",
+      title: "Quantum software for research and learning.",
+      body: "Leona Quantum brings quantum code generation, execution, and verification into one workspace.",
       signal: ["DESIGN", "EXECUTE", "VERIFY", "REUSE"],
     },
     why: {
-      label: "02 / WHY",
+      label: "Why we build",
       title: "Quantum work is still divided across too many layers.",
       paragraphs: [
-        "The promise of quantum computing is real. Reaching it, however, still means moving between quantum hardware, cloud services, SDKs, algorithm design, implementation, and verification.",
-        "That fragmentation leaves domain experts in chemistry, finance, optimization, and other fields with a high barrier between the problem they understand and the quantum tools that may help them explore it.",
-        "We are building Leona Quantum to make that path coherent: one environment for turning a question into work that can be run, inspected, and used again.",
+        "Quantum development involves hardware, cloud services, SDKs, algorithm design, implementation, and verification.",
+        "Researchers in chemistry, finance, and optimization need to connect the problems they know to quantum methods they can evaluate.",
+        "Leona brings these steps together so researchers can develop a circuit, inspect the result, and continue their work.",
       ],
     },
     build: {
@@ -82,8 +82,8 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
       ],
     },
     direction: {
-      label: "04 / DIRECTION",
-      title: "Make quantum computing a foundation people can keep building on.",
+      label: "Who it is for",
+      title: "Support research and learning.",
       paragraphs: [
         "Our aim is to lower three barriers at once: specialist knowledge, implementation, and verification.",
         "Domain researchers should be able to explore their own questions with quantum methods. Independent researchers should be able to move faster without losing rigor. Learners should be able to understand quantum computing through circuits that actually run.",
@@ -91,9 +91,9 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
       audiences: ["Domain R&D", "Independent research", "Learning & education"],
     },
     team: {
-      label: "01 / TEAM",
-      title: "Different disciplines. One system.",
-      body: "Leona Quantum was founded by three builders working across computer science, physical informatics, quantum machine learning, robotics, and AI for science.",
+      label: "Our team",
+      title: "The founding team",
+      body: "Leona Quantum was founded by three researchers and engineers working across computer science, physical informatics, quantum machine learning, robotics, and AI for science.",
       focusLabel: "Focus areas",
       portraitAlt: "Portrait of {name}",
       members: [
@@ -124,23 +124,23 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
       ],
     },
     cta: {
-      label: "BUILD WITH US",
-      title: "Bring us the quantum question you want to make real.",
-      body: "Talk with us about research, product access, or a problem worth exploring together.",
+      label: "Work with us",
+      title: "Tell us about your research.",
+      body: "Contact us about a research project, product access, or collaboration.",
       primary: "Talk to us",
       secondary: "Open the workspace",
     },
   },
   ja: {
     hero: {
-      label: "LEONA QUANTUM / ABOUT",
-      title: "量子技術を、\n限られた\n専門家だけの\nものにしない。",
-      body: "Leona Quantumは、自然言語で伝えた課題から、量子アルゴリズムの設計、実行、検証までを一貫して支援する、次世代の量子OSを開発しています。",
+      label: "Leonaについて",
+      title: "研究と学びのための量子ソフトウェア。",
+      body: "Leona Quantumは、量子コードの生成、実行、検証をひとつのワークスペースにまとめます。",
       signal: ["設計", "実行", "検証", "再利用"],
     },
     why: {
-      label: "02 / WHY",
-      title: "量子開発は、まだ\n多くの専門領域に\n分断されています。",
+      label: "開発の背景",
+      title: "量子開発には、複数の専門領域が関わります。",
       paragraphs: [
         "量子コンピューティングには大きな可能性があります。一方で、実際の開発には、量子ハードウェアやクラウド、SDK、アルゴリズム、実装、検証と、いくつもの専門領域をまたぐ必要があります。",
         "この複雑さが、化学や金融、最適化などの知見を持つ人と量子技術の間に、まだ高い壁をつくっています。",
@@ -159,8 +159,8 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
       ],
     },
     direction: {
-      label: "04 / DIRECTION",
-      title: "量子コンピューティングを、\n使い続けられる基盤へ。",
+      label: "利用者",
+      title: "研究と学びを支える。",
       paragraphs: [
         "私たちが目指すのは、専門知識、実装、検証という三つの壁を下げることです。",
         "他分野の研究開発者が、自分の課題へ量子技術を試せる。個人研究者が、確かさを失わずに開発を進められる。学習者が、実際に動く回路から理解を深められる。そんな入口をつくり、量子技術に取り組める人を増やしていきます。",
@@ -168,8 +168,8 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
       audiences: ["他分野の研究開発", "個人研究", "学習・教育"],
     },
     team: {
-      label: "01 / TEAM",
-      title: "異なる専門性を、\nひとつのシステムに。",
+      label: "チーム",
+      title: "創業チーム",
       body: "Leona Quantumは、情報工学、物理情報工学、量子機械学習、ロボティクス、生命科学AIなど、異なる領域で研究と開発に取り組んできた3人によって立ち上げられました。",
       focusLabel: "注力領域",
       portraitAlt: "{name}のポートレート",
@@ -201,8 +201,8 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
       ],
     },
     cta: {
-      label: "BUILD WITH US",
-      title: "量子技術で解きたい問いを、\n聞かせてください。",
+      label: "お問い合わせ",
+      title: "取り組んでいる研究を教えてください。",
       body: "研究、プロダクト利用、共同で探求したい課題について、Leona Quantumにご相談ください。",
       primary: "相談する",
       secondary: "ワークスペースを開く",
