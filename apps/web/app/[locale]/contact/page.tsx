@@ -39,10 +39,10 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
           <h1 id="contact-heading">{copy.title}</h1>
           <p>{copy.body}</p>
           <ProductGlyph kind="Nala" />
-          <div className="lq-contact-help" aria-labelledby="contact-help-heading">
+          <section className="lq-contact-help" aria-labelledby="contact-help-heading">
             <h2 id="contact-help-heading">{copy.panelTitle}</h2>
             <ul>{copy.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul>
-          </div>
+          </section>
         </div>
         <div className="mj-contact-form-section mj-contact-form-section--solo">
           <ContactForm locale={locale} />

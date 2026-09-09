@@ -80,10 +80,10 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       <Reveal>
         <section className="lq-home-example" aria-labelledby="home-example-heading">
           <div className="lq-home-example-copy">
-            <p className="mj-section-label">{locale === "ja" ? "アイデアから実装へ" : "From idea to implementation"}</p>
-            <h2 id="home-example-heading">{locale === "ja" ? "回路を見て、コードを理解する。" : "See the circuit. Understand the code."}</h2>
-            <p>{locale === "ja" ? "Nalaに問いを伝え、Studioで回路を編集。コードと結果を保存し、次の実験につなげます。" : "Start with a question in Nala. Refine the circuit in Studio, then keep the code and results for your next experiment."}</p>
-            <a className="mj-text-link" href="/studio">{locale === "ja" ? "Studioを開く" : "Explore Studio"} <span aria-hidden="true">→</span></a>
+            <p className="mj-section-label">{copy.example.label}</p>
+            <h2 id="home-example-heading">{copy.example.title}</h2>
+            <p>{copy.example.body}</p>
+            <a className="mj-text-link" href="/studio">{copy.example.link} <span aria-hidden="true">→</span></a>
           </div>
           <LandingCircuit locale={locale} />
         </section>

@@ -66,6 +66,7 @@ export const HOME_COPY: Record<PublicLocale, {
   hero: { label: string; title: string; lede: string; primary: string; secondary: string };
   promptDemo: { label: string; submit: string; retry: string; prompts: string[] };
   visual: { label: string; demoLabel: string; demoDescription: string; demoFallback: string };
+  example: { label: string; title: string; body: string; link: string };
   product: { label: string; title: string; items: Array<{ title: string; body: string; href: string }> };
   principles: { label: string; title: string; items: Array<{ title: string; body: string }> };
   frameworks: { label: string; items: string[] };
@@ -93,6 +94,12 @@ export const HOME_COPY: Record<PublicLocale, {
       "demoLabel": "See Leona in action",
       "demoDescription": "Follow a circuit from generation and verification to editing in Studio and reuse through the Atlas.",
       "demoFallback": "Open the product demo video"
+    },
+    example: {
+      label: "From idea to implementation",
+      title: "See the circuit. Understand the code.",
+      body: "Start with a question in Nala. Refine the circuit in Studio, then keep the code and results for your next experiment.",
+      link: "Explore Studio",
     },
     product: {
       "label": "The workspace",
@@ -244,6 +251,12 @@ export const HOME_COPY: Record<PublicLocale, {
       "demoLabel": "Leonaの操作を見る",
       "demoDescription": "回路の生成と検証から、Studioでの編集、Atlasを使った再利用までを紹介します。",
       "demoFallback": "プロダクトデモ動画を開く"
+    },
+    example: {
+      label: "アイデアから実装へ",
+      title: "回路を見て、コードを理解する。",
+      body: "Nalaに問いを伝え、Studioで回路を編集。コードと結果を保存し、次の実験につなげます。",
+      link: "Studioを開く",
     },
     product: {
       "label": "ワークスペース",
