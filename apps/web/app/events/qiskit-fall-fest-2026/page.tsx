@@ -183,10 +183,40 @@ export default function FallFestPage() {
           aria-labelledby="program-title"
         >
           <div className={s.sectionHeading}>
-            <h2 id="program-title">登壇者とプログラム</h2>
-            <p>研究の視点と、実装の手触りを。</p>
+            <h2 id="program-title">2日間のプログラム</h2>
+            <p>基礎講義からハンズオン、チームでの制作と成果発表まで。</p>
           </div>
           <Program />
+          <div className={s.hackathonBrief}>
+            <div>
+              <h3>ガイド付きミニハッカソン</h3>
+              <p>
+                4〜5名で1チーム、最大10チームを予定しています。講義や実習で学んだことを使い、メンターと相談しながら、動くNotebookと自分たちの考察をまとめます。
+              </p>
+            </div>
+            <div>
+              <p className={s.challengeLabel}>
+                課題候補 · いずれか1コースを選択
+              </p>
+              <dl className={s.challengeCourses}>
+                <div>
+                  <dt>SQD実験</dt>
+                  <dd>
+                    サンプル数などの条件を変え、推定結果や計算量の違いを比較。Notebook・比較グラフ・考察をまとめます。
+                  </dd>
+                </div>
+                <div>
+                  <dt>最適化への応用</dt>
+                  <dd>
+                    小規模な配送・割り当てなどの架空の問題を定式化し、解法を比較。目的関数・制約と比較結果をNotebookに整理します。
+                  </dd>
+                </div>
+              </dl>
+              <p className={s.programNote}>
+                課題の詳細と提出方法は当日ご案内します。内容は変更になる場合があります。
+              </p>
+            </div>
+          </div>
         </section>
         <section className={s.experience} aria-labelledby="experience-title">
           <div className={s.experienceHeading}>

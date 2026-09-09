@@ -60,3 +60,21 @@ Desktop and mobile screenshots live in `screenshots/qiskit-fall-fest-2026/`.
 The publication branch is `feature/qiskit-fall-fest-keio-publish`, based on current
 `origin/dev`. Unrelated About/landing edits and local-only commits in the original
 checkout are preserved and excluded from this change.
+
+
+## Expanded program from the owner-supplied plan
+
+Source: `QFF-Keio.docx - Google ドキュメント.pdf`, pages 1–2, supplied locally.
+The private planning PDF is not published. Day one now describes Quantum/Qiskit
+101, lectures, SQD instruction and paired hands-on work, team formation, and the
+start of the mini hackathon. Day two describes lectures, mentored implementation,
+Notebook submission, presentations, and feedback/awards. A shared brief covers
+4–5-person teams and the two candidate courses: SQD experiments and optimization.
+The planned talk topics are quantum annealing and quantum machine learning.
+
+The source explicitly says timings are provisional; the page uses broad day
+periods and marks the program planned rather than publishing exact clock times.
+The red annotation on page 1 disagrees with the speaker table and detailed agenda
+about day assignments. Clarification was requested; the existing published
+assignments are retained until confirmed. Host/contact/conduct facts continue to
+follow the owner's newer explicit instructions, not the older planning draft.
