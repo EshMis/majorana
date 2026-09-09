@@ -119,3 +119,18 @@ These are the screen-level specifics that the acceptance criteria do not fix.
 - **Screenshot visual-diff (Playwright, ≤ 0.1% tolerance)** over the `ui-visual` stories.
   The axe/a11y half of that gate shipped; the diff half has not. See `components.md`
   §Accessibility harness.
+
+### Public header single row — 2026-09-09
+
+The public header keeps every navigation link, the language and theme controls and the
+workspace action on one row at every width. Compact gaps and icon-only theme buttons keep
+it there; narrow screens scroll the row horizontally, and a focused control is scrolled
+fully into view. There is no collapsed menu. Owner request, first raised in PR 855 and
+landed with the second design pass (`docs/ui/ux-polish-20260909.md`).
+
+### Pricing cards without prices — 2026-09-09
+
+The four original plan cards, feature lists and per-plan actions remain. Amounts, billing
+cadence, TBD labels and the Recommended badge are omitted; the introduction says once
+that pricing is undecided and features may change, and the signed-in upgrade page says
+the same. Cards use a shorter minimum height so no empty price area is left.
