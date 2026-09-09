@@ -137,7 +137,7 @@ export async function PublicSite({
     // same source the page body and, since PR 710, the page metadata read.
     <main lang={resolvedLocale} className={["mj-public-site", className].filter(Boolean).join(" ")}>
       <div className="mj-public-frame">
-        <header className="mj-public-header">
+        <header className="mj-public-header lq-public-header">
           <a className="mj-public-brand" href="/" aria-label={copy.brandHome} title={copy.brandHome}>
             <LeonaWordmark className="lq-wordmark--public-header" />
           </a>

@@ -119,3 +119,10 @@ These are the screen-level specifics that the acceptance criteria do not fix.
 - **Screenshot visual-diff (Playwright, ≤ 0.1% tolerance)** over the `ui-visual` stories.
   The axe/a11y half of that gate shipped; the diff half has not. See `components.md`
   §Accessibility harness.
+
+### Public header single row — 2026-09-08
+
+The public header retains all six navigation links, language/theme controls and
+existing authentication actions. Compact gaps and icon-only theme buttons keep
+it on one row. On narrow screens the header scrolls horizontally so every action
+remains reachable without wrapping or shrinking text to an unreadable size.

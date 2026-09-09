@@ -3554,3 +3554,39 @@ html[lang="ja"] .mj-company-hero-title-line {
     min-height: 70vh;
   }
 }
+
+/* Keep the original public controls in one row; small screens can scroll it. */
+.mj-public-header.lq-public-header {
+  flex-wrap: nowrap;
+  gap: var(--sp-2);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-0) transparent;
+}
+.lq-public-header > .mj-public-nav {
+  flex: 0 0 auto;
+  order: 0;
+  width: auto;
+  gap: var(--sp-1);
+  overflow: visible;
+}
+.lq-public-header > .mj-public-nav a {
+  padding-inline: var(--sp-1);
+}
+.lq-public-header .mj-public-nav-primary {
+  flex-shrink: 0;
+}
+.lq-public-header > .mj-theme-toggle span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  .lq-public-header .lq-wordmark--public-header { width: 128px; }
+  .lq-public-header > .mj-public-nav { gap: 0; }
+}
