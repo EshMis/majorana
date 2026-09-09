@@ -126,3 +126,10 @@ The public header retains all six navigation links, language/theme controls and
 existing authentication actions. Compact gaps and icon-only theme buttons keep
 it on one row. On narrow screens the header scrolls horizontally so every action
 remains reachable without wrapping or shrinking text to an unreadable size.
+
+### Pricing proposal presentation — 2026-09-08
+
+The undecided-pricing notice leads a split introductory section. Proposed plans
+use an open four-column comparison (two columns on tablets, one on phones),
+with one shared inquiry section instead of repeated TBD prices and card buttons.
+No plan is recommended or presented as a finalized offer.

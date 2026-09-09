@@ -35,47 +35,49 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
   return (
     <PublicSite activePath="/pricing" className="mj-pricing-site" locale={locale} chrome="static">
       <Reveal>
-        <section className="mj-public-page-hero">
-          <h1>{copy.hero.title}</h1>
-          <p>{copy.hero.body}</p>
+        <section className="lq-pricing-intro">
+          <h1>{locale === "ja" ? <>料金とプランを、<br />検討しています。</> : <>Pricing, still<br />in the making.</>}</h1>
+          <div className="lq-pricing-intro-copy">
+            <p>{copy.hero.body}</p>
+            <a className="lq-pricing-text-link" href="/contact">
+              {locale === "ja" ? "利用について相談する" : "Discuss your needs"}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+            </a>
+          </div>
         </section>
       </Reveal>
 
-      <section className="mj-pricing-grid" aria-label={locale === "ja" ? "Leona Quantumのプラン" : "Leona Quantum plans"}>
-        {copy.plans.map((plan, index) => {
-          // With the demo off the Free plan's button goes to /contact, so its
-          // copy label ("Try the preview") is stale — computed once here and
-          // used for BOTH the visible text and the tooltip. They used to be
-          // computed separately, which shipped a button reading "Talk to us"
-          // whose hover tooltip still said "Try the preview".
-          const toDemo = plan.name === "Free" && demoEnabled;
-          const actionLabel = plan.name === "Free" && !demoEnabled
-            ? (locale === "ja" ? "お問い合わせ" : "Talk to us")
-            : plan.action;
-          return (
-          <Reveal delay={index * 90} key={plan.name}>
-            <article className={`mj-pricing-card mj-pricing-card--${plan.tone}`}>
-            <div className="mj-pricing-card-head">
-              <h2>{plan.name}</h2>
-              <span className="mj-pricing-mark">{locale === "ja" ? "検討中" : "Proposed"}</span>
-            </div>
-            <p className="mj-pricing-price">{plan.price}</p>
-            <p className="mj-pricing-cadence">{plan.cadence}</p>
-            <ul>
-              {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
-            </ul>
-            <a
-              className={plan.tone === "featured" ? "mj-primary-button" : "mj-secondary-button"}
-              href={toDemo ? "/demo" : "/contact"}
-              title={actionLabel}
-            >
-              {actionLabel}
-            </a>
-            </article>
-          </Reveal>
-          );
-        })}
-      </section>
+      <Reveal>
+        <section className="lq-pricing-proposals" aria-labelledby="pricing-proposals-title">
+          <div className="lq-pricing-section-heading">
+            <h2 id="pricing-proposals-title">{locale === "ja" ? "検討中のプラン" : "Plans under consideration"}</h2>
+            <p>{locale === "ja" ? "料金・機能構成は未確定です" : "Pricing and features are not final"}</p>
+          </div>
+          <div className="lq-pricing-columns">
+            {copy.plans.map((plan) => (
+              <article className="lq-pricing-plan" key={plan.name}>
+                <h3>{plan.name}</h3>
+                <ul>
+                  {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
+      </Reveal>
+
+      <Reveal>
+        <section className="lq-pricing-contact">
+          <div>
+            <h2>{locale === "ja" ? "まずは、研究の話から。" : "Start with your research."}</h2>
+            <p>{locale === "ja" ? "用途やチームの規模など、ご要望をお聞かせください。" : "Tell us about your use case, your team, and what you need."}</p>
+          </div>
+          <div className="lq-pricing-contact-actions">
+            <a className="mj-primary-button" href="/contact">{locale === "ja" ? "お問い合わせ" : "Get in touch"}</a>
+            {demoEnabled ? <a className="lq-pricing-text-link" href="/demo">{locale === "ja" ? "プレビューを試す" : "Try the preview"}</a> : null}
+          </div>
+        </section>
+      </Reveal>
     </PublicSite>
   );
 }
