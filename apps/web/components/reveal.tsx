@@ -24,7 +24,9 @@ export function Reveal({
       if (media.matches) return;
       animation = element.animate(
         [{ transform: "translateY(8px)" }, { transform: "none" }],
-        { duration: 360, delay: Math.min(delay, 180), easing: "cubic-bezier(.2,.8,.2,1)" },
+        // fill: "backwards" holds the first keyframe through the delay; without it a
+        // delayed element sat at rest and then dropped 8px before settling.
+        { duration: 360, delay: Math.min(delay, 180), easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" },
       );
     }, { threshold: .08 });
     const stop = () => { if (media.matches) animation?.cancel(); };
