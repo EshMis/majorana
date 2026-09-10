@@ -27,7 +27,7 @@ dependencies = [
 # Executing a compiled notebook through a real Jupyter kernel (the reader's
 # experience) is a validation concern, not a runtime one: the product executes
 # cells inside the existing sandbox with no kernel at all.
-execute = ["nbclient>=0.10,<1", "ipykernel>=6.29,<7"]
+execute = ["nbclient>=0.10,<1", "ipykernel>=7.3.0,<8"]
 
 [project.scripts]
 leona-notebooks = "leona_notebooks.cli:main"
