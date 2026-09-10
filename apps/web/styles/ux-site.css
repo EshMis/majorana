@@ -13,10 +13,15 @@
   scrollbar-width: thin;
   scrollbar-color: var(--border-0) transparent;
   scroll-padding-inline: var(--sp-3);
-  padding: var(--sp-2) var(--sp-1) var(--sp-5);
+  /* A shorter bar with taller controls (owner, 2026-09-10): the same 8px above and below,
+     where the bottom used to carry 20px, and every control in the row at --sp-12 (48px)
+     rather than the 44px marketing CTA height. The variable is scoped to the header so the
+     hero and pricing buttons keep --control-h-cta. */
+  --header-control-h: var(--sp-12);
+  padding: var(--sp-2) var(--sp-1);
   border-bottom: var(--border-hairline) solid var(--border-0);
 }
-.mj-public-header .mj-public-brand { display: inline-flex; align-items: center; flex: 0 0 auto; min-height: var(--control-h-cta); }
+.mj-public-header .mj-public-brand { display: inline-flex; align-items: center; flex: 0 0 auto; min-height: var(--header-control-h); }
 .mj-public-header :is(a, button) { scroll-margin-inline: var(--sp-3); }
 .lq-public-navigation { flex: 1 0 auto; min-width: 0; }
 .lq-public-menu-panel, .lq-public-preferences, .lq-public-auth {
@@ -31,13 +36,17 @@
 .mj-public-site .mj-public-nav a {
   display: inline-flex;
   align-items: center;
-  min-height: var(--control-h-cta);
+  min-height: var(--header-control-h);
   padding: 0 var(--sp-2);
 }
 .lq-public-auth { flex: 0 0 auto; }
-.mj-public-site .mj-public-nav-primary { min-height: var(--control-h-cta); }
+.mj-public-site .mj-public-nav-primary { min-height: var(--header-control-h); }
+.mj-public-site .mj-public-nav-signout { display: inline-flex; align-items: center; min-height: var(--header-control-h); }
+/* The toggle groups carry 2px of padding and a 1px border of their own; the buttons give
+   that back so the group, not the button, is the 48px control. */
+.lq-public-preferences :is(.mj-theme-toggle, .mj-language-toggle) { padding: 0; }
 .lq-public-preferences .mj-theme-toggle button,
-.lq-public-preferences .mj-language-toggle button { min-width: var(--control-h-cta); min-height: var(--control-h-cta); }
+.lq-public-preferences .mj-language-toggle button { min-width: var(--header-control-h); min-height: calc(var(--header-control-h) - 2 * var(--border-hairline)); }
 .lq-public-preferences .mj-theme-toggle span { display: none; }
 .mj-public-site :where(a, button, input, textarea, select, summary):focus-visible {
   outline: 2px solid var(--accent);
@@ -80,7 +89,7 @@
   padding-left: var(--sp-8);
   border-left: var(--border-hairline) solid var(--border-0);
 }
-.lq-landing-circuit h2 { margin: var(--sp-3) 0 0; font-size: var(--fs-display-3); font-family: var(--font-display); font-weight: 400; }
+.lq-landing-circuit h4 { margin: var(--sp-3) 0 0; font-size: var(--fs-16); font-weight: 500; line-height: 1.5; }
 .lq-bell-diagram { width: 100%; height: auto; display: block; margin-block: var(--sp-2); }
 .lq-circuit-wires { fill: var(--bg-0); stroke: var(--text-0); stroke-width: 1.5; }
 .lq-circuit-control { fill: var(--text-0); }
@@ -113,6 +122,12 @@
   border-radius: var(--radius-card);
   background: var(--bg-0);
 }
+/* The rotating suggestion is drawn in a layer behind the box (`ComposerGhostOverlay`), so the
+   textarea sits inside a positioned wrapper that takes its flex share. */
+.lq-landing-prompt-section .mj-composer-ghost-wrap { position: relative; display: flex; flex: 1; min-width: 0; }
+/* Full opacity: the shared rule draws the ghost at 78%, which takes --text-2 below AA (3.24:1
+   measured on the cover); at 100% it is the placeholder colour, 5.0:1 light and 5.4:1 dark. */
+.lq-landing-prompt-section .mj-landing-prompt .mj-composer-ghost-overlay { padding: var(--sp-1) 0; color: var(--text-2); opacity: 1; font-size: var(--fs-16); line-height: 1.5; }
 .lq-landing-prompt-section .mj-landing-prompt textarea {
   flex: 1;
   width: 100%;
@@ -146,21 +161,6 @@
 .lq-landing-prompt-section .mj-landing-prompt::after { content: none; animation: none; }
 .lq-landing-prompt-section .mj-landing-prompt-submit:disabled { opacity: .5; cursor: default; }
 .lq-arrow-forward { transform: rotate(180deg); }
-.lq-prompt-example {
-  display: block;
-  margin-top: var(--sp-2);
-  padding: var(--sp-2) 0;
-  border: 0;
-  background: transparent;
-  color: var(--text-1);
-  font: inherit;
-  font-size: var(--fs-13);
-  line-height: 1.5;
-  text-align: left;
-  text-decoration: underline;
-  text-underline-offset: var(--sp-1);
-  cursor: pointer;
-}
 .lq-site-section-heading { margin-bottom: var(--sp-6); }
 .lq-site-section-heading h2, .lq-site-demo h2 { margin: var(--sp-2) 0; font-family: var(--font-display); font-size: var(--fs-display-3); font-weight: 400; }
 .lq-site-products, .lq-site-evidence { padding-block: var(--sp-8); border-top: var(--border-hairline) solid var(--border-0); }
@@ -181,17 +181,12 @@
 .lq-site-product p, .lq-site-principles p { max-width: 48ch; margin: 0; color: var(--text-1); font-size: var(--fs-14); line-height: 1.65; }
 .lq-site-product > span { color: var(--accent); font-size: var(--fs-20); }
 .lq-site-product:hover h3 { color: var(--accent); text-decoration: underline; text-underline-offset: var(--sp-1); }
-.lq-site-demo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); align-items: center; gap: var(--sp-8); margin-block: var(--sp-8) var(--sp-12); padding: var(--sp-6); border: var(--border-hairline) solid var(--border-0); border-radius: var(--radius-card); }
-.lq-site-demo p:not(.mj-section-label) { color: var(--text-1); font-size: var(--fs-14); line-height: 1.65; }
-.lq-site-demo .lq-landing-demo-video { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--radius-control); object-fit: contain; }
+/* The walkthrough: the video alone, across the content width. */
+.lq-site-demo { margin-block: var(--sp-8) var(--sp-12); }
+.lq-site-demo .lq-landing-demo-video { display: block; width: 100%; aspect-ratio: 16 / 9; border: var(--border-hairline) solid var(--border-0); border-radius: var(--radius-card); background: var(--bg-1); object-fit: contain; }
 .lq-site-principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-8); }
 .lq-site-frameworks { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin: var(--sp-8) 0 0; color: var(--text-1); font-size: var(--fs-13); }
 .lq-site-frameworks span { color: var(--text-0); }
-.lq-site-home .mj-company-benchmark { padding-block: var(--sp-8); }
-.lq-site-home .mj-company-benchmark h2, .lq-site-home .mj-company-cross-benchmark h3 { font-family: var(--font-display); font-size: var(--fs-display-3); font-weight: 400; }
-.lq-site-home .mj-company-benchmark-score { background: var(--bg-1); }
-.lq-site-home .mj-company-benchmark-score-head, .lq-site-home .mj-company-benchmark-chart-head { color: var(--text-1); }
-.lq-site-home .mj-company-benchmark-track > span, .lq-site-home .mj-company-cross-benchmark-track > span { animation: none; transition: none; }
 .mj-public-site .mj-company-final-cta { margin-top: var(--sp-8); padding: var(--sp-8) 0; border-top: var(--border-hairline) solid var(--border-0); background: transparent; }
 .mj-public-site .mj-public-page-hero { padding-block: var(--sp-12); }
 .mj-public-site .mj-public-page-hero > p { max-width: 62ch; }
@@ -223,8 +218,8 @@
 .mj-about-site .mj-about-person-name h3 { font-family: var(--font-ui); font-size: var(--fs-20); }
 .mj-about-site .mj-about-person-bio { max-width: 72ch; }
 .mj-about-site .mj-about-person-affiliation { min-height: 0; }
-.mj-about-site .mj-about-person-focus { margin-top: var(--sp-4); padding-top: 0; }
-.mj-about-site .mj-about-person-focus li { color: var(--text-1); }
+
+
 .lq-legal-contents { max-width: var(--composer-max); margin-top: var(--sp-8); }
 .lq-legal-contents h2 { font-size: var(--fs-16); font-weight: 500; }
 .lq-legal-contents ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-6); list-style: none; padding: 0; }
@@ -243,7 +238,6 @@
   .lq-site-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
   .lq-site-product, .lq-site-product:nth-child(n + 4) { grid-column: span 1; }
   .lq-site-product:last-child { grid-column: 1 / -1; }
-  .lq-site-demo { grid-template-columns: minmax(0, 1fr); padding: var(--sp-4); gap: var(--sp-4); }
   .lq-site-principles { grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); }
   .mj-contact-site .mj-contact-layout { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
   .mj-about-site .mj-about-person-card { grid-template-columns: calc(var(--sp-16) * 2) minmax(0, 1fr); gap: var(--sp-5); }

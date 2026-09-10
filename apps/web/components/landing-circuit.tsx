@@ -8,7 +8,7 @@ export function LandingCircuit({ locale }: { locale: PublicLocale }) {
     <figure className="lq-landing-circuit">
       <figcaption>
         <span className="mj-section-label">{locale === "ja" ? "回路の例 · Qiskit" : "Example circuit · Qiskit"}</span>
-        <h2>{locale === "ja" ? "ベル状態をつくる" : "A Bell state, step by step"}</h2>
+        <h4>{locale === "ja" ? "ベル状態をつくる" : "A Bell state, step by step"}</h4>
       </figcaption>
       <svg className="lq-bell-diagram" viewBox="0 0 440 150" aria-hidden="true">
         <g className="lq-circuit-wires">

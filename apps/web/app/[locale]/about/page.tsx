@@ -50,8 +50,7 @@ export default async function AboutPage({
     >
       <section className="mj-about-section mj-about-team" aria-labelledby="about-team-heading">
         <div className="mj-about-team-heading">
-          <div><p className="mj-section-label">Leona Quantum</p><h1 id="about-team-heading">{copy.team.title}</h1></div>
-          <p>{copy.team.body}</p>
+          <h1 id="about-team-heading">{copy.team.title}</h1>
         </div>
         <div className="mj-about-team-grid">
           {copy.team.members.map((member, index) => (
@@ -76,9 +75,6 @@ export default async function AboutPage({
                   </div>
                   <p className="mj-about-person-affiliation">{member.affiliation}</p>
                   <p className="mj-about-person-bio">{member.bio}</p>
-                  <ul className="mj-about-person-focus" aria-label={`${member.name} — ${copy.team.focusLabel}`}>
-                    {member.focus.map((focus) => <li key={focus}>{focus}</li>)}
-                  </ul>
                 </div>
               </article>
             </Reveal>
@@ -87,9 +83,9 @@ export default async function AboutPage({
       </section>
 
       <Reveal>
-        <section className="lq-about-research" aria-labelledby="about-direction-heading">
-          <div><p className="mj-section-label">{copy.direction.label}</p><h2 id="about-direction-heading">{copy.direction.title}</h2></div>
-          <ul>{copy.direction.audiences.map((audience) => <li key={audience}>{audience}</li>)}</ul>
+        <section className="lq-about-vision" aria-labelledby="about-vision-heading">
+          <p className="mj-section-label" id="about-vision-heading">{copy.vision.label}</p>
+          {copy.vision.paragraphs.map((paragraph) => <p key={paragraph.slice(0, 24)}>{paragraph}</p>)}
         </section>
       </Reveal>
 
