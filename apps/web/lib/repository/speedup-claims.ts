@@ -143,14 +143,11 @@ export function speedupClaimCensus(provenance: readonly SpeedupProvenance[]): Sp
  */
 export function speedupCensusSentence(census: SpeedupClaimCensus, locale: PublicLocale): string {
   if (locale === "ja") {
-    return `${census.records} 件の記録が Quantum Algorithm Zoo から引用した速度向上の区分を掲げています。`
-      + `うち ${census.reported.length} 件は一次資料と照合済みで、同等の主張が記載されています。`
-      + `${census.absent.length} 件は照合済みで、記載がありませんでした。`
-      + `残る ${census.unchecked.length} 件は未照合です。`
-      + "最後の一群がもっとも多く、これは判定ではなく作業予定です。";
+    return `${census.records} 件の記録が速度向上の区分を示しています。`
+      + `うち ${census.reported.length} 件は一次資料と照合して一致し、${census.absent.length} 件は一致せず、`
+      + `${census.unchecked.length} 件はまだ照合していません。`;
   }
-  return `${census.records} records carry a speedup class quoted from the Quantum Algorithm Zoo.`
-    + ` ${census.reported.length} have been checked against their own primary paper and it states a comparable`
-    + ` claim; ${census.absent.length} have been checked and it does not; ${census.unchecked.length} have not`
-    + " been checked. The last group is the largest, and it is a worklist rather than a verdict.";
+  return `${census.records} records state a speedup class. ${census.reported.length} have been checked`
+    + ` against their primary paper and match, ${census.absent.length} do not, and ${census.unchecked.length}`
+    + " are not yet checked.";
 }

@@ -93,7 +93,7 @@ const coverageMod = await bundle("apps/web/lib/repository/zoo-coverage.ts", "zoo
 const papersMod = await bundle("apps/web/lib/repository/papers.ts", "papers");
 
 const { PUBLIC_REPOSITORY_ENTRIES } = corpusMod;
-const { ZOO_PARITY_COVERAGE, ZOO_SPEEDUP_PROVENANCE } = intakeMod;
+const { ZOO_PARITY_COVERAGE, ZOO_SPEEDUP_PROVENANCE, ZOO_PARITY_ENTRIES } = intakeMod;
 const { ZOO_LEGACY_COVERAGE, ZOO_NOT_APPLICABLE, ZOO_ROW_SHAPE } = coverageMod;
 const { paperIdFromUrl } = papersMod;
 
@@ -301,6 +301,52 @@ if (AS_JSON) {
       );
     }
     for (const row of unreviewed) console.log(`  shape unreviewed: ${row.name}`);
+  }
+}
+
+// --- the index is not named to a reader (owner directive 2026-09-10, ai-ops issue 217 lane) ---
+//
+// `zooEntry()` builds `verification`, `verificationDetails.method` and the
+// "Speedup class" metadata row the same way for every record, so this checks
+// the whole corpus rather than a sample. It does NOT scan every field for the
+// string "Quantum Algorithm Zoo": several fields (`complexityBasis`, `idea`,
+// and a few `relevance` sentences) are citations that name which of two
+// sources -- the index or the primary paper -- supplied a specific quoted
+// figure, and rewriting those risks corrupting exactly the kind of claim this
+// project's math/citation rules protect. Those are deliberately left alone;
+// this only pins the three fields the 2026-09-10 pass made structurally
+// index-free for every record, plus the two label strings that named it
+// before that pass and must not come back.
+for (const entry of ZOO_PARITY_ENTRIES) {
+  if (/Quantum Algorithm Zoo/.test(entry.verification)) {
+    errors.push(`${entry.slug}: verification names the index -- should read from the record's own primary paper`);
+  }
+  // `method`'s own template is index-free, but it interpolates the
+  // "Complexity basis" metadata value into itself -- and THAT field is
+  // exactly the citation prose the header above says is left alone. So the
+  // template is checked with that one interpolated span subtracted out,
+  // rather than checking the whole rendered string and false-flagging every
+  // record whose complexity citation happens to quote the index by name.
+  const complexityBasis = (entry.metadata ?? []).find((row) => row.label === "Complexity basis")?.value ?? "";
+  const methodWithoutComplexityBasis = (entry.verificationDetails?.method ?? "").split(complexityBasis).join("");
+  if (complexityBasis && /Quantum Algorithm Zoo/.test(methodWithoutComplexityBasis)) {
+    errors.push(`${entry.slug}: verificationDetails.method names the index outside its complexity citation -- should read from the record's own primary paper`);
+  }
+  for (const row of entry.metadata ?? []) {
+    if (row.label === "Secondary source for the speedup class" || row.label === "Section it is filed under") {
+      errors.push(`${entry.slug}: metadata still carries the pre-2026-09-10 index-naming row "${row.label}"`);
+    }
+  }
+}
+// The one record whose caveat spelled the name out in citation-adjacent prose
+// (entries-zoo-parity.ts ~2284) -- pinned individually because caveat text is
+// otherwise per-record free text this checker does not scan in bulk.
+{
+  const pinned = ZOO_PARITY_ENTRIES.find((entry) => entry.slug === "irreducible-representation-matrix-elements");
+  if (!pinned) {
+    errors.push('expected slug "irreducible-representation-matrix-elements" not found -- update this pinned check if it was renamed');
+  } else if (/Quantum Algorithm Zoo|\bthe Zoo entry\b/.test(pinned.verificationDetails?.caveat ?? "")) {
+    errors.push(`${pinned.slug}: caveat still names the index directly`);
   }
 }
 
