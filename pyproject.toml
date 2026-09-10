@@ -27,7 +27,7 @@ dev = [
     # with no kernel. pylatexenc is what `QuantumCircuit.draw("mpl")` needs and what
     # the sandbox guard already allowlists, so local runs match the promise.
     "nbclient>=0.10,<1",
-    "ipykernel>=6.29,<7",
+    "ipykernel>=7.3.0,<8",
     "pylatexenc>=2.10,<3",
     # Needed so the framework-parity tests actually RUN rather than skip. Two
     # defects that cost a full candidate budget each — Cirq's QASM header and its
