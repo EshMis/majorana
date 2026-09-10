@@ -125,7 +125,9 @@
 /* The rotating suggestion is drawn in a layer behind the box (`ComposerGhostOverlay`), so the
    textarea sits inside a positioned wrapper that takes its flex share. */
 .lq-landing-prompt-section .mj-composer-ghost-wrap { position: relative; display: flex; flex: 1; min-width: 0; }
-.lq-landing-prompt-section .mj-landing-prompt .mj-composer-ghost-overlay { padding: var(--sp-1) 0; color: var(--text-2); font-size: var(--fs-16); line-height: 1.5; }
+/* Full opacity: the shared rule draws the ghost at 78%, which takes --text-2 below AA (3.24:1
+   measured on the cover); at 100% it is the placeholder colour, 5.0:1 light and 5.4:1 dark. */
+.lq-landing-prompt-section .mj-landing-prompt .mj-composer-ghost-overlay { padding: var(--sp-1) 0; color: var(--text-2); opacity: 1; font-size: var(--fs-16); line-height: 1.5; }
 .lq-landing-prompt-section .mj-landing-prompt textarea {
   flex: 1;
   width: 100%;
