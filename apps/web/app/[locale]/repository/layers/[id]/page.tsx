@@ -19,6 +19,7 @@ import { isPublicLocale, parsePublicLocale, PUBLIC_LOCALES } from "../../../../.
 import { getRepositoryListEntries } from "../../../../../lib/repository-source";
 import { LAYER_GRAPH } from "../../../../../lib/repository/layer-graph";
 import { isCapability, layerCorpusEntry, layerNode, type LayerCorpusEntry } from "../../../../../lib/repository/layers";
+import { entryVerificationMethods } from "../../../../../lib/repository/entry-verification";
 import { STATE_VOCABULARY } from "../../../../../lib/repository/state-vocabulary";
 import { layerState } from "../../../../../lib/repository/states";
 
@@ -129,7 +130,9 @@ export default async function RepositoryLayerNodePage({
   // changed: the fetch can still be slow or short, and a state page with no
   // corpus renders every other section and omits that one.
   const entries = await getRepositoryListEntries();
-  const corpus: LayerCorpusEntry[] = entries.map(layerCorpusEntry);
+  const corpus: LayerCorpusEntry[] = entries.map((entry) =>
+    layerCorpusEntry({ ...entry, verificationMethods: entryVerificationMethods(entry) }),
+  );
 
   // **Both halves of what the parser returns, because the count is the point.**
   // `resolveOpenIds` says of itself that "the count over the cap is reported

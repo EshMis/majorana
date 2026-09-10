@@ -73,7 +73,7 @@ import {
   type EntryInterface,
   type InterfaceOption,
 } from "./interface.ts";
-import { TOPICS_BY_ID } from "./topics.ts";
+import { roleOf, PUBLIC_REPOSITORY_TOPICS, TOPICS_BY_ID } from "./topics.ts";
 import type { PublicRepositoryListEntry } from "./types.ts";
 
 export type BrowseRow = FoldedRow<PublicRepositoryListEntry>;
@@ -155,8 +155,14 @@ export interface RepositoryBrowseView {
   nextRowLimit: RowLimit | null;
   /** Populated only under `?category=gates` — every matching gate, unfolded and uncapped (master/detail needs them all). */
   gateEntries: PublicRepositoryListEntry[];
-  /** Populated only under `?category=algorithms` — grouped by family, folded, uncapped. */
-  algorithmGroups: Array<{ familyKey: string; rows: BrowseRow[] }>;
+  /**
+   * Populated only under `?category=algorithms` — grouped by METHOD (the
+   * technique facet in `topics.ts`, in that file's order), then benchmark
+   * circuits, then anything with no method topic; folded, uncapped. Grouping
+   * by `algorithmFamily` gave 57 headings, 33 of them over a single entry
+   * (owner, 2026-09-10).
+   */
+  algorithmGroups: Array<{ key: string; label: string; labelJa: string; rows: BrowseRow[] }>;
   /** The ranked-list section actually being sent, after folding AND the cap. Empty under gates/algorithms. */
   shownListRows: BrowseRow[];
   /** The held-out tail actually being sent, after folding AND the cap. */
@@ -300,15 +306,35 @@ export function buildRepositoryBrowseView(
 
   const algorithmGroups = (() => {
     if (category !== "algorithms") return [];
-    const byFamily = new Map<string, PublicRepositoryListEntry[]>();
-    for (const entry of ordered) {
-      const list = byFamily.get(entry.algorithmFamily) ?? [];
+    const methodOrder = PUBLIC_REPOSITORY_TOPICS.filter((topic) => topic.facet === "method");
+    const byKey = new Map<string, PublicRepositoryListEntry[]>();
+    const push = (key: string, entry: PublicRepositoryListEntry) => {
+      const list = byKey.get(key) ?? [];
       list.push(entry);
-      byFamily.set(entry.algorithmFamily, list);
+      byKey.set(key, list);
+    };
+    for (const entry of ordered) {
+      const topics = entry.topics ?? [];
+      // A benchmark circuit is grouped as one whatever technique it exercises:
+      // eight width-scaled MaxCut rings under "QAOA" would read as eight
+      // algorithms.
+      if (roleOf(topics) === "benchmark-circuit") {
+        push("benchmark-circuits", entry);
+        continue;
+      }
+      const method = methodOrder.find((topic) => topics.includes(topic.id));
+      push(method ? method.id : "other", entry);
     }
-    return Array.from(byFamily.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([familyKey, groupEntries]) => ({ familyKey, rows: foldRows(groupEntries, groupOfSlug) }));
+    const groups: Array<{ key: string; label: string; labelJa: string; rows: BrowseRow[] }> = [];
+    for (const topic of methodOrder) {
+      const list = byKey.get(topic.id);
+      if (list?.length) groups.push({ key: topic.id, label: topic.label, labelJa: topic.labelJa, rows: foldRows(list, groupOfSlug) });
+    }
+    const other = byKey.get("other");
+    if (other?.length) groups.push({ key: "other", label: "Other algorithms", labelJa: "その他のアルゴリズム", rows: foldRows(other, groupOfSlug) });
+    const benchmarks = byKey.get("benchmark-circuits");
+    if (benchmarks?.length) groups.push({ key: "benchmark-circuits", label: "Benchmark circuits", labelJa: "ベンチマーク回路", rows: foldRows(benchmarks, groupOfSlug) });
+    return groups;
   })();
 
   const listRows = category === "gates" || category === "algorithms" ? [] : foldRows(ordered, groupOfSlug);

@@ -36,6 +36,7 @@ import {
   layerNode,
   methodsRealizing,
   ownStretchName,
+  alternativesTo,
   refinementsOf,
   routeOf,
   type LayerCitation,
@@ -50,6 +51,7 @@ import {
 } from "./layers.ts";
 import type { PaperRegister } from "./papers.ts";
 import type { StateVocabulary } from "./states.ts";
+import type { VerificationMethodId } from "./verification.ts";
 import { parseTheory, type TheoryMark, type TheorySpan } from "./theory-marks.ts";
 
 /** Why a section is empty. See the block above — the two are not one fact. */
@@ -160,6 +162,19 @@ export interface CardRecord {
   readonly title: string;
   readonly description: string;
   readonly href: string;
+  /**
+   * How the record was verified, as the Atlas badge draws it, and which
+   * frameworks its own code is written in.
+   *
+   * The 2026-09-10 Atlas pass asked for the record's own chrome on the card —
+   * the tier glyph and the framework line are what a reader sees on the browse
+   * card and the record page, and a link that carried neither was the one place
+   * the same record looked different. `verificationMethods` is optional because
+   * the corpus a test feeds the card need not carry it; `frameworks` is a list
+   * because a record with no native code is a fact worth drawing as nothing.
+   */
+  readonly verificationMethods?: readonly VerificationMethodId[];
+  readonly frameworks: readonly string[];
 }
 
 /**
@@ -356,6 +371,23 @@ export interface MethodCard extends CardCommon {
    * no fold here), same as `example`/`implementations` since session 114.
    */
   readonly refinements: CardValue<readonly CardRefinementEntry[]>;
+  /**
+   * *Alternatives*: the other methods filling the same slot, minus the ones
+   * that narrow this one (those are `refinedBy` / `refinements`).
+   *
+   * Read off `alternativesTo`, the same partition the method page draws under
+   * "Different approaches". Added in the 2026-09-10 Atlas pass, when the owner
+   * asked for the elements the record and method pages had and the card did
+   * not: a reader on the card could see what a method narrows and what narrows
+   * it, and not what else fills the slot it fills.
+   */
+  readonly alternatives: CardValue<readonly CardLink[]>;
+  /**
+   * *Makes unnecessary*: the slots this method lets a route skip — the
+   * `bypasses` field, which the process card already draws from the other end
+   * as *Routes that make it unnecessary*. Same pass, same reason as above.
+   */
+  readonly makesUnnecessary: CardValue<readonly CardLink[]>;
   readonly whenItApplies: CardValue<string>;
   /** *Performance*, on the card. `cost` is what the graph calls the field it reads. */
   readonly cost: CardValue<string>;
@@ -700,6 +732,14 @@ function recordsOf(
         title: ja ? entry.titleJa : entry.title,
         description: ja ? entry.descriptionJa : entry.description,
         href: `/repository/${slug}`,
+        verificationMethods: entry.verificationMethods,
+        // The record's own code only — a converted or source-referenced variant
+        // is the Atlas's work, not the record's, and the record page says so
+        // beside the code. Undefined status is the test corpus, which records
+        // one runnable each and never says how.
+        frameworks: (entry.runnable ?? [])
+          .filter((variant) => variant.status === undefined || variant.status === "native")
+          .map((variant) => variant.framework),
       };
     }),
   );
@@ -1032,6 +1072,16 @@ function methodCard(input: CardInput, method: LayerMethod): MethodCard {
       .map((child) => linkFor(graph, child.id, ja))
       .filter((link): link is CardLink => link !== null),
     refinements: refinementEntriesOf(graph, method, ja),
+    alternatives: listOrGap(
+      alternativesTo(graph, method)
+        .map((other) => linkFor(graph, other.id, ja))
+        .filter((link): link is CardLink => link !== null),
+    ),
+    makesUnnecessary: listOrGap(
+      (method.bypasses ?? [])
+        .map((id) => linkFor(graph, id, ja))
+        .filter((link): link is CardLink => link !== null),
+    ),
     contract: contractOf(graph, method, ja),
     whenItApplies: stated(ja ? method.conditionsJa : method.conditions),
     // The researched reason where there is one, not the standing gap note — same
@@ -1167,6 +1217,8 @@ export type CardSectionId =
   | "example"
   | "performance"
   | "refinements"
+  | "alternatives"
+  | "makes-unnecessary"
   | "contested"
   | "implementations"
   | "records"
@@ -1262,6 +1314,13 @@ export function cardSections(card: Card): readonly CardSection[] {
     // sentence — and like Contested it is commentary on the method's standing
     // rather than part of the recipe above it.
     of("refinements", card.refinements),
+    // The two the 2026-09-10 Atlas pass added, between Refinements and
+    // Contested so his two rulings above still hold: Refinements stays after
+    // Performance, Contested stays after both. They are the method's standing
+    // among its neighbours — what else fills the slot, what the slot can skip —
+    // which is the same kind of sentence as Refinements.
+    of("alternatives", card.alternatives),
+    of("makes-unnecessary", card.makesUnnecessary),
     of("contested", card.contested),
     of("implementations", card.implementations),
     of("records", card.records),

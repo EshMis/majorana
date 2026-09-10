@@ -33,10 +33,12 @@ import { paperOwnPageMethods, paperRevealFor } from "../lib/repository/paper-rev
 import { LAYER_GRAPH } from "../lib/repository/layer-graph";
 import { layerNode } from "../lib/repository/layers";
 import { STATE_VOCABULARY } from "../lib/repository/state-vocabulary";
-import type { PaperIndexCensus, PaperPage } from "../lib/repository/paper-pages";
+import { groupPapersByYear, type PaperIndexCensus, type PaperPage } from "../lib/repository/paper-pages";
 import type { TraceShape } from "../lib/repository/paper-traces";
-import type { SourceCoverageAxis, SourceCoverageStatus } from "../lib/repository/types";
+import type { SourceCoverage, SourceCoverageAxis, SourceCoverageStatus } from "../lib/repository/types";
 import { canonicalPaperUrl } from "../lib/repository/papers";
+import { shortAuthors } from "../lib/repository/authors";
+import { PapersSearch } from "./repository-papers-search";
 
 const COPY = {
   en: {
@@ -46,7 +48,7 @@ const COPY = {
     backToPapers: "← Papers",
     layersLink: "Map — how the pieces fit together",
     readLine: (read: number, total: number) =>
-      `${read} of ${total} record what they report. The rest have not been read for it — that is an absence, not a claim that they report nothing.`,
+      `${read} of ${total} record what they report; the rest are simply unread, not a claim that they report nothing.`,
     reportsHeading: "What it reports",
     reportsNone:
       "Nobody has read this paper for what it reports. Absent here means unread, never “it reports nothing”.",
@@ -97,6 +99,11 @@ const COPY = {
     // sentence a graph seeded one cluster at a time produces most often.
     citedByNodes: (n: number) => `cited by ${n} map ${n === 1 ? "node" : "nodes"}`,
     citedByRecords: (n: number) => `cited by ${n} Atlas ${n === 1 ? "record" : "records"}`,
+    searchLabel: "Search papers",
+    searchPlaceholder: "Search by title or author",
+    undated: "Undated",
+    yearCount: (n: number) => `${n} ${n === 1 ? "paper" : "papers"}`,
+    yearStripLabel: "Jump to a year",
   },
   ja: {
     title: "論文",
@@ -105,7 +112,7 @@ const COPY = {
     backToPapers: "← 論文",
     layersLink: "地図 — 部品どうしの組み合わさり方",
     readLine: (read: number, total: number) =>
-      `${total} 件のうち ${read} 件について、何を報告しているかが記録されています。残りはまだそのために読まれていません。これは記載がないということであり、「何も報告していない」という主張ではありません。`,
+      `${total} 件のうち ${read} 件は何を報告しているかが記録されており、残りは単に未読で「何も報告していない」という意味ではありません。`,
     reportsHeading: "何を報告しているか",
     reportsNone:
       "この論文が何を報告しているかについては、まだ誰も読んでいません。ここでの記載なしは未読を意味し、「何も報告していない」という意味ではありません。",
@@ -149,6 +156,11 @@ const COPY = {
     empty: "登録されている論文がありません。まだ登録簿に何も読み込まれていないか、読み込みに失敗したかのいずれかです。このふたつは別のことですが、このページからは区別できません。",
     citedByNodes: (n: number) => `地図の ${n} 個のノードから引用`,
     citedByRecords: (n: number) => `アトラスの ${n} 件の記録から引用`,
+    searchLabel: "論文を検索",
+    searchPlaceholder: "タイトルまたは著者で検索",
+    undated: "年不明",
+    yearCount: (n: number) => `${n} 件`,
+    yearStripLabel: "年に移動",
   },
 } as const;
 
@@ -184,6 +196,21 @@ function ReportsChips({ page, copy }: { page: PaperPage; copy: PapersCopy }) {
       ))}
     </span>
   );
+}
+
+/**
+ * The reported axes only, joined for the compact index row — "Theory ·
+ * Simulation" with nothing printed for an axis that is absent or not yet
+ * established, and nothing at all when the paper has not been read. The
+ * detail page keeps the full three-axis breakdown (`ReportsChips` above);
+ * this is the row's deliberately smaller summary, the same trim every other
+ * field on the index took this pass.
+ */
+function reportedAxisMarks(reports: SourceCoverage | undefined, copy: PapersCopy): string | null {
+  if (!reports) return null;
+  const reported = AXES.filter((axis) => reports[axis] === "reported");
+  if (reported.length === 0) return null;
+  return reported.map((axis) => copy.axis[axis]).join(" · ");
 }
 
 function CitationSites({
@@ -352,7 +379,12 @@ export function PaperView({ page, locale }: { page: PaperPage; locale: PublicLoc
   );
 }
 
-/** The register, in one list. */
+/** `#year-2024`, or `#year-undated` for the group with no recorded year. */
+function yearAnchor(year: string | null): string {
+  return year ? `year-${year}` : "year-undated";
+}
+
+/** The register, grouped by year, newest first, with a jump strip and a filter. */
 export function PaperIndexView({
   pages,
   census,
@@ -363,6 +395,7 @@ export function PaperIndexView({
   locale: PublicLocale;
 }) {
   const copy = COPY[locale];
+  const groups = groupPapersByYear(pages);
   return (
     <article className="mj-layers-index mj-papers-index">
       <nav className="mj-layers-breadcrumb" aria-label={copy.title}>
@@ -392,40 +425,79 @@ export function PaperIndexView({
       <section className="mj-papers-census" aria-label={copy.title}>
         <p className="mj-layers-empty">{copy.readLine(census.read, census.papers)}</p>
       </section>
-      {/* Unreachable on the authored register, which has 143 rows — and written
+      {/* Unreachable on the authored register, which has 328 rows — and written
           anyway, because "the list is currently empty" and "the register failed
           to load" render identically as a blank page, and the reader cannot
           tell which they are looking at. Same rule every list on the Layers
-          surface follows: an empty list says what the emptiness means. */}
-      {pages.length === 0 ? <p className="mj-layers-empty">{copy.empty}</p> : null}
-      <ul className="mj-papers-list">
-        {pages.map((page) => (
-          <li key={page.paper.id}>
-            <a className="mj-papers-list-title" href={`/repository/papers/${page.slug}`}>
-              {page.paper.title}
-            </a>
-            <p className="mj-papers-byline">
-              {page.paper.authors} · {page.paper.year}
-            </p>
-            <p className="mj-papers-list-meta">
-              <ReportsChips page={page} copy={copy} />
-            </p>
-            {/* A count, not a heading reused as one. "Where the map cites it: 1"
-                is a section title with a number stapled on; "cited by 1 map
-                node" is the sentence a reader is actually reading. */}
-            <p className="mj-layers-count">
-              {page.nodes.length === 0 && page.records.length === 0
-                ? copy.citedNowhere
-                : [
-                    page.nodes.length > 0 ? copy.citedByNodes(page.nodes.length) : null,
-                    page.records.length > 0 ? copy.citedByRecords(page.records.length) : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-            </p>
-          </li>
-        ))}
-      </ul>
+          surface follows: an empty list says what the emptiness means. The
+          search box and year strip are gated on the same check: there is
+          nothing to search or jump to when the register itself is empty. */}
+      {pages.length === 0 ? (
+        <p className="mj-layers-empty">{copy.empty}</p>
+      ) : (
+        <PapersSearch
+          searchLabel={copy.searchLabel}
+          searchPlaceholder={copy.searchPlaceholder}
+          yearStrip={
+            <nav className="mj-papers-year-strip" aria-label={copy.yearStripLabel}>
+              {groups.map((group) => (
+                <a key={yearAnchor(group.year)} href={`#${yearAnchor(group.year)}`}>
+                  {group.year ?? copy.undated}
+                </a>
+              ))}
+            </nav>
+          }
+        >
+          {groups.map((group) => (
+            <section
+              key={yearAnchor(group.year)}
+              className="mj-papers-year-group"
+              data-paper-year-group
+              aria-labelledby={yearAnchor(group.year)}
+            >
+              <h2 id={yearAnchor(group.year)} className="mj-papers-year-heading">
+                {group.year ?? copy.undated}
+                <span className="mj-papers-year-count" data-paper-year-count>
+                  {copy.yearCount(group.pages.length)}
+                </span>
+              </h2>
+              <ul className="mj-papers-list">
+                {group.pages.map((page) => {
+                  const marks = reportedAxisMarks(page.paper.reports, copy);
+                  return (
+                    <li
+                      key={page.paper.id}
+                      data-paper-search={`${page.paper.title} ${page.paper.authors}`.toLowerCase()}
+                    >
+                      <a className="mj-papers-list-title" href={`/repository/papers/${page.slug}`}>
+                        {page.paper.title}
+                      </a>
+                      <p className="mj-papers-byline">
+                        {shortAuthors(page.paper.authors)} · {page.paper.year}
+                      </p>
+                      {marks ? <p className="mj-papers-marks">{marks}</p> : null}
+                      {/* A count, not a heading reused as one. "Where the map
+                          cites it: 1" is a section title with a number stapled
+                          on; "cited by 1 map node" is the sentence a reader is
+                          actually reading. */}
+                      <p className="mj-layers-count">
+                        {page.nodes.length === 0 && page.records.length === 0
+                          ? copy.citedNowhere
+                          : [
+                              page.nodes.length > 0 ? copy.citedByNodes(page.nodes.length) : null,
+                              page.records.length > 0 ? copy.citedByRecords(page.records.length) : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </PapersSearch>
+      )}
     </article>
   );
 }

@@ -50,12 +50,15 @@ import type {
   ProcessCard,
 } from "../lib/repository/card-content";
 import { cardSections } from "../lib/repository/card-content";
+import { ATLAS_SECTION_LABELS } from "../lib/repository/section-labels";
 import { LOOP_CLOSURE_COPY } from "../lib/repository/loop-closure-copy";
 import { THEORY_MARKS, type TheoryMark, type TheorySpan } from "../lib/repository/theory-marks";
 import { THEORY_MARK_COPY } from "../lib/repository/theory-mark-copy";
 import { ownStepName } from "../lib/repository/converge-layout";
 import type { PublicLocale } from "../lib/public-locale";
 import { MathText } from "./math-text";
+import { AtlasGap, AtlasSection, AtlasSectionNav, atlasNavItemId } from "./atlas-sections";
+import { VerificationTierBadge } from "./repository-verification";
 
 type Lang = "en" | "ja";
 
@@ -204,26 +207,7 @@ const COPY: Record<Lang, Copy> = {
      * chain, which was called "State to state".
      */
     sectionsLabel: "Sections of this card",
-    sections: {
-      "when-it-applies": "When it applies",
-      input: "Input",
-      theory: "Theory",
-      output: "Output",
-      requires: "Requires",
-      example: "Example",
-      performance: "Performance",
-      refinements: "Refinements",
-      contested: "Where the claim is contested",
-      implementations: "Implementations",
-      records: "In the repository",
-      contract: "What it takes and returns",
-      between: "Between these two states",
-      "no-slot": "No named step covers this",
-      "why-a-layer": "Why it is a layer at all",
-      "filled-by": "Methods that fill it",
-      "bypassed-by": "Routes that make it unnecessary",
-      "classical-equivalents": "Classical equivalents",
-    },
+    sections: ATLAS_SECTION_LABELS.en,
     // Singular. Each names one marked clause, so the legend reads as a key to
     // what is highlighted rather than as a heading over a list — which is the
     // whole difference between this and the two sections it replaced.
@@ -295,26 +279,7 @@ const COPY: Record<Lang, Copy> = {
     noSlotHere:
       "この区間は手法が自ら閉じており、まだ名前のある工程が当てられていません。ここに名前のある工程を見つける価値があります。",
     sectionsLabel: "このカードの項目",
-    sections: {
-      "when-it-applies": "適用条件",
-      input: "入力",
-      theory: "理論",
-      output: "出力",
-      requires: "必要なもの",
-      example: "例",
-      performance: "性能",
-      refinements: "改良版",
-      contested: "主張が争われている点",
-      implementations: "実装",
-      records: "リポジトリ内",
-      contract: "入力と出力",
-      between: "この二つの状態のあいだ",
-      "no-slot": "名前のある工程がまだありません",
-      "why-a-layer": "なぜ層として立てるのか",
-      "filled-by": "これを満たす手法",
-      "bypassed-by": "これを不要にする経路",
-      "classical-equivalents": "古典的な対応物",
-    },
+    sections: ATLAS_SECTION_LABELS.ja,
     marks: THEORY_MARK_COPY.ja,
     openStep: "この工程を開く",
     refinementNote: "独自の経路として描くために必要な研究",
@@ -360,31 +325,8 @@ const COPY: Record<Lang, Copy> = {
  * a sweep still counts it as the gap it is.
  */
 function Gap({ gap, copy, note }: { gap: CardGap; copy: Copy; note?: string }): React.ReactElement {
-  return (
-    <p
-      className={`mj-card-gap mj-card-gap--${gap}`}
-      data-gap={gap}
-      // So a sweep counts the accounted gaps apart from the unexplained ones —
-      // the same reason `--closure` prints them on separate lines. Without it
-      // the two are one string in the DOM and the distinction this change exists
-      // to draw is invisible to every instrument, including the production
-      // read-back that is the only thing verifying this component at all.
-      data-explained={note === undefined ? undefined : "true"}
-    >
-      {/* **Through `MathText`, because a declared reason carries mathematics.**
-          `backward-euler`'s names the Padé order the paper's theorems require —
-          `$k \ge 3$` — and a gap note drawn as plain text would print the
-          dollars. The other caller passes prose with no `$`, where this is a
-          no-op. */}
-      {note !== undefined ? (
-        <MathText source={note} />
-      ) : gap === "none-recorded" ? (
-        copy.noneFound
-      ) : (
-        copy.noField
-      )}
-    </p>
-  );
+  // The drawing lives in `atlas-sections.tsx` now, shared with the record page.
+  return <AtlasGap gap={gap} note={note} words={copy} />;
 }
 
 /**
@@ -441,40 +383,24 @@ function Section({
   whenEmpty?: React.ReactNode;
   children?: React.ReactNode;
 }): React.ReactElement {
+  // `AtlasSection` draws it; the card only unpacks its value. A declared reason
+  // outranks the standing gap sentence (`backward-euler`'s Implementations),
+  // and `note` — the own-step card's *no named step covers this*, a statement
+  // about the map rather than the sources — still wins over both.
   return (
-    <section
-      className={`mj-card-section${value.held ? "" : " mj-card-section--empty"}`}
-      data-section={id}
-      // The name is on the tab in the row above, not repeated here. A heading
-      // over a single visible section, one line under the same word in the nav,
-      // is the duplicate title the owner had just asked to be rid of one level
-      // down — so the section is *named* to a screen reader by the control that
-      // selected it and drawn without a heading.
-      aria-labelledby={labelledBy}
-      hidden={!showing}
+    <AtlasSection
+      id={id}
+      held={value.held}
+      gap={value.held ? undefined : value.gap}
+      reason={value.held ? undefined : value.reason}
+      note={note}
+      showing={showing}
+      labelledBy={labelledBy}
+      words={copy}
+      whenEmpty={whenEmpty}
     >
-      <div className="mj-card-section-body">
-        {value.held ? (
-          children
-        ) : (
-          <>
-            {/* **A declared reason outranks the standing gap sentence.** `noneFound`
-                — the owner's own *"none found yet"* — is right when nobody has
-                looked, and it is the wrong sentence on a record where somebody
-                looked at every cited source and wrote down what they found.
-                `backward-euler` carries such a reason for its Implementations
-                section, and a reader shown "None found yet." there is being told
-                the opposite of what the record knows.
-
-                `note` still wins over both: it is the own-step card's *no named
-                step covers this*, a statement about the MAP rather than about
-                the sources, and the two are not competing for the same slot. */}
-            <Gap gap={value.gap} copy={copy} note={note ?? value.reason} />
-            {whenEmpty}
-          </>
-        )}
-      </div>
-    </section>
+      {children}
+    </AtlasSection>
   );
 }
 
@@ -487,7 +413,7 @@ function Section({
  * and the section ids are unique within a card by construction.
  */
 function navItemId(id: CardSectionId): string {
-  return `mj-card-nav-${id}`;
+  return atlasNavItemId("mj-card", id);
 }
 
 /**
@@ -523,31 +449,13 @@ function SectionNav({
   copy: Copy;
 }): React.ReactElement {
   return (
-    <nav className="mj-card-nav" aria-label={copy.sectionsLabel}>
-      {sections.map((section) => {
-        const className = `mj-card-nav-item${section.value.held ? "" : " mj-card-nav-item--empty"}`;
-        const href = hrefFor(section.id);
-        // A name with no address is drawn as a name. The addresses are built
-        // from this same list, so a missing one cannot happen — and if it ever
-        // does, an unclickable word is the truthful drawing of it. The wrong
-        // answer here is a fallback href, which would silently send a reader
-        // somewhere they did not ask to go.
-        return section.id === showing || href === undefined ? (
-          <span
-            key={section.id}
-            className={section.id === showing ? `${className} is-showing` : className}
-            id={navItemId(section.id)}
-            aria-current={section.id === showing ? "true" : undefined}
-          >
-            {copy.sections[section.id]}
-          </span>
-        ) : (
-          <a key={section.id} className={className} id={navItemId(section.id)} href={href}>
-            {copy.sections[section.id]}
-          </a>
-        );
-      })}
-    </nav>
+    <AtlasSectionNav
+      prefix="mj-card"
+      items={sections.map((section) => ({ id: section.id, label: copy.sections[section.id], held: section.value.held }))}
+      showing={showing}
+      hrefFor={hrefFor}
+      label={copy.sectionsLabel}
+    />
   );
 }
 
@@ -1050,6 +958,17 @@ function Body({ card, id, copy }: { card: Card; id: CardSectionId; copy: Copy })
             <li key={record.slug}>
               <a href={record.href}>{record.title}</a>
               {record.description ? <p className="mj-card-list-blurb">{record.description}</p> : null}
+              {/* The record's own chrome — the tier glyph the browse card and
+                  the record page draw, and the frameworks its code is written
+                  in — so the same record looks the same from the map. */}
+              {record.verificationMethods !== undefined || record.frameworks.length > 0 ? (
+                <p className="mj-card-record-meta">
+                  {record.verificationMethods !== undefined ? (
+                    <VerificationTierBadge methods={record.verificationMethods} locale={copy.lang} />
+                  ) : null}
+                  {record.frameworks.length > 0 ? <span>{record.frameworks.join(" · ")}</span> : null}
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -1145,6 +1064,32 @@ function Body({ card, id, copy }: { card: Card; id: CardSectionId; copy: Copy })
     // analysis. The entry is the child's own lede and its own potential-path
     // note, read off the child node — following the link is still how a reader
     // gets the whole record.
+    case "alternatives":
+      return card.kind === "method" && card.alternatives.held ? (
+        <ul className="mj-card-list">
+          {card.alternatives.value.map((link) => (
+            <li key={link.id}>
+              <a href={link.href}>{link.label}</a>
+              <p className="mj-card-list-blurb">
+                <MathText source={link.summary} />
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : null;
+    case "makes-unnecessary":
+      return card.kind === "method" && card.makesUnnecessary.held ? (
+        <ul className="mj-card-list">
+          {card.makesUnnecessary.value.map((link) => (
+            <li key={link.id}>
+              <a href={link.href}>{link.label}</a>
+              <p className="mj-card-list-blurb">
+                <MathText source={link.summary} />
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : null;
     case "refinements":
       return card.kind === "method" && card.refinements.held ? (
         <ul className="mj-card-list">

@@ -19,6 +19,9 @@ import type { PublicLocale } from "../../../lib/public-locale";
 import { MarkdownContent } from "../../../components/chat-markdown";
 import { StarIcon } from "../../../components/icons";
 import { VerificationMethodChips, VerificationTierBadge } from "../../../components/repository-verification";
+import { AtlasSection, AtlasSectionNav, atlasNavItemId } from "../../../components/atlas-sections";
+import { ATLAS_CHROME_COPY, ATLAS_SECTION_LABELS } from "../../../lib/repository/section-labels";
+import { RECORD_SECTION_ORDER, recordSectionHref, recordSections, type RecordSectionId } from "../../../lib/repository/record-card";
 import { loadStarredRepositorySlugs, toggleRepositoryStar } from "../../../lib/repository-stars";
 import { TOPICS_BY_ID } from "../../../lib/repository/topics";
 import { TOPICS_A_CATEGORY_TAB_OWNS } from "../../../lib/repository/topic-filter";
@@ -33,13 +36,13 @@ import { RepositoryExportAction } from "../repository-export";
 const COPY = {
   en: {
     back: "← Atlas",
-    circuit: "Circuit & simulation",
+    openMap: "Open on the map",
+    updated: "Updated",
+    keywords: "Keywords",
+    sectionsLabel: "Sections of this record",
     structure: "Circuit structure",
-    connections: "What this takes and returns",
     cost: "Fault-tolerant cost",
     outcomes: "Expected outcomes",
-    how: "How it works",
-    code: "Implementation",
     framework: "Framework",
     copy: "Copy code",
     copied: "Copied",
@@ -47,13 +50,11 @@ const COPY = {
     star: "Star",
     unstar: "Unstar",
     starNote: "Atlas stars stay in the public catalog. Saving this entry to your workspace starts an unstarred private copy.",
-    resources: "Facts",
     verification: "Verification",
     method: "Method",
     result: "Result",
     caveat: "Caveat",
     source: "Source",
-    literature: "Literature & references",
     coverage: "What the source documents",
     coverageTheory: "Theory",
     coverageSimulation: "Simulation",
@@ -63,7 +64,6 @@ const COPY = {
     coverageUnknown: "not checked",
     coverageNote:
       "What the source itself reports \u2014 not how Leona verified this record. \u201cNot checked\u201d means nobody has read the source for that axis; \u201cnot in this source\u201d means somebody has, and it is not there.",
-    gaps: "Declared gaps",
     gapsNone: "Reviewed against the source, and no gaps were found.",
     gapsUnreviewed: "Nobody has reviewed this record for gaps yet.",
     gapPermanent: "permanent",
@@ -95,13 +95,13 @@ const COPY = {
   },
   ja: {
     back: "← Atlas",
-    circuit: "回路とシミュレーション",
+    openMap: "地図で開く",
+    updated: "更新日",
+    keywords: "キーワード",
+    sectionsLabel: "この項目のセクション",
     structure: "回路の構造",
-    connections: "入力と出力",
     cost: "誤り耐性計算のコスト",
     outcomes: "期待される出力",
-    how: "仕組み",
-    code: "実装",
     framework: "フレームワーク",
     copy: "コードをコピー",
     copied: "コピー済み",
@@ -109,13 +109,11 @@ const COPY = {
     star: "スターを付ける",
     unstar: "スターを外す",
     starNote: "スターはAtlasに保存されます。ワークスペースに追加したコピーには引き継がれません。",
-    resources: "基本情報",
     verification: "検証",
     method: "方法",
     result: "結果",
     caveat: "注意点",
     source: "出典",
-    literature: "文献と参考資料",
     coverage: "\u51fa\u5178\u304c\u8a18\u8f09\u3057\u3066\u3044\u308b\u7bc4\u56f2",
     coverageTheory: "\u7406\u8ad6",
     coverageSimulation: "\u30b7\u30df\u30e5\u30ec\u30fc\u30b7\u30e7\u30f3",
@@ -125,7 +123,6 @@ const COPY = {
     coverageUnknown: "\u672a\u78ba\u8a8d",
     coverageNote:
       "\u51fa\u5178\u81ea\u8eab\u304c\u4f55\u3092\u5831\u544a\u3057\u3066\u3044\u308b\u304b\u3067\u3042\u308a\u3001Leona \u304c\u3069\u3046\u691c\u8a3c\u3057\u305f\u304b\u3067\u306f\u3042\u308a\u307e\u305b\u3093\u3002\u300c\u672a\u78ba\u8a8d\u300d\u306f\u305d\u306e\u8ef8\u306b\u3064\u3044\u3066\u8ab0\u3082\u51fa\u5178\u3092\u8aad\u3093\u3067\u3044\u306a\u3044\u3053\u3068\u3001\u300c\u3053\u306e\u51fa\u5178\u306b\u306f\u306a\u3057\u300d\u306f\u8aad\u3093\u3060\u4e0a\u3067\u5b58\u5728\u3057\u306a\u3044\u3053\u3068\u3092\u610f\u5473\u3057\u307e\u3059\u3002",
-    gaps: "\u5ba3\u8a00\u3055\u308c\u305f\u6b20\u843d",
     gapsNone: "\u51fa\u5178\u3068\u7167\u5408\u6e08\u307f\u3067\u3001\u6b20\u843d\u306f\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3067\u3057\u305f\u3002",
     gapsUnreviewed: "\u3053\u306e\u9805\u76ee\u306f\u307e\u3060\u6b20\u843d\u306e\u78ba\u8a8d\u304c\u884c\u308f\u308c\u3066\u3044\u307e\u305b\u3093\u3002",
     gapPermanent: "\u6052\u4e45\u7684",
@@ -261,8 +258,10 @@ export function RepositoryEntryView({
   estimate,
   profile,
   connections,
-  connectionsOpen,
   layers,
+  hasLayers = false,
+  mapHref = null,
+  section = null,
 }: {
   entry: PublicRepositoryEntry;
   locale: PublicLocale;
@@ -275,14 +274,12 @@ export function RepositoryEntryView({
    * the estimate comes from the anonymous catalog API, which by standing policy
    * (see lib/repository-source.ts) is read only by server code — proxying it to
    * the browser would create a second unauthenticated surface for no gain.
-   * Null when there is no estimate to show, and the section then does not
-   * render at all.
+   * Null when there is no estimate to show; Performance then draws without it.
    */
   estimate?: ReactNode;
   /**
    * The circuit-structure panel (R1), on the same slot terms as `estimate`
-   * above and for the same reason. Null when the entry carries no circuit, and
-   * the section then does not render at all.
+   * above and for the same reason. Null when the entry carries no circuit.
    */
   profile?: ReactNode;
   /**
@@ -290,69 +287,93 @@ export function RepositoryEntryView({
    *
    * A slot like the two above, but passed unconditionally: an entry with no
    * ports has an answer ("not a pipeline stage"), and most records are in that
-   * position (121 of the then-283, measured 2026-07). A missing section would
-   * leave a reader looking for
-   * something to compose to infer it from silence.
+   * position (121 of the then-283, measured 2026-07). Drawn under **both**
+   * Input and Output, the way the card draws its contract under both — one
+   * field read twice, so the two names cannot disagree about it.
    */
   connections?: ReactNode;
   /**
-   * Whether `?port=` named an end, which forces the connections section open.
-   *
-   * Without this the address is decorative: `?port=in` expands a `<details>`
-   * *inside* a section that is itself collapsed by default, so a reader
-   * following the link arrives at a page where the thing they were linked to is
-   * hidden — and `curl | grep` still shows `open=""` on the inner element, so
-   * the check that proves the param works passes either way. Found by looking
-   * at the rendered page rather than at the markup.
-   */
-  connectionsOpen?: boolean;
-  /**
    * Where the layer graph names this record, or null when it does not.
    *
-   * Null on most records (279 of the then-283, measured 2026-07), and unlike every panel on the Layers surface
-   * itself this one renders **nothing** in that case. The difference is
-   * deliberate: over there an empty list is the finding — it says which part of
-   * the literature the corpus has not reached — and here it would be the same
-   * sentence repeated on almost every record, which is noise wearing honesty's
-   * clothes.
+   * Null on most records (279 of the then-283, measured 2026-07). It sits in
+   * the *In the Atlas* section beside the related records, and `hasLayers`
+   * says whether it drew anything, so the section can be an honest gap.
    */
   layers?: ReactNode;
+  /** Whether `layers` draws anything — `entryLayerPresence`, computed by the page. */
+  hasLayers?: boolean;
+  /** The map, opened on the card that names this record, or null when none does. */
+  mapHref?: string | null;
+  /**
+   * Which section `?sec=` named, or null for the first — resolved on the server
+   * against the record's own list, exactly as the card resolves its own.
+   */
+  section?: RecordSectionId | null;
   related: RelatedEntrySummary[];
 }) {
   const copy = COPY[locale];
+  const chrome = ATLAS_CHROME_COPY[locale];
+  const labels = ATLAS_SECTION_LABELS[locale];
+  const ja = locale === "ja";
   const [framework, setFramework] = useState<PublicRepositoryFramework>(entry.framework);
   const [copied, setCopied] = useState(false);
   const [starred, setStarred] = useState(false);
+  const [showing, setShowing] = useState<RecordSectionId>(section ?? RECORD_SECTION_ORDER[0]);
   const variant = useMemo(() => getPublicRepositoryVariant(entry, framework), [entry, framework]);
   const methods = entryVerificationMethods(entry);
   // Resolved through the vocabulary rather than rendered from the ids, so an id
   // the API knows and this build does not is dropped instead of printed raw.
   //
-  // The four topics a category tab owns are dropped as well (ai-ops#75). On this
-  // page they were the worst case of that collision rather than the mildest: the
-  // kicker two elements up already prints `categoryLabel` — "Gates" — and the
-  // chip beside it said "Gate" and linked to `?topic=gate-primitive`, a list of
-  // 27 under a word the tabs answer with 29. In Japanese the kicker and the chip
-  // were the same string. Nothing is lost by dropping it, because the kicker is
-  // still there saying which kind this is; what goes is the second, quieter
-  // answer and the link onto the smaller number.
+  // The four topics a category tab owns are dropped as well (ai-ops 75). The
+  // eyebrow above the name already says which kind this is; a chip saying it
+  // again, linking onto a smaller number, was the second answer to one question.
   const topics = (entry.topics ?? [])
     .filter((id) => !TOPICS_A_CATEGORY_TAB_OWNS.has(id))
     .map((id) => TOPICS_BY_ID.get(id))
     .filter((topic): topic is NonNullable<typeof topic> => topic !== undefined);
-  const title = locale === "ja" ? entry.titleJa : entry.title;
-  const description = locale === "ja" ? entry.descriptionJa : entry.description;
-  const introduction = locale === "ja" ? entry.introductionJa : entry.introduction;
-  const explanation = locale === "ja"
-    ? entry.explanationMdJa ?? entry.explanationJa
-    : entry.explanationMd ?? entry.explanation;
+  const title = ja ? entry.titleJa : entry.title;
+  const description = ja ? entry.descriptionJa : entry.description;
+  const introduction = ja ? entry.introductionJa : entry.introduction;
+  const explanation = ja ? entry.explanationMdJa ?? entry.explanationJa : entry.explanationMd ?? entry.explanation;
+  const hasProfile = profile !== null && profile !== undefined;
+  const hasEstimate = estimate !== null && estimate !== undefined;
+  // Held or gap is decided in `record-card.ts`, where a test can read it.
+  const sections = useMemo(
+    () =>
+      recordSections({
+        entry,
+        locale,
+        hasProfile,
+        hasEstimate,
+        hasLayers,
+        relatedCount: related.length,
+        words: { unreviewed: copy.gapsUnreviewed, notCircuit: copy.notCircuit },
+      }),
+    [entry, locale, hasProfile, hasEstimate, hasLayers, related.length, copy],
+  );
+  const base = `/repository/${entry.slug}`;
 
   useEffect(() => {
     setStarred(loadStarredRepositorySlugs().has(entry.slug));
   }, [entry.slug]);
 
+  // A navigation that names a section wins over whatever a click chose before it.
+  useEffect(() => {
+    if (section !== null) setShowing(section);
+  }, [section]);
+
   function handleStar() {
     setStarred(toggleRepositoryStar(entry.slug));
+  }
+
+  // A click switches sections without a round trip and leaves the address
+  // behind it, so the page a reader reloads or shares is the one they saw.
+  // The link still carries the address for a reader with JavaScript off.
+  function select(id: string) {
+    const next = RECORD_SECTION_ORDER.find((candidate) => candidate === id);
+    if (next === undefined) return;
+    setShowing(next);
+    window.history.replaceState(window.history.state, "", recordSectionHref(base, next));
   }
 
   async function copyCode() {
@@ -362,112 +383,103 @@ export function RepositoryEntryView({
     window.setTimeout(() => setCopied(false), 1600);
   }
 
-  return (
-    <>
-      <section className="mj-repo-detail-hero">
-        <a className="mj-back-link" href="/repository">{copy.back}</a>
-        <div className="mj-repository-detail-kicker">
-          <VerificationTierBadge methods={methods} locale={locale} />
-          <span>{locale === "ja" ? entry.categoryLabelJa : entry.categoryLabel}</span>
-          <span>{algorithmFamilyLabel(entry.algorithmFamily, locale)}</span>
-          <time dateTime={entry.updatedAt}>{entry.updatedAt}</time>
-        </div>
-        <h1>{title}</h1>
-        <p>{description}</p>
-        {/* The closed vocabulary above the free keywords, and separated from
-            them, because they are different kinds of claim: a topic is one of a
-            fixed set of values the whole corpus is classified against and is
-            offered as a filter on /repository; a tag is a keyword this record
-            happens to wear, and 217 of the 307 in the corpus are worn by
-            exactly one entry.
-            Each topic carries its definition on hover — a vocabulary whose terms
-            a reader has to guess at is a vocabulary they will read wrong. */}
-        {topics.length > 0 ? (
-          <div className="mj-repository-topics" aria-label={locale === "ja" ? "トピック" : "Topics"}>
-            {topics.map((topic) => (
-              <a
-                key={topic.id}
-                className={`mj-repository-topic mj-repository-topic--${topic.facet}`}
-                href={`/repository?topic=${encodeURIComponent(topic.id)}`}
-                title={locale === "ja" ? topic.definitionJa : topic.definition}
-              >
-                {locale === "ja" ? topic.labelJa : topic.label}
-              </a>
+  const facts = [...entry.resources, ...entry.metadata];
+  const industry = ja ? entry.industryUseCasesJa ?? entry.industryUseCases : entry.industryUseCases;
+
+  function body(id: RecordSectionId): ReactNode {
+    switch (id) {
+      case "when-it-applies":
+        return <p>{introduction}</p>;
+      case "input":
+      case "output":
+        return connections;
+      case "theory":
+        return <MarkdownContent source={explanation} className="mj-repo-markdown" />;
+      case "requires":
+        return (
+          <dl className="mj-card-dl">
+            {facts.map((row) => (
+              <div key={`${row.label}-${row.value}`}>
+                <dt>{dataLabel(row.label, locale)}</dt>
+                <dd>{row.value}</dd>
+              </div>
             ))}
-          </div>
-        ) : null}
-        <div className="mj-repo-detail-hero-foot">
-          <div className="mj-repository-tags" aria-label={locale === "ja" ? "タグ" : "Tags"}>
-            {entry.tags.map((tag) => <span key={tag}>{tag}</span>)}
-          </div>
-          <button className={`mj-star-toggle${starred ? " is-starred" : ""}`} type="button" aria-pressed={starred} title={starred ? copy.unstar : copy.star} onClick={handleStar}>
-            <StarIcon size={14} filled={starred} />
-            {starred ? copy.unstar : copy.star}
-          </button>
-          <RepositoryExportAction slug={entry.slug} title={title} isSignedIn={isSignedIn} signInHref={signInHref} locale={locale} />
-        </div>
-        <p className="mj-repository-star-note">{copy.starNote}</p>
-      </section>
-
-      <div className="mj-repository-detail-layout">
-        <main className="mj-repository-detail-main">
-          <p className="mj-repo-detail-lede">{introduction}</p>
-
-          <DetailSection title={copy.circuit} defaultOpen>
+          </dl>
+        );
+      case "example":
+        return (
+          <>
             <CircuitDiagram entry={entry} locale={locale} />
-            <div className="mj-repository-outcomes" aria-label={copy.outcomes}>
-              {entry.visualization.outcomes.map((outcome) => (
-                <div className="mj-repository-outcome" key={outcome.label}>
-                  <div className="mj-repository-outcome-label"><span>{outcome.label}</span><strong>{Math.round(outcome.probability * 100)}%</strong></div>
-                  <div className="mj-repository-outcome-track"><span style={{ width: `${Math.max(0, Math.min(1, outcome.probability)) * 100}%` }} /></div>
-                </div>
-              ))}
-            </div>
-          </DetailSection>
-
-          {/* Structure before cost: these are measurements of the circuit
-              rendered directly above, and the cost is computed FROM them. */}
-          {profile ? <DetailSection title={copy.structure}>{profile}</DetailSection> : null}
-
-          {estimate ? <DetailSection title={copy.cost}>{estimate}</DetailSection> : null}
-
-          {/* After the cost rather than beside the structure. The two panels
-              above answer "what is this circuit"; this one answers "what could
-              it be part of", which is a different question and the one a reader
-              has to have finished the first two to ask. */}
-          {connections ? (
-            <DetailSection title={copy.connections} defaultOpen={connectionsOpen}>
-              {connections}
-            </DetailSection>
-          ) : null}
-
-          {/* Directly under the connections panel, and not inside a
-              `DetailSection`. The panel above answers "what meets this record's
-              edges"; this answers "what is this record an instance of", which is
-              one level up and is the only route from a record into the layer
-              graph. Behind a collapsed disclosure it would be a door nobody
-              opens — the failure the gates surface already paid for twice. */}
-          {layers}
-
-          <DetailSection title={copy.how} defaultOpen>
-            <MarkdownContent source={explanation} className="mj-repo-markdown" />
-          </DetailSection>
-
-          <DetailSection title={copy.code} defaultOpen>
+            {entry.visualization.outcomes.length > 0 ? (
+              <div className="mj-repository-outcomes" aria-label={copy.outcomes}>
+                {entry.visualization.outcomes.map((outcome) => (
+                  <div className="mj-repository-outcome" key={outcome.label}>
+                    <div className="mj-repository-outcome-label">
+                      <span>{outcome.label}</span>
+                      <strong>{Math.round(outcome.probability * 100)}%</strong>
+                    </div>
+                    <div className="mj-repository-outcome-track">
+                      <span style={{ width: `${Math.max(0, Math.min(1, outcome.probability)) * 100}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </>
+        );
+      case "performance":
+        return (
+          <>
+            {/* Structure before cost: the cost is computed from the structure. */}
+            {hasProfile ? (
+              <>
+                <h2 className="mj-record-subhead">{copy.structure}</h2>
+                {profile}
+              </>
+            ) : null}
+            {hasEstimate ? (
+              <>
+                <h2 className="mj-record-subhead">{copy.cost}</h2>
+                {estimate}
+              </>
+            ) : null}
+            <h2 className="mj-record-subhead">{copy.comparison}</h2>
+            <ClassicalComparison
+              comparison={entry.classicalComparison ?? defaultClassicalComparison(entry)}
+              locale={locale}
+              copy={copy}
+            />
+          </>
+        );
+      case "contested":
+        return <KnownGapsBody gaps={entry.knownGaps} locale={locale} copy={copy} />;
+      case "implementations":
+        return (
+          <>
             <div className="mj-repo-code-controls">
               <label className="mj-repository-framework-picker">
                 <span>{copy.framework}</span>
                 <select value={framework} onChange={(event) => setFramework(event.target.value as PublicRepositoryFramework)}>
-                  {PUBLIC_REPOSITORY_FRAMEWORKS.map((option) => <option key={option} value={option}>{option}</option>)}
+                  {PUBLIC_REPOSITORY_FRAMEWORKS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </select>
               </label>
-              <span className={`mj-repository-variant-status mj-repository-variant-status--${variant.status === "source" ? "conversion" : variant.status}`}>{variantLabel(variant.status, locale)}</span>
+              <span
+                className={`mj-repository-variant-status mj-repository-variant-status--${variant.status === "source" ? "conversion" : variant.status}`}
+              >
+                {variantLabel(variant.status, locale)}
+              </span>
             </div>
             {variant.code ? (
               <div className="mj-code">
                 <div className="mj-code-head">
                   <span className="mj-code-file">{variant.filename}</span>
-                  <button className="mj-code-copy" type="button" onClick={copyCode}>{copied ? copy.copied : copy.copy}</button>
+                  <button className="mj-code-copy" type="button" onClick={copyCode}>
+                    {copied ? copy.copied : copy.copy}
+                  </button>
                 </div>
                 <pre className="mj-code-body" tabIndex={0} role="region" aria-label={`${title} ${framework} source code`}>
                   <SyntaxHighlightedCode code={variant.code} language={variant.language} />
@@ -477,115 +489,242 @@ export function RepositoryEntryView({
               <div className="mj-repository-code-placeholder">
                 <strong>{variant.status === "unsupported" ? copy.notCircuit : copy.noCode}</strong>
                 <p>{variant.note}</p>
-                {variant.status !== "unsupported" ? <a className="mj-secondary-button" href="/contact">{copy.request}</a> : null}
+                {variant.status !== "unsupported" ? (
+                  <a className="mj-secondary-button" href="/contact">
+                    {copy.request}
+                  </a>
+                ) : null}
               </div>
             )}
             {variant.note && variant.code ? <p className="mj-repository-code-note">{variant.note}</p> : null}
-          </DetailSection>
+          </>
+        );
+      case "records":
+        return (
+          <>
+            {layers}
+            {related.length > 0 ? (
+              <>
+                <h2 className="mj-record-subhead">{copy.related}</h2>
+                <ul className="mj-card-list">
+                  {related.map((item) => (
+                    <li key={item.slug}>
+                      <a href={`/repository/${item.slug}`}>{ja ? item.titleJa : item.title}</a>
+                      <p className="mj-card-list-blurb">{ja ? item.categoryLabelJa : item.categoryLabel}</p>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </>
+        );
+      default: {
+        const unreachable: never = id;
+        return unreachable;
+      }
+    }
+  }
 
-          <DetailSection title={copy.comparison}>
-            <ClassicalComparison comparison={entry.classicalComparison ?? defaultClassicalComparison(entry)} locale={locale} copy={copy} />
-          </DetailSection>
-
-          {/* Rendered only when the record says something. On a corpus where
-              almost nothing is authored yet, three "not checked" chips on 282
-              pages teach a reader to skip the panel, and the one page that does
-              carry a claim loses by association. When the field goes backwards —
-              a repopulation dropping the authored records — the panel
-              disappears, which is visible, rather than staying put and saying
-              nothing, which is not. */}
-          {isInformative(entry.sourceCoverage) ? (
-            <DetailSection title={copy.coverage}>
-              <SourceCoveragePanel coverage={entry.sourceCoverage!} copy={copy} />
-            </DetailSection>
-          ) : null}
-
-          <KnownGapsSection gaps={entry.knownGaps} locale={locale} copy={copy} />
-
-          {entry.literature?.length ? (
-            <DetailSection title={copy.literature}>
-              <div className="mj-repository-literature-list">
-                {entry.literature.map((citation) => (
-                  <article key={citation.url}>
-                    <div><strong>{citation.title}</strong><span>{citation.year} · {citation.authors}</span></div>
-                    <p>{locale === "ja" ? citation.relevanceJa : citation.relevance}</p>
-                    {/* --url: the link text here is a citation URL, so its
-                        length is data. The base class is nowrap, which suits
-                        the fixed labels it was written for and overflowed this
-                        card silently. */}
-                    <a className="mj-text-link mj-text-link--url" href={citation.url} target="_blank" rel="noreferrer">{citation.url.replace(/^https?:\/\//, "")} ↗</a>
-                  </article>
-                ))}
-              </div>
-            </DetailSection>
-          ) : null}
-        </main>
-
-        <aside className="mj-repository-detail-aside">
-          <section className="mj-repository-aside-card">
-            <p className="mj-section-label">{copy.verification}</p>
-            <VerificationTierBadge methods={methods} locale={locale} />
-            <VerificationMethodChips methods={methods} locale={locale} />
-            <dl className="mj-repository-detail-dl">
-              <div><dt>{copy.method}</dt><dd>{entry.verificationDetails.method}</dd></div>
-              <div><dt>{copy.result}</dt><dd>{entry.verificationDetails.result}</dd></div>
-              {entry.verificationDetails.caveat ? <div><dt>{copy.caveat}</dt><dd>{entry.verificationDetails.caveat}</dd></div> : null}
-            </dl>
-          </section>
-          <section className="mj-repository-aside-card">
-            <p className="mj-section-label">{copy.resources}</p>
-            <dl className="mj-repository-detail-dl">
-              {[...entry.resources, ...entry.metadata].map((row) => (
-                <div key={`${row.label}-${row.value}`}><dt>{dataLabel(row.label, locale)}</dt><dd>{row.value}</dd></div>
-              ))}
-            </dl>
-          </section>
-          <section className="mj-repository-aside-card">
-            <p className="mj-section-label">{copy.source}</p>
-            <a className="mj-repository-source-title" href={entry.source.url} target="_blank" rel="noreferrer">{entry.source.title} ↗</a>
-            <dl className="mj-repository-detail-dl">
-              <div><dt>{copy.kind}</dt><dd>{locale === "ja" ? entry.source.kind === "curated_reference" ? "運営が確認した資料" : entry.source.kind === "verified_run" ? "検証済みの実行" : "コミュニティ投稿" : entry.source.kind.replaceAll("_", " ")}</dd></div>
-              {entry.source.contributor ? <div><dt>{copy.contributor}</dt><dd>{entry.source.contributor}</dd></div> : null}
-              {entry.source.reviewedBy ? <div><dt>{copy.reviewedBy}</dt><dd>{entry.source.reviewedBy}</dd></div> : null}
-              <div><dt>{copy.license}</dt><dd>{entry.source.license}</dd></div>
-            </dl>
-          </section>
-          {entry.industryUseCases?.length ? (
-            <section className="mj-repository-aside-card">
-              <p className="mj-section-label">{copy.industry}</p>
-              <ul className="mj-repository-bullet-list">
-                {(locale === "ja" ? entry.industryUseCasesJa ?? entry.industryUseCases : entry.industryUseCases).map((useCase) => <li key={useCase}>{useCase}</li>)}
-              </ul>
-            </section>
-          ) : null}
-        </aside>
-      </div>
-
-      {related.length ? (
-        <section className="mj-repository-related" aria-label={copy.related}>
-          <p className="mj-section-label">{copy.related}</p>
-          <div className="mj-repository-related-grid">
-            {related.map((item) => (
-              <a className="mj-repository-related-card" key={item.slug} href={`/repository/${item.slug}`}>
-                <span>{locale === "ja" ? item.categoryLabelJa : item.categoryLabel}</span>
-                <strong>{locale === "ja" ? item.titleJa : item.title}</strong>
-                <span aria-hidden="true">↗</span>
+  return (
+    <div className="mj-record-page">
+      {/* The card, as a page. Eyebrow, name, lede, the way onward, then the row
+          of section names and one section under it — the anatomy of
+          `MapCardPanel`, drawn by the same `atlas-sections.tsx` functions. The
+          hero, the two-column layout and the stack of disclosures this page
+          used to have went in the 2026-09-10 Atlas pass. */}
+      <article className="mj-card mj-card--page" aria-labelledby="mj-record-title">
+        <a className="mj-back-link" href="/repository">
+          {copy.back}
+        </a>
+        <p className="mj-card-eyebrow">
+          {ja ? entry.categoryLabelJa : entry.categoryLabel} · {algorithmFamilyLabel(entry.algorithmFamily, locale)}
+        </p>
+        <h1 id="mj-record-title">{title}</h1>
+        <p className="mj-card-lede">{description}</p>
+        <p className="mj-card-refinement">
+          <VerificationTierBadge methods={methods} locale={locale} />
+          <span>
+            {copy.updated} <time dateTime={entry.updatedAt}>{entry.updatedAt}</time>
+          </span>
+        </p>
+        {/* The closed vocabulary, each term carrying its definition on hover —
+            a vocabulary whose terms a reader has to guess at is a vocabulary
+            they will read wrong. The free keywords sit in the Source card below;
+            they are a different kind of claim, and 217 of the corpus's 307 are
+            worn by exactly one record. */}
+        {topics.length > 0 ? (
+          <div className="mj-repository-topics" aria-label={ja ? "トピック" : "Topics"}>
+            {topics.map((topic) => (
+              <a
+                key={topic.id}
+                className={`mj-repository-topic mj-repository-topic--${topic.facet}`}
+                href={`/repository?topic=${encodeURIComponent(topic.id)}`}
+                title={ja ? topic.definitionJa : topic.definition}
+              >
+                {ja ? topic.labelJa : topic.label}
               </a>
             ))}
           </div>
+        ) : null}
+        <p className="mj-card-onward">
+          {mapHref !== null ? <a href={mapHref}>{copy.openMap}</a> : null}
+          <button
+            className={`mj-star-toggle${starred ? " is-starred" : ""}`}
+            type="button"
+            aria-pressed={starred}
+            title={starred ? copy.unstar : copy.star}
+            onClick={handleStar}
+          >
+            <StarIcon size={14} filled={starred} />
+            {starred ? copy.unstar : copy.star}
+          </button>
+          <RepositoryExportAction slug={entry.slug} title={title} isSignedIn={isSignedIn} signInHref={signInHref} locale={locale} />
+        </p>
+
+        <div className="mj-card-sections">
+          <AtlasSectionNav
+            prefix="mj-record"
+            items={sections.map((item) => ({ id: item.id, label: labels[item.id], held: item.held }))}
+            showing={showing}
+            hrefFor={(id) => recordSectionHref(base, id as RecordSectionId)}
+            label={copy.sectionsLabel}
+            onSelect={select}
+          />
+          <div className="mj-card-body">
+            {sections.map((item) => (
+              <AtlasSection
+                key={item.id}
+                id={item.id}
+                held={item.held}
+                gap={item.gap}
+                reason={item.reason}
+                showing={item.id === showing}
+                labelledBy={atlasNavItemId("mj-record", item.id)}
+                words={chrome}
+              >
+                {body(item.id)}
+              </AtlasSection>
+            ))}
+
+            {/* References below the sections and not among them, as on the
+                card — the owner's *"it isn't needed for papers to be their
+                own section"*. */}
+            {entry.literature?.length ? (
+              <section className="mj-card-references">
+                <h2>{chrome.references}</h2>
+                <ul className="mj-card-list">
+                  {entry.literature.map((citation) => (
+                    <li key={citation.url}>
+                      <a href={citation.url} target="_blank" rel="noreferrer">
+                        {citation.title}
+                      </a>
+                      <p className="mj-card-list-blurb">
+                        {citation.authors} · {citation.year}
+                      </p>
+                      {(ja ? citation.relevanceJa : citation.relevance) ? (
+                        <p className="mj-card-list-blurb">{ja ? citation.relevanceJa : citation.relevance}</p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+          </div>
+        </div>
+      </article>
+
+      {/* What the card has no section for — how this record was verified,
+          where it came from, where it is used — sits under it rather than
+          among its sections, so the sections stay the card's. */}
+      <div className="mj-record-aside">
+        <section className="mj-repository-aside-card">
+          <p className="mj-section-label">{copy.verification}</p>
+          <VerificationTierBadge methods={methods} locale={locale} />
+          <VerificationMethodChips methods={methods} locale={locale} />
+          <dl className="mj-repository-detail-dl">
+            <div>
+              <dt>{copy.method}</dt>
+              <dd>{entry.verificationDetails.method}</dd>
+            </div>
+            <div>
+              <dt>{copy.result}</dt>
+              <dd>{entry.verificationDetails.result}</dd>
+            </div>
+            {entry.verificationDetails.caveat ? (
+              <div>
+                <dt>{copy.caveat}</dt>
+                <dd>{entry.verificationDetails.caveat}</dd>
+              </div>
+            ) : null}
+          </dl>
         </section>
-      ) : null}
-    </>
+        <section className="mj-repository-aside-card">
+          <p className="mj-section-label">{copy.source}</p>
+          <a className="mj-repository-source-title" href={entry.source.url} target="_blank" rel="noreferrer">
+            {entry.source.title} ↗
+          </a>
+          <dl className="mj-repository-detail-dl">
+            <div>
+              <dt>{copy.kind}</dt>
+              <dd>{sourceKindLabel(entry.source.kind, locale)}</dd>
+            </div>
+            {entry.source.contributor ? (
+              <div>
+                <dt>{copy.contributor}</dt>
+                <dd>{entry.source.contributor}</dd>
+              </div>
+            ) : null}
+            {entry.source.reviewedBy ? (
+              <div>
+                <dt>{copy.reviewedBy}</dt>
+                <dd>{entry.source.reviewedBy}</dd>
+              </div>
+            ) : null}
+            <div>
+              <dt>{copy.license}</dt>
+              <dd>{entry.source.license}</dd>
+            </div>
+          </dl>
+          {/* Rendered only when the record says something. Three "not checked"
+              chips on every page would teach a reader to skip the panel, and
+              the one page that does carry a claim would lose by association. */}
+          {isInformative(entry.sourceCoverage) ? (
+            <>
+              <p className="mj-section-label">{copy.coverage}</p>
+              <SourceCoveragePanel coverage={entry.sourceCoverage!} copy={copy} />
+            </>
+          ) : null}
+          {entry.tags.length > 0 ? (
+            <div className="mj-repository-tags" aria-label={copy.keywords}>
+              {entry.tags.map((tag) => (
+                <span key={tag}>{tag}</span>
+              ))}
+            </div>
+          ) : null}
+        </section>
+        {industry?.length ? (
+          <section className="mj-repository-aside-card">
+            <p className="mj-section-label">{copy.industry}</p>
+            <ul className="mj-repository-bullet-list">
+              {industry.map((useCase) => (
+                <li key={useCase}>{useCase}</li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </div>
+      <p className="mj-repository-star-note">{copy.starNote}</p>
+    </div>
   );
 }
 
-function DetailSection({ title, defaultOpen, children }: { title: string; defaultOpen?: boolean; children: ReactNode }) {
-  return (
-    <details className="mj-repo-section" open={defaultOpen}>
-      <summary>{title}</summary>
-      <div className="mj-repo-section-body">{children}</div>
-    </details>
-  );
+function sourceKindLabel(kind: PublicRepositoryEntry["source"]["kind"], locale: PublicLocale): string {
+  if (locale === "ja") {
+    if (kind === "curated_reference") return "運営が確認した資料";
+    if (kind === "verified_run") return "検証済みの実行";
+    return "コミュニティ投稿";
+  }
+  return kind.replaceAll("_", " ");
 }
 
 /**
@@ -633,7 +772,7 @@ function SourceCoveragePanel({ coverage, copy }: { coverage: SourceCoverage; cop
  * The unreviewed state renders as a sentence rather than as an empty panel for
  * the same reason: "nobody has looked" is information a reader can act on.
  */
-function KnownGapsSection({
+function KnownGapsBody({
   gaps,
   locale,
   copy,
@@ -643,52 +782,47 @@ function KnownGapsSection({
   copy: RepositoryCopy;
 }) {
   const state = knownGapsState(gaps);
-  if (state.kind === "none") {
-    return (
-      <DetailSection title={copy.gaps}>
-        <p className="mj-repo-gaps-empty">{copy.gapsNone}</p>
-      </DetailSection>
-    );
-  }
+  // The unreviewed state is the section's gap sentence — `record-card.ts`
+  // marks the section not held and hands the words to `AtlasSection` — so this
+  // branch is only reached if the two ever disagree, and then it still says
+  // the true thing rather than nothing.
   if (state.kind === "unreviewed") {
-    return (
-      <DetailSection title={copy.gaps}>
-        <p className="mj-repo-gaps-empty mj-repo-gaps-empty--unreviewed">{copy.gapsUnreviewed}</p>
-      </DetailSection>
-    );
+    return <p className="mj-repo-gaps-empty mj-repo-gaps-empty--unreviewed">{copy.gapsUnreviewed}</p>;
+  }
+  if (state.kind === "none") {
+    return <p className="mj-repo-gaps-empty">{copy.gapsNone}</p>;
   }
   return (
-    <DetailSection title={copy.gaps} defaultOpen>
-      <div className="mj-repo-gaps">
-        {state.gaps.map((gap, index) => (
-          <article key={`${gap.role}-${index}`} className="mj-repo-gap">
-            <header>
-              <strong>{copy[`gapRole_${gap.role}`]}</strong>
-              <span className="mj-repo-gap-reason">{copy[`gapReason_${gap.reason}`]}</span>
-              {/* A permanent reason renders as permanent (§3.6): the field
-                  disagreeing, or an implementation being tied to one paper's
-                  device, is not a backlog item and must not read like one. */}
-              {isPermanentGap(gap.reason) ? (
-                <span className="mj-repo-gap-permanent">{copy.gapPermanent}</span>
-              ) : null}
-            </header>
-            <p>{locale === "ja" ? gap.detailJa : gap.detail}</p>
-            {gap.citations?.length ? (
-              <ul className="mj-repo-gap-citations">
-                {gap.citations.map((citation) => (
-                  <li key={citation.url}>
-                    <a href={citation.url} rel="noreferrer noopener" target="_blank">
-                      {citation.title}
-                    </a>
-                    <span> · {citation.authors}, {citation.year}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </article>
-        ))}
-      </div>
-    </DetailSection>
+    <div className="mj-repo-gaps">
+      {state.gaps.map((gap, index) => (
+        <article key={`${gap.role}-${index}`} className="mj-repo-gap">
+          <header>
+            <strong>{copy[`gapRole_${gap.role}`]}</strong>
+            <span className="mj-repo-gap-reason">{copy[`gapReason_${gap.reason}`]}</span>
+            {/* A permanent reason renders as permanent (§3.6): the field
+                disagreeing, or an implementation being tied to one paper's
+                device, is not a backlog item and must not read like one. */}
+            {isPermanentGap(gap.reason) ? <span className="mj-repo-gap-permanent">{copy.gapPermanent}</span> : null}
+          </header>
+          <p>{locale === "ja" ? gap.detailJa : gap.detail}</p>
+          {gap.citations?.length ? (
+            <ul className="mj-repo-gap-citations">
+              {gap.citations.map((citation) => (
+                <li key={citation.url}>
+                  <a href={citation.url} rel="noreferrer noopener" target="_blank">
+                    {citation.title}
+                  </a>
+                  <span>
+                    {" "}
+                    · {citation.authors}, {citation.year}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </article>
+      ))}
+    </div>
   );
 }
 
@@ -758,6 +892,10 @@ function CircuitDiagram({ entry, locale }: { entry: PublicRepositoryEntry; local
       className="mj-repo-circuit"
       role="img"
       aria-label={`${locale === "ja" ? entry.titleJa : entry.title}${locale === "ja" ? "の回路またはワークフロー図" : " circuit or workflow diagram"}`}
+      // A wide circuit scrolls sideways on a phone, so the region must take
+      // keyboard focus for the scroll to be reachable (axe:
+      // scrollable-region-focusable, caught on the 390px production sweep).
+      tabIndex={0}
     >
       {wires.map((wire, wireIndex) => (
         <div className="mj-repo-circuit-row" key={wire}>

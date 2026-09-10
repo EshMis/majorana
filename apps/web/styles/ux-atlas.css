@@ -7,8 +7,22 @@
 .mj-repository-category-nav { overflow-x: auto; flex-wrap: nowrap; padding-bottom: var(--sp-2); }
 .mj-repository-category-nav a { flex-shrink: 0; min-height: var(--sp-10); padding-inline: var(--sp-4); display: inline-flex; align-items: center; }
 .mj-repository-search-status { min-height: var(--sp-5); margin: 0; color: var(--text-1); font-size: var(--fs-12); }
-.mj-repo-card { padding: var(--sp-5); }
+.mj-repo-card { padding: var(--sp-4) var(--sp-5); gap: var(--sp-1); }
 .mj-repo-card h3 { font-size: var(--fs-16); line-height: 1.5; }
+/* Two lines of description on a preview; the entry page has the rest. */
+.mj-repo-card > p { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.mj-repo-card-foot { padding-top: var(--sp-1); }
+/* Algorithms: method groups with an index that jumps to each. */
+.mj-repo-group-index { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0 0 var(--sp-4); padding: var(--sp-2) 0; background: var(--bg-0); }
+.mj-repo-group-index a { display: inline-flex; align-items: center; gap: var(--sp-2); min-height: var(--sp-8); padding: 0 var(--sp-3); border: 1px solid var(--border-0); border-radius: 999px; color: var(--text-0); font-size: var(--fs-13); text-decoration: none; }
+.mj-repo-group-index a:hover { border-color: var(--accent); color: var(--accent); }
+.mj-repo-group-index .mj-repo-group-count { font-size: var(--fs-12); }
+/* One scrolling row on a phone, so the sticky index costs one row of the screen, not four. */
+@media (max-width: 720px) {
+  .mj-repo-group-index { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--sp-4)); padding-inline: var(--sp-4); }
+  .mj-repo-group-index a { flex: 0 0 auto; }
+  .mj-repo-group { scroll-margin-top: var(--sp-16); }
+}
 .mj-repo-card-top { row-gap: var(--sp-2); }
 .mj-repo-card-foot, .mj-repo-card-links { flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
 .mj-repo-card-links :is(a, button) { min-height: var(--sp-8); }
