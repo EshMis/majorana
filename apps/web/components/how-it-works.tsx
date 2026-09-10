@@ -67,11 +67,18 @@ export function HowItWorks({
 
   useEffect(() => {
     const element = section.current;
-    const sync = () => setOnScreen((current) => current && document.visibilityState !== "hidden");
+    // Two signals, one state: the section is "on screen" when it intersects the
+    // viewport AND the tab is visible. Each is held on its own so a change in
+    // either recomputes from both — deriving the new value from the previous
+    // state would leave the section parked off screen for good after the tab
+    // was hidden and shown again (Sourcery, PR 858).
+    let intersecting = !element || !window.IntersectionObserver;
+    const sync = () => setOnScreen(intersecting && document.visibilityState !== "hidden");
     document.addEventListener("visibilitychange", sync);
     if (!element || !window.IntersectionObserver) return () => document.removeEventListener("visibilitychange", sync);
     const observer = new IntersectionObserver(([entry]) => {
-      setOnScreen(Boolean(entry?.isIntersecting) && document.visibilityState !== "hidden");
+      intersecting = Boolean(entry?.isIntersecting);
+      sync();
     }, { threshold: 0.25 });
     observer.observe(element);
     return () => {
