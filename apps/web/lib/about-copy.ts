@@ -18,21 +18,14 @@ type AboutCopy = {
     body: string;
     steps: Array<{ number: string; title: string; body: string }>;
   };
-  direction: {
+  /** The company's ambition, read after the people (owner, 2026-09-10). */
+  vision: {
     label: string;
-    title: string;
     paragraphs: string[];
-    audiences: string[];
   };
   team: {
     label: string;
     title: string;
-    body: string;
-    /** Accessible name for a founder's focus-tag list, composed as
-     *  `${member.name} — ${focusLabel}`. It exists because the label used to be
-     *  the hardcoded English word "focus", which a Japanese screen-reader user
-     *  heard read out in English beside a Japanese name. */
-    focusLabel: string;
     portraitAlt: string;
     members: Array<{
       number: "01" | "02" | "03";
@@ -41,7 +34,6 @@ type AboutCopy = {
       role: string;
       affiliation: string;
       bio: string;
-      focus: string[];
     }>;
   };
   cta: {
@@ -81,20 +73,16 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
         { number: "04", title: "Keep & reuse", body: "Preserve the circuit and evidence so the work can be revisited and extended." },
       ],
     },
-    direction: {
-      label: "Who it is for",
-      title: "Support research and learning.",
+    vision: {
+      label: "Where we are going",
       paragraphs: [
-        "Our aim is to lower three barriers at once: specialist knowledge, implementation, and verification.",
-        "Domain researchers should be able to explore their own questions with quantum methods. Independent researchers should be able to move faster without losing rigor. Learners should be able to understand quantum computing through circuits that actually run.",
+        "Leona Quantum started with three researchers who kept running into the same wall. Quantum computing is full of ideas that are hard to get from a paper onto a machine, and harder still to check once they are there. We are building the workspace that closes that gap: a question becomes a circuit, the circuit runs, and the result comes back with its evidence attached.",
+        "Our ambition is a platform that gets better with every run it makes. Each verified circuit, each paper tied to its method in the Atlas and each lesson someone completes teaches the system a little more about how quantum work is actually done. A chemist, a student and a hardware team should reach the same tools and trust the same answers, and the record of how those answers were produced should stay open.",
       ],
-      audiences: ["Domain R&D", "Independent research", "Learning & education"],
     },
     team: {
       label: "Our team",
-      title: "The founding team",
-      body: "Leona Quantum was founded by three researchers and engineers working across computer science, physical informatics, quantum machine learning, robotics, and AI for science.",
-      focusLabel: "Focus areas",
+      title: "Meet the founders",
       portraitAlt: "Portrait of {name}",
       members: [
         {
@@ -103,7 +91,6 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
           role: "CEO",
           affiliation: "Keio University · Information and Computer Science",
           bio: "Rui has researched multiple zeta functions and worked on robotics competitions, AI companion robots, and Vision-Language-Action research, with a focus on carrying theory into systems that work in the physical world.",
-          focus: ["Robotics", "VLA", "Engineering"],
         },
         {
           number: "02",
@@ -111,7 +98,6 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
           role: "COO",
           affiliation: "Keio University · Applied Physics and Physico-Informatics",
           bio: "Rei researches spintronics and topological insulators, and has also worked in machine-learning education and learning support for displaced communities.",
-          focus: ["Quantum materials", "Machine learning", "Education"],
         },
         {
           number: "03",
@@ -119,7 +105,6 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
           role: "CTO",
           affiliation: "UC Berkeley · Physics, Computer Science, and Chemistry",
           bio: "Eshaan has applied AI to physical simulation, life science, and quantum machine learning through work at Lawrence Berkeley National Laboratory, NASA Ames Research Center, and research teams at Berkeley and Keio.",
-          focus: ["AI for science", "Quantum ML", "Life science"],
         },
       ],
     },
@@ -158,20 +143,16 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
         { number: "04", title: "知識として残す", body: "回路と根拠を保存し、後から参照、再利用できる形にします。" },
       ],
     },
-    direction: {
-      label: "利用者",
-      title: "研究と学びを支える。",
+    vision: {
+      label: "目指す場所",
       paragraphs: [
-        "私たちが目指すのは、専門知識、実装、検証という三つの壁を下げることです。",
-        "他分野の研究開発者が、自分の課題へ量子技術を試せる。個人研究者が、確かさを失わずに開発を進められる。学習者が、実際に動く回路から理解を深められる。そんな入口をつくり、量子技術に取り組める人を増やしていきます。",
+        "Leona Quantumは、同じ壁に何度もぶつかってきた3人の研究者から始まりました。量子コンピューティングには、論文から実機へ運ぶのが難しいアイデアがあふれていて、運んだあとに確かめるのはさらに難しい。その隔たりを埋めるワークスペースを作っています。問いが回路になり、回路が動き、結果が検証記録とともに返ってくる場所です。",
+        "私たちが目指すのは、実行のたびに良くなっていくプラットフォームです。検証済みの回路、Atlasで手法と結びついた論文、誰かが修了した教材のひとつひとつが、量子の仕事が実際にどう進むのかをシステムに教えていきます。化学者も、学生も、ハードウェアのチームも、同じ道具にたどり着いて同じ答えを信頼できるように。そして、その答えがどう作られたかの記録は、開かれたままにしておきます。",
       ],
-      audiences: ["他分野の研究開発", "個人研究", "学習・教育"],
     },
     team: {
       label: "チーム",
-      title: "創業チーム",
-      body: "Leona Quantumは、情報工学、物理情報工学、量子機械学習、ロボティクス、生命科学AIなど、異なる領域で研究と開発に取り組んできた3人によって立ち上げられました。",
-      focusLabel: "注力領域",
+      title: "創業者を紹介します",
       portraitAlt: "{name}のポートレート",
       members: [
         {
@@ -180,7 +161,6 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
           role: "CEO",
           affiliation: "慶應義塾大学 理工学部 情報工学科",
           bio: "多重ゼータ関数の研究に取り組み、ロボット競技やAI対話ロボット、Vision-Language-Actionモデルの研究開発を通じて、理論を実際に動くシステムへ落とし込んできました。",
-          focus: ["ロボティクス", "VLA", "エンジニアリング"],
         },
         {
           number: "02",
@@ -188,7 +168,6 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
           role: "COO",
           affiliation: "慶應義塾大学 理工学部 物理情報工学科",
           bio: "スピントロニクスとトポロジカル絶縁体を研究しながら、機械学習教育や難民の学習支援にも携わっています。",
-          focus: ["量子材料", "機械学習", "教育"],
         },
         {
           number: "03",
@@ -196,7 +175,6 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
           role: "CTO",
           affiliation: "カリフォルニア大学バークレー校 物理学・情報科学・化学",
           bio: "ローレンス・バークレー国立研究所やNASA Ames Research Centerなどで、物理シミュレーション、生命科学、量子機械学習へのAI応用に取り組んできました。",
-          focus: ["AI for Science", "量子機械学習", "生命科学"],
         },
       ],
     },

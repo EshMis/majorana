@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { LandingCircuit } from "../../components/landing-circuit";
+import { HowItWorks } from "../../components/how-it-works";
 import { LiquidGridBackground } from "../../components/liquid-grid-background";
-import { ProductGlyph } from "../../components/product-glyph";
-import { Reveal } from "../../components/reveal";
 import type { Metadata } from "next";
 import { LandingDemoVideo } from "../../components/landing-demo-video";
 import { LandingBenchmark } from "../../components/landing-benchmark";
@@ -86,33 +84,10 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         />
       </section>
 
-      <Reveal>
-        <section className="lq-home-example" aria-labelledby="home-example-heading">
-          <div className="lq-home-example-copy">
-            <p className="mj-section-label">{copy.example.label}</p>
-            <h2 id="home-example-heading">{copy.example.title}</h2>
-            <p>{copy.example.body}</p>
-            <a className="mj-text-link" href="/studio">{copy.example.link} <span aria-hidden="true">→</span></a>
-          </div>
-          <LandingCircuit locale={locale} />
-        </section>
-      </Reveal>
-
-      <section className="lq-site-products" aria-labelledby="surfaces-heading">
-        <div className="lq-site-section-heading">
-          <p className="mj-section-label">{copy.product.label}</p>
-          <h2 id="surfaces-heading">{copy.product.title}</h2>
-        </div>
-        <div className="lq-site-product-grid">
-          {copy.product.items.map((item) => (
-            <a className="lq-site-product" href={item.href} key={item.title}>
-              <ProductGlyph kind={item.title} />
-              <div><h3>{item.title}</h3><p>{item.body}</p></div>
-              <span aria-hidden="true">↗</span>
-            </a>
-          ))}
-        </div>
-      </section>
+      {/* "From idea to implementation" and "The workspace" merged into one connected
+          diagram: the five surfaces on a rail, each opening into what it does. The
+          Bell-circuit example lives on inside the Studio stage. */}
+      <HowItWorks copy={copy.how} items={copy.product.items} locale={locale} />
 
       <section className="lq-site-evidence" aria-labelledby="evidence-heading">
         <div className="lq-site-section-heading">

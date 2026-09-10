@@ -42,8 +42,11 @@
 .lq-public-auth { flex: 0 0 auto; }
 .mj-public-site .mj-public-nav-primary { min-height: var(--header-control-h); }
 .mj-public-site .mj-public-nav-signout { display: inline-flex; align-items: center; min-height: var(--header-control-h); }
+/* The toggle groups carry 2px of padding and a 1px border of their own; the buttons give
+   that back so the group, not the button, is the 48px control. */
+.lq-public-preferences :is(.mj-theme-toggle, .mj-language-toggle) { padding: 0; }
 .lq-public-preferences .mj-theme-toggle button,
-.lq-public-preferences .mj-language-toggle button { min-width: var(--header-control-h); min-height: var(--header-control-h); }
+.lq-public-preferences .mj-language-toggle button { min-width: var(--header-control-h); min-height: calc(var(--header-control-h) - 2 * var(--border-hairline)); }
 .lq-public-preferences .mj-theme-toggle span { display: none; }
 .mj-public-site :where(a, button, input, textarea, select, summary):focus-visible {
   outline: 2px solid var(--accent);
@@ -86,7 +89,7 @@
   padding-left: var(--sp-8);
   border-left: var(--border-hairline) solid var(--border-0);
 }
-.lq-landing-circuit h2 { margin: var(--sp-3) 0 0; font-size: var(--fs-display-3); font-family: var(--font-display); font-weight: 400; }
+.lq-landing-circuit h4 { margin: var(--sp-3) 0 0; font-size: var(--fs-16); font-weight: 500; line-height: 1.5; }
 .lq-bell-diagram { width: 100%; height: auto; display: block; margin-block: var(--sp-2); }
 .lq-circuit-wires { fill: var(--bg-0); stroke: var(--text-0); stroke-width: 1.5; }
 .lq-circuit-control { fill: var(--text-0); }
@@ -182,11 +185,6 @@
 .lq-site-principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-8); }
 .lq-site-frameworks { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin: var(--sp-8) 0 0; color: var(--text-1); font-size: var(--fs-13); }
 .lq-site-frameworks span { color: var(--text-0); }
-.lq-site-home .mj-company-benchmark { padding-block: var(--sp-8); }
-.lq-site-home .mj-company-benchmark h2, .lq-site-home .mj-company-cross-benchmark h3 { font-family: var(--font-display); font-size: var(--fs-display-3); font-weight: 400; }
-.lq-site-home .mj-company-benchmark-score { background: var(--bg-1); }
-.lq-site-home .mj-company-benchmark-score-head, .lq-site-home .mj-company-benchmark-chart-head { color: var(--text-1); }
-.lq-site-home .mj-company-benchmark-track > span, .lq-site-home .mj-company-cross-benchmark-track > span { animation: none; transition: none; }
 .mj-public-site .mj-company-final-cta { margin-top: var(--sp-8); padding: var(--sp-8) 0; border-top: var(--border-hairline) solid var(--border-0); background: transparent; }
 .mj-public-site .mj-public-page-hero { padding-block: var(--sp-12); }
 .mj-public-site .mj-public-page-hero > p { max-width: 62ch; }
@@ -218,8 +216,8 @@
 .mj-about-site .mj-about-person-name h3 { font-family: var(--font-ui); font-size: var(--fs-20); }
 .mj-about-site .mj-about-person-bio { max-width: 72ch; }
 .mj-about-site .mj-about-person-affiliation { min-height: 0; }
-.mj-about-site .mj-about-person-focus { margin-top: var(--sp-4); padding-top: 0; }
-.mj-about-site .mj-about-person-focus li { color: var(--text-1); }
+
+
 .lq-legal-contents { max-width: var(--composer-max); margin-top: var(--sp-8); }
 .lq-legal-contents h2 { font-size: var(--fs-16); font-weight: 500; }
 .lq-legal-contents ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-6); list-style: none; padding: 0; }

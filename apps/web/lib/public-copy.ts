@@ -1,42 +1,30 @@
 import type { PublicLocale } from "./public-locale";
+import type { HowItWorksCopy } from "../components/how-it-works";
 
 export type HomeBenchmarkCopy = {
   label: string;
   title: string;
   body: string;
-  scoreLabel: string;
-  internalLabel: string;
-  chartLabel: string;
-  chartAria: string;
-  models: Array<{
+  /** The x axis, e.g. "pass@1, %". Every score is a percentage on 0–100. */
+  axisLabel: string;
+  leonaLabel: string;
+  reportedLabel: string;
+  tableLabel: string;
+  tableHeaders: { benchmark: string; model: string; score: string; source: string };
+  /**
+   * One row per benchmark (or per framework of a multi-framework benchmark).
+   * Exactly one score per row is `featured` — LeonaQ, our own evaluation; the
+   * rest are the figures the cited sources report. The numbers are the
+   * measurement: change them only against the source named in `badge`.
+   */
+  rows: Array<{
     name: string;
-    detail: string;
-    score: number;
-    badge: string;
-    featured?: boolean;
+    detail?: string;
+    scores: Array<{ model: string; detail?: string; score: number; badge: string; featured?: boolean }>;
   }>;
   note: string;
   sourcesLabel: string;
   sources: Array<{ label: string; href: string }>;
-  crossFramework: {
-    label: string;
-    title: string;
-    body: string;
-    internalLabel: string;
-    comparisonLabel: string;
-    chartAria: string;
-    frameworks: Array<{
-      name: string;
-      scores: Array<{
-        model: string;
-        score: number;
-        featured?: boolean;
-      }>;
-    }>;
-    note: string;
-    sourcesLabel: string;
-    sources: Array<{ label: string; href: string }>;
-  };
 };
 
 export const LOADING_COPY: Record<PublicLocale, {
@@ -74,7 +62,9 @@ export const HOME_COPY: Record<PublicLocale, {
   promptDemo: { label: string; submit: string; retry: string; prompts: string[] };
   /** `demoLabel` names the walkthrough video; `demoDescription` is read to screen readers only. */
   visual: { demoLabel: string; demoDescription: string; demoFallback: string };
-  example: { label: string; title: string; body: string; link: string };
+  /** The connected diagram of the five surfaces; `stages[i]` pairs with `product.items[i]`. */
+  how: HowItWorksCopy;
+  /** `items` is shared with the product page's map and list; `label`/`title` name that map there. */
   product: { label: string; title: string; items: Array<{ title: string; body: string; href: string }> };
   principles: { label: string; title: string; items: Array<{ title: string; body: string }> };
   frameworks: { label: string; items: string[] };
@@ -104,11 +94,43 @@ export const HOME_COPY: Record<PublicLocale, {
       "demoDescription": "Follow a circuit from generation and verification to editing in Studio and reuse through the Atlas.",
       "demoFallback": "Open the product demo video"
     },
-    example: {
-      label: "From idea to implementation",
-      title: "See the circuit. Understand the code.",
-      body: "Start with a question in Nala. Refine the circuit in Studio, then keep the code and results for your next experiment.",
-      link: "Explore Studio",
+    how: {
+      label: "How it fits together",
+      title: "From a question to a result you can check.",
+      lede: "Five parts on one thread. Ask, build, look it up, learn, share. Each hands its work to the next.",
+      flowLabel: "The five parts of Leona",
+      stages: [
+        {
+          figure: "nala",
+          title: "Ask in plain words",
+          body: "Describe what you want. Nala writes the circuit, runs it, and shows you the checks it passed, so you start from a working answer rather than a blank file.",
+          link: "Open Nala",
+        },
+        {
+          figure: "studio",
+          title: "Edit, run, keep versions",
+          body: "Every circuit opens in Studio. Change a gate, simulate it, verify it, and save the version. Your work stays private until you decide otherwise.",
+          link: "Open Studio",
+        },
+        {
+          figure: "atlas",
+          title: "Look it up at the source",
+          body: "A public reference of algorithms, papers and circuits, each tied to the paper it comes from. Pull one into Studio or cite it.",
+          link: "Browse the Atlas",
+        },
+        {
+          figure: "notebooks",
+          title: "Learn by running it",
+          body: "Turn a question into a Jupyter lesson with cells that run and exercises that check themselves.",
+          link: "Open Notebooks",
+        },
+        {
+          figure: "qapps",
+          title: "Share it as a small app",
+          body: "Wrap a circuit in a few inputs and a chart, then send the link. Anyone can try it without touching code.",
+          link: "Open Qapps",
+        },
+      ],
     },
     product: {
       "label": "The workspace",
@@ -174,69 +196,65 @@ export const HOME_COPY: Record<PublicLocale, {
       "secondary": "Explore the Atlas"
     },
     benchmark: {
-      label: "Model performance / Qiskit HumanEval",
+      label: "Benchmarks",
       title: "Measured on code that has to run.",
-      body: "In our internal evaluation, LeonaQ reached 55.0% pass@1 on Qiskit HumanEval, an execution-based benchmark for Qiskit code generation.",
-      scoreLabel: "Qiskit HumanEval · pass@1",
-      internalLabel: "Internal evaluation",
-      chartLabel: "Reported pass@1",
-      chartAria: "Qiskit HumanEval pass@1 comparison",
-      models: [
-        { name: "LeonaQ", detail: "Leona Quantum", score: 55.0, badge: "Internal", featured: true },
-        { name: "Qiskit Code Assistant", detail: "mistral-small-3.2-24b-qiskit", score: 47.0, badge: "Official model card" },
-        { name: "Granite 8B Code QK", detail: "granite-8b-code-qk", score: 46.5, badge: "QHE paper" },
-        { name: "DeepSeek Coder 33B", detail: "deepseek-coder-33b-base", score: 39.6, badge: "QHE paper" },
-        { name: "CodeLlama 34B Python", detail: "codellama-34b-python-hf", score: 26.7, badge: "QHE paper" },
+      body: "LeonaQ's pass@1 on two execution-based benchmarks, next to the results their papers report for other models.",
+      axisLabel: "pass@1, %",
+      leonaLabel: "LeonaQ, our evaluation",
+      reportedLabel: "Reported in the source",
+      tableLabel: "The same numbers as a table",
+      tableHeaders: { benchmark: "Benchmark", model: "Model", score: "pass@1", source: "Source" },
+      rows: [
+        {
+          name: "Qiskit HumanEval",
+          detail: "Qiskit code generation, execution-based",
+          scores: [
+            { model: "LeonaQ", detail: "Leona Quantum", score: 55.0, badge: "Internal", featured: true },
+            { model: "Qiskit Code Assistant", detail: "mistral-small-3.2-24b-qiskit", score: 47.0, badge: "Official model card" },
+            { model: "Granite 8B Code QK", detail: "granite-8b-code-qk", score: 46.5, badge: "QHE paper" },
+            { model: "DeepSeek Coder 33B", detail: "deepseek-coder-33b-base", score: 39.6, badge: "QHE paper" },
+            { model: "CodeLlama 34B Python", detail: "codellama-34b-python-hf", score: 26.7, badge: "QHE paper" },
+          ],
+        },
+        {
+          name: "QuanBench+ · Qiskit",
+          detail: "42 tasks",
+          scores: [
+            { model: "LeonaQ", score: 72.3, badge: "Internal", featured: true },
+            { model: "Gemini", score: 59.5, badge: "QuanBench+ paper" },
+            { model: "GPT", score: 57.1, badge: "QuanBench+ paper" },
+            { model: "Claude", score: 45.2, badge: "QuanBench+ paper" },
+          ],
+        },
+        {
+          name: "QuanBench+ · Cirq",
+          detail: "the same 42 tasks",
+          scores: [
+            { model: "LeonaQ", score: 71.4, badge: "Internal", featured: true },
+            { model: "Gemini", score: 54.8, badge: "QuanBench+ paper" },
+            { model: "GPT", score: 52.4, badge: "QuanBench+ paper" },
+            { model: "Claude", score: 35.7, badge: "QuanBench+ paper" },
+          ],
+        },
+        {
+          name: "QuanBench+ · PennyLane",
+          detail: "the same 42 tasks",
+          scores: [
+            { model: "LeonaQ", score: 66.7, badge: "Internal", featured: true },
+            { model: "Gemini", score: 40.5, badge: "QuanBench+ paper" },
+            { model: "GPT", score: 42.9, badge: "QuanBench+ paper" },
+            { model: "Claude", score: 26.2, badge: "QuanBench+ paper" },
+          ],
+        },
       ],
-      note: "LeonaQ's 55.0% is from our internal evaluation. Comparator values are reported results from the Qiskit HumanEval paper and Qiskit's official model card. Dataset revisions, system prompts, and execution environments may differ, so this is a directional comparison rather than a controlled head-to-head test.",
-      sourcesLabel: "Sources and methodology",
+      note: "LeonaQ's figures come from our own evaluation. The comparator figures are the ones reported in the Qiskit HumanEval paper, Qiskit's model card and the QuanBench+ paper, where Gemini 3 Pro, GPT-5.1 and Claude 3.7 Sonnet appear here under their family names. Datasets, prompts and environments differ between those runs and ours, so treat this as directional rather than a controlled head-to-head.",
+      sourcesLabel: "Sources",
       sources: [
         { label: "Qiskit HumanEval paper · Table II", href: "https://arxiv.org/abs/2406.14712" },
         { label: "Qiskit model card · benchmark table", href: "https://huggingface.co/Qiskit/mistral-small-3.2-24b-qiskit" },
         { label: "IBM Quantum · Qiskit Code Assistant", href: "https://quantum.cloud.ibm.com/docs/en/guides/qiskit-code-assistant" },
+        { label: "QuanBench+ paper · Table 3", href: "https://arxiv.org/html/2604.08570v2" },
       ],
-      crossFramework: {
-        label: "Multi-framework evaluation / QuanBench+",
-        title: "Quantum code that travels across frameworks.",
-        body: "We evaluated LeonaQ on the same 42 quantum-programming tasks implemented in Qiskit, Cirq, and PennyLane.",
-        internalLabel: "Internal evaluation",
-        comparisonLabel: "Reported Pass@1",
-        chartAria: "QuanBench+ Pass@1 comparison across Qiskit, Cirq, and PennyLane",
-        frameworks: [
-          {
-            name: "Qiskit",
-            scores: [
-              { model: "LeonaQ", score: 72.3, featured: true },
-              { model: "Gemini", score: 59.5 },
-              { model: "GPT", score: 57.1 },
-              { model: "Claude", score: 45.2 },
-            ],
-          },
-          {
-            name: "Cirq",
-            scores: [
-              { model: "LeonaQ", score: 71.4, featured: true },
-              { model: "Gemini", score: 54.8 },
-              { model: "GPT", score: 52.4 },
-              { model: "Claude", score: 35.7 },
-            ],
-          },
-          {
-            name: "PennyLane",
-            scores: [
-              { model: "LeonaQ", score: 66.7, featured: true },
-              { model: "Gemini", score: 40.5 },
-              { model: "GPT", score: 42.9 },
-              { model: "Claude", score: 26.2 },
-            ],
-          },
-        ],
-        note: "LeonaQ results are from our internal evaluation of QuanBench+. Comparator values are reported Pass@1 results for Gemini 3 Pro, GPT-5.1, and Claude 3.7 Sonnet in the QuanBench+ paper; model names are shortened to their families here. Evaluation environments may differ, so this is a directional comparison rather than a controlled head-to-head test.",
-        sourcesLabel: "Source and methodology",
-        sources: [
-          { label: "QuanBench+ paper · Table 3", href: "https://arxiv.org/html/2604.08570v2" },
-        ],
-      },
     },
   },
   ja: {
@@ -262,11 +280,43 @@ export const HOME_COPY: Record<PublicLocale, {
       "demoDescription": "回路の生成と検証から、Studioでの編集、Atlasを使った再利用までを紹介します。",
       "demoFallback": "プロダクトデモ動画を開く"
     },
-    example: {
-      label: "アイデアから実装へ",
-      title: "回路を見て、コードを理解する。",
-      body: "Nalaに問いを伝え、Studioで回路を編集。コードと結果を保存し、次の実験につなげます。",
-      link: "Studioを開く",
+    how: {
+      label: "全体のつながり",
+      title: "問いから、確かめられる結果まで。",
+      lede: "5つの部品が1本の流れでつながります。尋ねる、組み立てる、調べる、学ぶ、共有する。それぞれが次の作業へ受け渡します。",
+      flowLabel: "Leonaを構成する5つの部品",
+      stages: [
+        {
+          figure: "nala",
+          title: "言葉で頼む",
+          body: "作りたいものを説明すると、Nalaが回路を書いて実行し、通った検証を示します。白紙からではなく、動く答えから始められます。",
+          link: "Nalaを開く",
+        },
+        {
+          figure: "studio",
+          title: "編集して、実行して、版を残す",
+          body: "回路はすべてStudioで開けます。ゲートを変え、シミュレーションと検証を行い、版として保存します。公開すると決めるまでは非公開のままです。",
+          link: "Studioを開く",
+        },
+        {
+          figure: "atlas",
+          title: "出典にあたって調べる",
+          body: "アルゴリズム、論文、回路の公開リファレンスです。それぞれが元の論文と結びついています。Studioに取り込むことも、引用することもできます。",
+          link: "Atlasを見る",
+        },
+        {
+          figure: "notebooks",
+          title: "動かしながら学ぶ",
+          body: "問いをJupyterの教材に変えます。セルは実際に実行でき、演習は自動で採点されます。",
+          link: "ノートブックを開く",
+        },
+        {
+          figure: "qapps",
+          title: "小さなアプリとして共有する",
+          body: "回路にいくつかの入力欄とグラフを付けて、リンクを送るだけ。コードに触れずに誰でも試せます。",
+          link: "Qappsを開く",
+        },
+      ],
     },
     product: {
       "label": "ワークスペース",
@@ -332,69 +382,65 @@ export const HOME_COPY: Record<PublicLocale, {
       "secondary": "Atlasを見る"
     },
     benchmark: {
-      label: "モデル性能 / QISKIT HUMANEVAL",
+      label: "ベンチマーク",
       title: "動くコードで、モデルの実力を測る。",
-      body: "LeonaQは、Qiskitコード生成を実行テストで評価するQiskit HumanEvalにおいて、pass@1 55.0%を記録しました（社内評価）。",
-      scoreLabel: "Qiskit HumanEval · pass@1",
-      internalLabel: "社内評価",
-      chartLabel: "pass@1 公表値との比較",
-      chartAria: "Qiskit HumanEvalのpass@1比較",
-      models: [
-        { name: "LeonaQ", detail: "Leona Quantum", score: 55.0, badge: "社内評価", featured: true },
-        { name: "Qiskit Code Assistant", detail: "mistral-small-3.2-24b-qiskit", score: 47.0, badge: "公式モデルカード" },
-        { name: "Granite 8B Code QK", detail: "granite-8b-code-qk", score: 46.5, badge: "QHE論文" },
-        { name: "DeepSeek Coder 33B", detail: "deepseek-coder-33b-base", score: 39.6, badge: "QHE論文" },
-        { name: "CodeLlama 34B Python", detail: "codellama-34b-python-hf", score: 26.7, badge: "QHE論文" },
+      body: "実行テストに基づく2つのベンチマークでのLeonaQのpass@1を、各論文が公表する他モデルの結果と並べています。",
+      axisLabel: "pass@1（%）",
+      leonaLabel: "LeonaQ（社内評価）",
+      reportedLabel: "出典の公表値",
+      tableLabel: "同じ数値を表で見る",
+      tableHeaders: { benchmark: "ベンチマーク", model: "モデル", score: "pass@1", source: "出典" },
+      rows: [
+        {
+          name: "Qiskit HumanEval",
+          detail: "Qiskitコード生成・実行ベース",
+          scores: [
+            { model: "LeonaQ", detail: "Leona Quantum", score: 55.0, badge: "社内評価", featured: true },
+            { model: "Qiskit Code Assistant", detail: "mistral-small-3.2-24b-qiskit", score: 47.0, badge: "公式モデルカード" },
+            { model: "Granite 8B Code QK", detail: "granite-8b-code-qk", score: 46.5, badge: "QHE論文" },
+            { model: "DeepSeek Coder 33B", detail: "deepseek-coder-33b-base", score: 39.6, badge: "QHE論文" },
+            { model: "CodeLlama 34B Python", detail: "codellama-34b-python-hf", score: 26.7, badge: "QHE論文" },
+          ],
+        },
+        {
+          name: "QuanBench+ · Qiskit",
+          detail: "42課題",
+          scores: [
+            { model: "LeonaQ", score: 72.3, badge: "社内評価", featured: true },
+            { model: "Gemini", score: 59.5, badge: "QuanBench+論文" },
+            { model: "GPT", score: 57.1, badge: "QuanBench+論文" },
+            { model: "Claude", score: 45.2, badge: "QuanBench+論文" },
+          ],
+        },
+        {
+          name: "QuanBench+ · Cirq",
+          detail: "同じ42課題",
+          scores: [
+            { model: "LeonaQ", score: 71.4, badge: "社内評価", featured: true },
+            { model: "Gemini", score: 54.8, badge: "QuanBench+論文" },
+            { model: "GPT", score: 52.4, badge: "QuanBench+論文" },
+            { model: "Claude", score: 35.7, badge: "QuanBench+論文" },
+          ],
+        },
+        {
+          name: "QuanBench+ · PennyLane",
+          detail: "同じ42課題",
+          scores: [
+            { model: "LeonaQ", score: 66.7, badge: "社内評価", featured: true },
+            { model: "Gemini", score: 40.5, badge: "QuanBench+論文" },
+            { model: "GPT", score: 42.9, badge: "QuanBench+論文" },
+            { model: "Claude", score: 26.2, badge: "QuanBench+論文" },
+          ],
+        },
       ],
-      note: "LeonaQの55.0%は社内評価値です。比較対象には、Qiskit HumanEval論文とQiskit公式モデルカードの公表値を使用しています。データセットの版、システムプロンプト、実行環境が異なる可能性があるため、同一条件での厳密な直接比較ではありません。",
-      sourcesLabel: "出典・評価方法",
+      note: "LeonaQの数値は社内評価です。比較値はQiskit HumanEval論文、Qiskit公式モデルカード、QuanBench+論文の公表値で、Gemini 3 Pro、GPT-5.1、Claude 3.7 Sonnetはファミリー名で表記しています。データセットやプロンプト、実行環境が異なるため、同一条件での直接比較ではなく目安としてご覧ください。",
+      sourcesLabel: "出典",
       sources: [
         { label: "Qiskit HumanEval論文 · Table II", href: "https://arxiv.org/abs/2406.14712" },
         { label: "Qiskit公式モデルカード · ベンチマーク表", href: "https://huggingface.co/Qiskit/mistral-small-3.2-24b-qiskit" },
         { label: "IBM Quantum · Qiskit Code Assistant", href: "https://quantum.cloud.ibm.com/docs/en/guides/qiskit-code-assistant" },
+        { label: "QuanBench+論文 · Table 3", href: "https://arxiv.org/html/2604.08570v2" },
       ],
-      crossFramework: {
-        label: "マルチフレームワーク評価 / QUANBENCH+",
-        title: "3つのフレームワークで、性能を測る。",
-        body: "同じ42の量子プログラミング課題をQiskit、Cirq、PennyLaneに実装したQuanBench+で、LeonaQを評価しました。",
-        internalLabel: "社内評価",
-        comparisonLabel: "pass@1 公表値",
-        chartAria: "Qiskit、Cirq、PennyLaneにおけるQuanBench+のpass@1比較",
-        frameworks: [
-          {
-            name: "Qiskit",
-            scores: [
-              { model: "LeonaQ", score: 72.3, featured: true },
-              { model: "Gemini", score: 59.5 },
-              { model: "GPT", score: 57.1 },
-              { model: "Claude", score: 45.2 },
-            ],
-          },
-          {
-            name: "Cirq",
-            scores: [
-              { model: "LeonaQ", score: 71.4, featured: true },
-              { model: "Gemini", score: 54.8 },
-              { model: "GPT", score: 52.4 },
-              { model: "Claude", score: 35.7 },
-            ],
-          },
-          {
-            name: "PennyLane",
-            scores: [
-              { model: "LeonaQ", score: 66.7, featured: true },
-              { model: "Gemini", score: 40.5 },
-              { model: "GPT", score: 42.9 },
-              { model: "Claude", score: 26.2 },
-            ],
-          },
-        ],
-        note: "LeonaQの数値はQuanBench+を使った社内評価です。比較値には、QuanBench+論文が公表しているGemini 3 Pro、GPT-5.1、Claude 3.7 Sonnetのpass@1を使用し、画面上の名称はモデルファミリー名に短縮しています。実行環境が異なる可能性があるため、同一条件での厳密な直接比較ではありません。",
-        sourcesLabel: "出典・評価方法",
-        sources: [
-          { label: "QuanBench+論文 · Table 3", href: "https://arxiv.org/html/2604.08570v2" },
-        ],
-      },
     },
   },
 };
