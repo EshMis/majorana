@@ -54,6 +54,7 @@
 // 4. **Never fill a hole.** An unstated applicability condition is `undefined`,
 //    not a plausible sentence. Same rule §3.6 applies to a gap in a record.
 import { estimateTextWidth, LANE_FONT_PX } from "./process-layout.ts";
+import type { VerificationMethodId } from "./verification.ts";
 import { stateSatisfies, validateStateVocabulary, type StateVocabulary } from "./states.ts";
 import { validatePairedTheory, validateTheory } from "./theory-marks.ts";
 import type { PublicRepositoryCategory, SourceCoverage } from "./types";
@@ -3456,6 +3457,14 @@ export interface LayerCorpusEntry {
   runnable?: readonly LayerCorpusRunnable[];
   /** The record's verification prose, verbatim. The Results of a joined implementation. */
   verification?: string;
+  /**
+   * The verification methods the Atlas derives for the record, so the card can
+   * draw the same tier glyph the browse card and the record page draw. Passed
+   * in by the page rather than derived here: the derivation reads the whole
+   * record (`entry-verification.ts`), and this projection deliberately holds a
+   * slice of it.
+   */
+  verificationMethods?: readonly VerificationMethodId[];
   /** The record's provenance line, verbatim. Half of the classification stamp. */
   provenance?: string;
   /**
@@ -3508,6 +3517,7 @@ export function layerCorpusEntry(entry: {
   descriptionJa: string;
   codeVariants?: readonly { framework: string; status?: string; filename?: string }[];
   verification?: string;
+  verificationMethods?: readonly VerificationMethodId[];
   provenance?: string;
   algorithmFamily?: string;
   tags?: readonly string[];
@@ -3525,6 +3535,7 @@ export function layerCorpusEntry(entry: {
       filename: variant.filename,
     })),
     verification: entry.verification,
+    verificationMethods: entry.verificationMethods,
     provenance: entry.provenance,
     algorithmFamily: entry.algorithmFamily,
     tags: entry.tags,

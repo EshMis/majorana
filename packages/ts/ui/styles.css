@@ -1353,40 +1353,16 @@ a.mj-facet-option:hover {
   border-color: var(--text-1);
 }
 
-.mj-repository-detail-kicker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-3);
-  margin-top: var(--sp-8);
-  color: var(--text-2);
-  font-family: var(--font-mono);
-  font-size: var(--fs-12);
-  text-transform: uppercase;
-}
 
-.mj-repository-detail-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.38fr);
-  gap: var(--sp-12);
-}
-.mj-repository-detail-layout > *,
+
+
 .mj-repository-aside-card,
 .mj-repository-entry-links {
   min-width: 0;
 }
-.mj-repository-detail-main {
-  min-width: 0;
-}
 
-.mj-repository-detail-section h2,
-.mj-repository-related h2 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--fs-display-3);
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-}
+
+
 
 .mj-repository-outcomes {
   display: grid;
@@ -1494,12 +1470,7 @@ a.mj-facet-option:hover {
   margin: var(--sp-3) 0;
   line-height: 1.6;
 }
-.mj-repository-detail-aside {
-  display: grid;
-  align-content: start;
-  gap: var(--sp-4);
-  padding-top: var(--sp-12);
-}
+
 .mj-repository-aside-card {
   padding: var(--sp-5);
   border: 1px solid var(--border-0);
@@ -1550,38 +1521,12 @@ a.mj-facet-option:hover {
   font-size: var(--fs-12);
   line-height: 1.5;
 }
-.mj-repository-related {
-  padding: var(--sp-12) 0;
-  border-top: 1px solid var(--border-0);
-}
-.mj-repository-related-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--sp-4);
-  margin-top: var(--sp-6);
-}
-.mj-repository-related-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  padding: var(--sp-5);
-  border: 1px solid var(--border-0);
-  border-radius: var(--radius-card);
-  color: var(--text-0);
-  background: var(--bg-1);
-  text-decoration: none;
-}
-.mj-repository-related-card:hover { border-color: var(--accent); }
-.mj-repository-related-card span {
-  color: var(--text-2);
-  font-family: var(--font-mono);
-  font-size: var(--fs-12);
-}
-.mj-repository-related-card strong {
-  font-size: var(--fs-14);
-  font-weight: 500;
-  text-transform: capitalize;
-}
+
+
+
+
+
+
 
 /* contact and legal pages */
 .mj-contact-hero {
@@ -7595,16 +7540,11 @@ div.mj-rail-row:hover {
  * vertical navigation aid; on mobile it becomes a compact stage strip so the
  * evidence panel never forces the page wider than the viewport. */
 @media (max-width: 860px) {
-  .mj-repository-guidance,
-  .mj-repository-detail-layout {
+  .mj-repository-guidance {
     grid-template-columns: minmax(0, 1fr);
   }
-  .mj-repository-detail-aside {
-    padding-top: 0;
-  }
-  .mj-repository-related-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  
+  
 }
 
 @media (max-width: 620px) {
@@ -7615,13 +7555,7 @@ div.mj-rail-row:hover {
   .mj-public-header > .mj-language-toggle button {
     font-size: var(--fs-12);
   }
-  .mj-repository-related-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-.mj-repository-detail-section,
-.mj-repository-related {
-    padding-block: var(--sp-8);
-  }
+  
 }
 
 @media (max-width: 760px) {
@@ -8526,76 +8460,24 @@ div.mj-rail-row:hover {
 }
 
 /* ---------- repository detail: compact hero + collapsible sections ---------- */
-.mj-repo-detail-hero {
-  padding: var(--sp-6) 0 var(--sp-6);
-  border-bottom: 1px solid var(--border-0);
-}
-.mj-repo-detail-hero h1 {
-  max-width: 680px;
-  margin: var(--sp-3) 0 0;
-  font-size: var(--fs-28);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
-}
-.mj-repo-detail-hero > p {
-  max-width: 720px;
-  margin: var(--sp-2) 0 0;
-  color: var(--text-1);
-  font-size: var(--fs-14);
-  line-height: 1.55;
-}
-.mj-repo-detail-hero-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  margin-top: var(--sp-4);
-}
-.mj-repo-detail-hero-foot .mj-repository-tags { margin-top: 0; }
-.mj-repo-detail-lede {
-  max-width: 760px;
-  margin: 0 0 var(--sp-4);
-  color: var(--text-1);
-  font-size: var(--fs-14);
-  line-height: 1.6;
-}
-.mj-repo-section {
-  margin: 0 0 var(--sp-3);
-  border: 1px solid var(--border-0);
-  border-radius: var(--radius-card);
-  background: var(--bg-1);
-}
-.mj-repo-section > summary {
-  padding: var(--sp-3) var(--sp-4);
-  color: var(--text-0);
-  font-size: var(--fs-14);
-  font-weight: 500;
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  align-items: center;
-}
-.mj-repo-section > summary::-webkit-details-marker { display: none; }
-.mj-repo-section > summary::after {
-  content: "+";
-  margin-left: auto;
-  color: var(--text-2);
-  font-family: var(--font-mono);
-}
-.mj-repo-section[open] > summary::after { content: "−"; }
-.mj-repo-section-body {
-  padding: 0 var(--sp-4) var(--sp-4);
-}
+
+
+
+
+
+
+
+
+
+
+
+
 /* Consecutive paragraphs inside a disclosure were touching, so two paragraphs
    read as one run-on block — visible the moment a disclosure carried prose
    rather than a table or a code block, which is what the Atlas's "About" box
    is. Scoped to `p + p` so a body whose first child is a paragraph keeps
    sitting tight under its summary. */
-.mj-repo-section-body > p + p {
-  margin-top: var(--sp-3);
-}
+
 .mj-repo-code-controls {
   display: flex;
   align-items: end;
@@ -14453,6 +14335,87 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   margin: var(--sp-4) 0 0;
   color: var(--text-2);
   font-size: var(--fs-12);
+}
+/* The record's own chrome on a card's record list (2026-09-10): the tier glyph
+   and the frameworks its code is written in, so a record looks the same from
+   the map as it does on its page and on the browse card. */
+.mj-card-record-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-1) 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-12);
+}
+/* --- the record page wears the card (2026-09-10) ------------------------- */
+/* The owner asked for Atlas entries to *"match exactly how the cards look like
+   when clicked into on the map"*: same eyebrow, name, lede, way onward, row of
+   section names, one section under it, references below. `.mj-card--page` is
+   the card as a page rather than a popover — static, opaque, as tall as its
+   content, and the body does not scroll inside it. */
+.mj-record-page {
+  width: min(100%, 48rem);
+  margin: 0 auto;
+  padding: var(--sp-4) 0 var(--sp-8);
+}
+.mj-card--page {
+  position: static;
+  width: auto;
+  max-height: none;
+  background: var(--bg-1);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+.mj-card--page h1 {
+  margin: 0;
+  font-size: var(--fs-20);
+}
+.mj-card--page .mj-back-link {
+  margin-bottom: var(--sp-4);
+}
+.mj-card--page .mj-card-body {
+  overflow: visible;
+}
+.mj-card--page .mj-card-onward {
+  align-items: center;
+}
+.mj-card--page .mj-repository-topics {
+  margin-top: var(--sp-3);
+}
+/* A section that holds two or three panels names each one quietly, the way the
+   references heading does — a page has an h1, so these are h2 and the
+   references heading is too. */
+.mj-card--page .mj-record-subhead,
+.mj-card--page .mj-card-references > h2 {
+  margin: var(--sp-4) 0 var(--sp-3);
+  color: var(--text-2);
+  font-size: var(--fs-12);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.mj-card--page .mj-record-subhead:first-child,
+.mj-card--page .mj-card-references > h2 {
+  margin-top: 0;
+}
+.mj-card--page .mj-layers-entry-strip {
+  margin-top: 0;
+}
+/* What has no section on the card sits under it: how the record was verified,
+   where it came from, where it is used. */
+.mj-record-aside {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+.mj-record-aside .mj-repository-tags {
+  margin-top: var(--sp-3);
+}
+.mj-record-page .mj-repository-star-note {
+  margin-top: var(--sp-3);
 }
 
 /* ---------- Notebooks ---------- */

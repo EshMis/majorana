@@ -43,11 +43,13 @@ import {
   ownCardId,
   sectionState,
   type Card,
+  type MethodCard,
 } from "./repository/card-content.ts";
 import { LAYER_GRAPH } from "./repository/layer-graph.ts";
 import { STATE_VOCABULARY } from "./repository/state-vocabulary.ts";
 import { PAPER_REGISTER } from "./repository/paper-register.ts";
 import {
+  alternativesTo,
   isMethod,
   layerNode,
   ownStretchName,
@@ -257,6 +259,10 @@ test("the card draws the sections the owner asked for, in the order he asked for
       // Contested it is commentary on the method's standing rather than part
       // of the recipe above it.
       "refinements",
+      // The 2026-09-10 Atlas pass: the method's standing among its neighbours,
+      // between Refinements and Contested so both earlier rulings still hold.
+      "alternatives",
+      "makes-unnecessary",
       "contested",
       "implementations",
       "records",
@@ -309,7 +315,9 @@ test("a section is never empty and silent — every one resolves to held, or to 
     // six on a process — the two card kinds are different shapes, and a
     // count that only fitted the fatter one would pass a process card that had lost half
     // its sections.
-    const expected = card.kind === "method" ? 11 : 6;
+    // 13 on a method since the 2026-09-10 Atlas pass added Alternatives and
+    // Makes unnecessary; the two gap sentences still cover every one of them.
+    const expected = card.kind === "method" ? 13 : 6;
     assert.equal(
       sections.length,
       expected,
@@ -326,7 +334,7 @@ test("a section is never empty and silent — every one resolves to held, or to 
   // Pinned so a section cannot quietly leave the card. Removing one is a change to this
   // number, which is a change somebody has to justify in a diff. 16 until s121
   // (`method:refinements` is W17's addition).
-  assert.equal(seen.size, 17, `${seen.size} distinct sections: ${[...seen].sort().join(", ")}`);
+  assert.equal(seen.size, 19, `${seen.size} distinct sections: ${[...seen].sort().join(", ")}`);
 });
 
 test("the two gaps stay different facts — the undesigned sections never say 'none found yet'", () => {
@@ -2206,4 +2214,28 @@ test("every method carries a listing, and the graph cannot shrink to pass", () =
       `${node.id}'s listing is a single line — a block was flattened`,
     );
   }
+});
+
+test("the card names the other ways through its slot, and the slots it lets a route skip", () => {
+  // Read off the same graph helpers the method page draws from, so the card and
+  // the page cannot count a different set of neighbours.
+  const methods = cards().filter((card): card is MethodCard => card.kind === "method");
+  const nodeOf = (card: MethodCard) => layerNode(LAYER_GRAPH, card.id) as LayerMethod;
+  const withSiblings = methods.filter((card) => alternativesTo(LAYER_GRAPH, nodeOf(card)).length > 0);
+  assert.ok(withSiblings.length > 0, "no method in the graph shares a slot");
+  for (const card of withSiblings) {
+    assert.ok(card.alternatives.held, `${card.id} shares a slot and draws no alternatives`);
+    assert.equal(card.alternatives.value.length, alternativesTo(LAYER_GRAPH, nodeOf(card)).length);
+  }
+  const alone = methods.find((card) => alternativesTo(LAYER_GRAPH, nodeOf(card)).length === 0);
+  if (alone) assert.equal(alone.alternatives.held, false, `${alone.id} fills its slot alone and draws alternatives`);
+
+  const bypassing = methods.filter((card) => (nodeOf(card).bypasses ?? []).length > 0);
+  assert.ok(bypassing.length > 0, "the graph records no bypass at all");
+  for (const card of bypassing) {
+    assert.ok(card.makesUnnecessary.held, `${card.id} bypasses a slot and draws none`);
+    assert.equal(card.makesUnnecessary.value.length, (nodeOf(card).bypasses ?? []).length);
+  }
+  const direct = methods.find((card) => (nodeOf(card).bypasses ?? []).length === 0);
+  if (direct) assert.equal(direct.makesUnnecessary.held, false);
 });
