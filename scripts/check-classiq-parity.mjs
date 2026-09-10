@@ -68,7 +68,7 @@ const intakeMod = await bundle("apps/web/lib/repository/entries-classiq-parity.t
 
 const { PUBLIC_REPOSITORY_ENTRIES } = corpusMod;
 const { CLASSIQ_COVERAGE, CLASSIQ_COVERAGE_BASIS, CLASSIQ_NOT_APPLICABLE } = coverageMod;
-const { CLASSIQ_PARITY_COVERAGE } = intakeMod;
+const { CLASSIQ_PARITY_COVERAGE, CLASSIQ_PARITY_ENTRIES } = intakeMod;
 
 // The strengths a declaration can have, in the order they are printed. Kept in
 // step with `ClassiqClaimBasis` in apps/web/lib/repository/classiq-coverage.ts —
@@ -99,6 +99,61 @@ const corpusSlugs = new Set(PUBLIC_REPOSITORY_ENTRIES.map((entry) => entry.slug)
 const indexPaths = new Set(index.entries.map((entry) => entry.path));
 
 const errors = [];
+
+// --- the library is not named to a reader (owner directive 2026-09-10, ai-ops issue 217 lane) ---
+//
+// Unlike the Zoo-parity file, `verification`, `verificationDetails.method`,
+// the "Reference implementation" resource row and every per-record caveat
+// and complexityBasis mention that named the library was pure provenance
+// prose -- "the index gives a path and file list, states no bound" -- and
+// all of it was rewritten to drop the library's name and its directory
+// path. So this scans on every record, not a sample.
+//
+// One exception, exactly one record: qaoa-in-qaoa's `idea`/`explanation`
+// and `caveat` report a fact the PRIMARY PAPER's own abstract states about
+// its own implementation ("built on the Classiq platform ... run on an
+// HPE-Cray EX supercomputer") -- citation content, not index-provenance
+// framing, and the caveat text itself says so explicitly. Rewriting that
+// would misattribute the paper's own methodology detail, which is exactly
+// what the hard rule against touching citations exists to prevent. So this
+// is a pinned, named exception, not a loosened check.
+const CLASSIQ_PLATFORM_CITATION_EXCEPTION = "qaoa-in-qaoa";
+for (const entry of CLASSIQ_PARITY_ENTRIES) {
+  const exempt = entry.slug === CLASSIQ_PLATFORM_CITATION_EXCEPTION;
+  const fields = {
+    verification: entry.verification,
+    "verificationDetails.method": entry.verificationDetails?.method,
+    ...(exempt ? {} : {
+      "verificationDetails.caveat": entry.verificationDetails?.caveat,
+      explanation: entry.explanation,
+    }),
+  };
+  for (const [field, value] of Object.entries(fields)) {
+    if (typeof value === "string" && /Classiq/.test(value)) {
+      errors.push(`${entry.slug}: ${field} names the library -- should describe the record without it`);
+    }
+  }
+  for (const row of [...(entry.resources ?? []), ...(entry.metadata ?? [])]) {
+    if (/Classiq/.test(row.label) || (typeof row.value === "string" && /Classiq/.test(row.value))) {
+      errors.push(`${entry.slug}: a resource/metadata row still names the library ("${row.label}")`);
+    }
+  }
+  // The exempt record's caveat/explanation must still name ONLY the one
+  // platform fact, not carry forward any of the boilerplate this pass
+  // removed everywhere else -- so the exemption cannot silently widen into
+  // "anything goes" for this record.
+  if (exempt) {
+    const caveat = entry.verificationDetails?.caveat ?? "";
+    const explanation = entry.explanation ?? "";
+    if (!/built on the Classiq platform/.test(caveat)) {
+      errors.push(`${entry.slug}: expected caveat to still cite the paper's own "built on the Classiq platform" fact -- has the wording changed?`);
+    }
+    if (/does not reproduce or verify the Classiq demonstration|Classiq index entry|Classiq directory/.test(caveat + explanation)) {
+      errors.push(`${entry.slug}: caveat/explanation carries index-provenance boilerplate this pass should have removed, alongside the one citation exception`);
+    }
+  }
+}
+
 for (const [path, claims] of coverage) {
   if (!indexPaths.has(path)) {
     errors.push(

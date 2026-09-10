@@ -11572,6 +11572,31 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   color: var(--text-2);
   font-style: italic;
 }
+/* The claims page's per-row status: the same chip, extended with the two
+   states that surface needs. `absent` gets the warn tint
+   `.mj-layers-repeat--measured` uses elsewhere on this page for "an answer
+   worth noticing" -- never red or an error tone, because the finding is
+   about one paper's text, not a defect in the record. `unchecked` reuses the
+   quiet, italic "nobody has established this" treatment `unknown` already
+   has above. */
+.mj-papers-chip[data-status="absent"] {
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--border-0));
+  color: var(--text-0);
+}
+.mj-papers-chip[data-status="unchecked"] {
+  color: var(--text-2);
+  font-style: italic;
+}
+/* The long "what was read" text, collapsed by default so a row reads as one
+   line and one link, not a paragraph. */
+.mj-claims-read { margin: var(--sp-2) 0 0; }
+.mj-claims-read > summary {
+  color: var(--text-2);
+  font-size: var(--fs-12);
+  cursor: pointer;
+}
+.mj-claims-read > summary:hover { color: var(--accent); }
+.mj-claims-read > p { margin: var(--sp-2) 0 0; }
 /* Four shapes and four readings. `point` gets no emphasis at all, because it is
    the commonest answer — 60 of 84 — and styling it as a deficiency would tell a
    reader that most of the bibliography is broken when it is merely cited once. */

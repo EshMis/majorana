@@ -3,19 +3,20 @@
 // ## What this page is for
 //
 // Every Zoo-parity record shows a speedup class, and that class is a quotation
-// from the Quantum Algorithm Zoo rather than something this repository derived.
-// The owner's ruling on that (EshMis/ai-ops#18) was to keep the classes, keep
+// from a secondary index rather than something this repository derived. The
+// owner's ruling on that (EshMis/ai-ops#18) was to keep the classes, keep
 // track of which are second-hand, and prefer the primary source wherever it can
-// be found. This page is where that tracking becomes readable.
+// be found. This page is where that tracking becomes readable, checked against
+// each record's own paper -- not against the index that supplied the class.
 //
 // Seven records now say the primary source does **not** state the class. That was
 // the finding, and it lived only inside each record's caveat and inside a lint
-// script's census comment — reachable by nobody.
+// script's census comment -- reachable by nobody.
 //
 // ## Two rules the layout follows
 //
 // **The denominator is the first sentence, and the finding is second.** "Seven
-// records disagree with the Zoo" reads as seven out of seven unless the unchecked
+// records disagree" reads as seven out of seven unless the unchecked
 // majority is on the page beside them. `speedupClaimCensus` has no accessor that
 // returns the finding without the rest, so this ordering cannot quietly rot.
 //
@@ -33,69 +34,96 @@ import {
   type SpeedupAbsentRow,
   type SpeedupClaimCensus,
   type SpeedupClaimRow,
+  type SpeedupReportedRow,
 } from "../lib/repository/speedup-claims";
+
+type ClaimStatus = "reported" | "absent" | "unchecked";
 
 const COPY = {
   en: {
     title: "Whose claim is the speedup",
-    lede:
-      "Every algorithm record here shows a speedup class, and that class is quoted from an outside index rather than"
-      + " derived here. This page says, for each one, whether the paper behind it states the same thing.",
+    lede: "Every algorithm record's speedup class is checked against that record's own primary paper.",
     backToAtlas: "The Quantum Atlas",
     papersLink: "Papers — every source behind the Quantum Atlas and the Map",
     absentHeading: "Checked, and the paper does not state it",
     absentLede:
-      "Each of these is the narrow claim that a named paper does not contain a named result — not that the class is"
-      + " wrong. The index may have taken it from a source this record does not cite. What was read is printed"
-      + " beside each one, because “the paper does not say it” is only ever as wide as the text somebody opened.",
+      "Each row is the narrow claim that a specific paper does not contain a specific result, not that the"
+      + " class itself is wrong.",
     reportedHeading: "Checked, and the paper states it",
     reportedLede: "The source's own words, not a paraphrase.",
     uncheckedHeading: "Not checked against the primary source",
-    uncheckedLede:
-      "Nobody has asked these papers whether they support the class shown on the record. Listed rather than counted:"
-      + " a page that showed only the finished half of an audit would be a smaller claim pretending to be a whole one.",
-    zooSays: "The index files it as",
+    uncheckedLede: "Nobody has checked these records' papers against the class shown yet, so they are listed rather than counted.",
+    classLabel: "Speedup class",
     paperSays: "The paper behind it",
     read: "What was read",
     noneAbsent: "No record has been checked and found unsupported.",
     noneUnchecked: "Every record has been checked against its primary source.",
+    status: {
+      reported: "paper agrees",
+      absent: "paper does not state it",
+      unchecked: "not yet checked",
+    } satisfies Record<ClaimStatus, string>,
   },
   ja: {
     title: "速度向上は誰の主張か",
-    lede:
-      "本サイトのアルゴリズム記録には速度向上の区分が示されていますが、これは外部の索引からの引用であって、ここで導いたものではありません。"
-      + "このページは、その根拠となる論文が同じことを述べているかどうかを一件ずつ示します。",
+    lede: "アルゴリズムの記録が掲げる速度向上の区分は、それぞれの記録の一次資料と照合しています。",
     backToAtlas: "量子アトラス",
     papersLink: "論文 — 量子アトラスと地図の背後にあるすべての資料",
     absentHeading: "照合の結果、論文に記載がなかったもの",
-    absentLede:
-      "いずれも、特定の論文に特定の結果が含まれていないという限定的な主張であり、区分が誤りだという主張ではありません。"
-      + "索引が、この記録の引用しない別の資料から採った可能性もあります。何を読んだかを各件に併記します。"
-      + "「論文に記載がない」と言えるのは、実際に開いた本文の範囲に限られるからです。",
+    absentLede: "いずれも、特定の論文に特定の結果が含まれていないという限定的な主張であり、区分そのものが誤りだという主張ではありません。",
     reportedHeading: "照合の結果、論文に記載があったもの",
     reportedLede: "言い換えではなく、資料自身の言葉です。",
     uncheckedHeading: "一次資料と未照合のもの",
-    uncheckedLede:
-      "これらの論文が記録の区分を裏づけるかどうかは、まだ誰も確認していません。件数ではなく一覧として示します。"
-      + "監査の終わった半分だけを見せるページは、小さな主張を全体のように見せることになるからです。",
-    zooSays: "索引による区分",
+    uncheckedLede: "これらの記録については、示されている区分と論文との照合がまだ行われていないため、件数ではなく一覧として示します。",
+    classLabel: "速度向上の区分",
     paperSays: "根拠となる論文",
     read: "読んだ範囲",
     noneAbsent: "照合の結果、裏づけを欠くと判明した記録はありません。",
     noneUnchecked: "すべての記録が一次資料と照合済みです。",
+    status: {
+      reported: "論文と一致",
+      absent: "論文に記載なし",
+      unchecked: "未照合",
+    } satisfies Record<ClaimStatus, string>,
   },
 } as const;
 
-function RowHead({ row, locale }: { row: SpeedupClaimRow; locale: PublicLocale }) {
+/** Title (linked to the record), year, class and status -- everything a
+ * reader needs to place a row, on one line. */
+function RowSummary({
+  row,
+  status,
+  locale,
+}: {
+  row: SpeedupClaimRow;
+  status: ClaimStatus;
+  locale: PublicLocale;
+}) {
+  const copy = COPY[locale];
   return (
-    <>
+    <p className="mj-papers-list-meta">
       <a className="mj-papers-list-title" href={`/repository/${row.slug}`}>
         {locale === "ja" ? row.titleJa : row.title}
       </a>
-      <p className="mj-papers-byline">
-        {row.source.authors} · {row.source.year}
-      </p>
-    </>
+      {" · "}
+      {row.source.year}
+      {" · "}
+      {copy.classLabel}: {row.speedup}
+      {" · "}
+      <span className="mj-papers-chip" data-status={status}>
+        {copy.status[status]}
+      </span>
+    </p>
+  );
+}
+
+/** "The paper behind it" -- a real link to the source, not a name in text. */
+function PaperLink({ row, locale }: { row: SpeedupClaimRow; locale: PublicLocale }) {
+  const copy = COPY[locale];
+  return (
+    <p className="mj-papers-list-meta">
+      {copy.paperSays}: <a className="mj-papers-source-link" href={row.source.url}>{row.source.title}</a>
+    </p>
   );
 }
 
@@ -125,23 +153,19 @@ export function SpeedupClaimsView({
       <section aria-labelledby="mj-claims-absent">
         <h2 id="mj-claims-absent">{copy.absentHeading}</h2>
         <p className="mj-layers-empty">{copy.absentLede}</p>
-        {/* Unreachable while seven records say `absent`, and written anyway: an
+        {/* Unreachable while records say `absent`, and written anyway: an
             empty list and a failed load render identically, and the reader cannot
             tell which they are looking at. */}
         {census.absent.length === 0 ? <p className="mj-layers-empty">{copy.noneAbsent}</p> : null}
         <ul className="mj-papers-list">
           {census.absent.map((row: SpeedupAbsentRow) => (
             <li key={row.slug}>
-              <RowHead row={row} locale={locale} />
-              <p className="mj-papers-list-meta">
-                {copy.zooSays}: <strong>{row.speedup}</strong> — {row.zooName}
-              </p>
-              <p className="mj-papers-list-meta">
-                {copy.paperSays}: {row.source.title}
-              </p>
-              <p className="mj-papers-list-meta">
-                {copy.read}: {row.read}
-              </p>
+              <RowSummary row={row} status="absent" locale={locale} />
+              <PaperLink row={row} locale={locale} />
+              <details className="mj-claims-read">
+                <summary>{copy.read}</summary>
+                <p>{row.read}</p>
+              </details>
             </li>
           ))}
         </ul>
@@ -151,12 +175,10 @@ export function SpeedupClaimsView({
         <h2 id="mj-claims-reported">{copy.reportedHeading}</h2>
         <p className="mj-layers-empty">{copy.reportedLede}</p>
         <ul className="mj-papers-list">
-          {census.reported.map((row) => (
+          {census.reported.map((row: SpeedupReportedRow) => (
             <li key={row.slug}>
-              <RowHead row={row} locale={locale} />
-              <p className="mj-papers-list-meta">
-                {copy.zooSays}: <strong>{row.speedup}</strong> — {row.zooName}
-              </p>
+              <RowSummary row={row} status="reported" locale={locale} />
+              <PaperLink row={row} locale={locale} />
               <blockquote className="mj-papers-list-meta">{row.quote}</blockquote>
             </li>
           ))}
@@ -172,10 +194,8 @@ export function SpeedupClaimsView({
         <ul className="mj-papers-list">
           {census.unchecked.map((row) => (
             <li key={row.slug}>
-              <RowHead row={row} locale={locale} />
-              <p className="mj-papers-list-meta">
-                {copy.zooSays}: <strong>{row.speedup}</strong> — {row.zooName}
-              </p>
+              <RowSummary row={row} status="unchecked" locale={locale} />
+              <PaperLink row={row} locale={locale} />
             </li>
           ))}
         </ul>

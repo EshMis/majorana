@@ -1657,8 +1657,8 @@ const ZOO_ALGORITHMS: ZooAlgorithm[] = [
         authors: "Dominik Janzing, Pawel Wocjan",
         year: "2006",
         url: "https://arxiv.org/abs/quant-ph/0606229",
-        relevance: "Primary source, and the source of this record's cost claim. Consult it for the sparse-access model it assumes, for the b^m scale that the accuracy guarantee is stated relative to, and for the reduction from an arbitrary BQP circuit to a diagonal entry of a matrix power. The Quantum Algorithm Zoo cites this work under the title of its Theory of Computing version, \"A simple promiseBQP-complete matrix problem\"; the arXiv document is the same work by the same two authors under a different title.",
-        relevanceJa: "一次資料であり、本記録の計算量の出典です。前提とされている疎行列へのアクセスモデル、精度保証が相対的に述べられている尺度 b^m、および任意の BQP 回路から行列べきの対角成分への帰着については、原論文で確認してください。Quantum Algorithm Zoo はこの研究を Theory of Computing 版の題名「A simple promiseBQP-complete matrix problem」で引用していますが、arXiv 版は同じ二人の著者による同じ研究が別の題名で公開されたものです。",
+        relevance: "Primary source, and the source of this record's cost claim. Consult it for the sparse-access model it assumes, for the b^m scale that the accuracy guarantee is stated relative to, and for the reduction from an arbitrary BQP circuit to a diagonal entry of a matrix power. A secondary source cites this work under the title of its Theory of Computing version, \"A simple promiseBQP-complete matrix problem\"; the arXiv document is the same work by the same two authors under a different title.",
+        relevanceJa: "一次資料であり、本記録の計算量の出典です。前提とされている疎行列へのアクセスモデル、精度保証が相対的に述べられている尺度 b^m、および任意の BQP 回路から行列べきの対角成分への帰着については、原論文で確認してください。二次資料はこの研究を Theory of Computing 版の題名「A simple promiseBQP-complete matrix problem」で引用していますが、arXiv 版は同じ二人の著者による同じ研究が別の題名で公開されたものです。",
       },
     ],
     relatedSlugs: ["string-rewriting-derivation-counts", "jones-polynomial-approximation", "hamiltonian-simulation-ising"],
@@ -2281,8 +2281,8 @@ const ZOO_ALGORITHMS: ZooAlgorithm[] = [
     ideaJa: "すべての道筋は Hadamard テストを経由します。これは、あるユニタリに対する効率的な回路と効率的な状態準備とを、期待値の加法的な推定へ変えるものです。効率的な量子 Fourier 変換をもつ有限群については、正則表現をその変換で共役変換すると、すべての既約表現の直和が得られ、そこから行列成分が得られます。ユニタリ群と対称群を同時に扱う場合には、量子 Schur 変換が両方の作用を一度にブロック対角化します。多項式的な最高ウェイトをもつ Lie 群については、行列成分は Gel'fand-Tsetlin 生成元から作られる疎で行が計算可能なハミルトニアンをシミュレートすることで得られます。対称群と交代群を直接扱う場合には、置換をバブルソートによって隣接互換の積へ分解し、隣接互換の Young-Yamanouchi 表現は小さなブロックの単純な直和になります。",
     complexity: "Time polynomial in n and 1/ε to obtain any matrix element of any irreducible representation of the symmetric or alternating group to within ±ε, and likewise for any irreducible representation of polynomial highest weight of the unitary, special unitary and special orthogonal groups. The Hadamard test itself needs O(1/ε²) measurements.",
     complexityBasis: 'section 1 of arXiv:0811.0562: "for the finite groups Sn and An we obtain any matrix element of any irreducible representation to within ±ǫ in time that scales polynomially in 1/ǫ and n. For the Lie groups U(n), SU(n), and SO(n) we obtain any matrix element of any irreducible representation of polynomial highest weight to within ±ǫ in time that scales polynomially in 1/ǫ and n."; section 5: "quantum computers can solve the following problem with probability 1 − δ in poly(n, 1/ǫ, log(1/δ)) time."; section 2, for the subroutine: "one can obtain the real part of ⟨ψ|U|ψ⟩ to precision ǫ by making O(1/ǫ²) measurements."',
-    caveat: "This is a literature record: nothing was constructed, compiled, simulated or run, and no matrix element was estimated here. The approximation is additive, not multiplicative, and the paper says why that matters more than it sounds: for exponentially large unitary matrices the typical matrix element is exponentially small, so on average instances a polynomially precise additive approximation provides almost no information — section 5 puts it bluntly, that one could instead simply guess zero every time with similar results. The exponential speedup quoted on this record is therefore a worst-case statement, and the very sentence that states it also says average case instances are classically easy. The paper proves no hardness result for the interesting instances; it offers an unproven hypothesis naming a possible class of instances not solvable classically in polynomial time, and observes that the strategy used to prove the Jones polynomial case cannot transfer because the symmetric group is finite and so no representation of it can be dense in a continuous group. There is explicitly no speedup for group characters, and the Lie group results are restricted to polynomial highest weight, with exponential highest weight and the symplectic group left open. The Quantum Algorithm Zoo cites this work as \"Fast quantum algorithms for approximating the irreducible representations of groups\"; the paper's own title page reads \"approximating some irreducible representations of groups\". Finally, the Zoo entry also names later work on Kronecker coefficients and representation-theoretic multiplicities, which this record does not cover.",
-    caveatJa: "本項目は文献に基づく記録です。ここで何かを構成・コンパイル・シミュレート・実行したことはなく、具体的な行列成分を推定したわけでもありません。近似は乗法的ではなく加法的であり、論文はそれが聞こえ以上に重要である理由を述べています。すなわち、指数的に大きなユニタリ行列では典型的な行列成分は指数的に小さいため、平均的な問題例では多項式精度の加法的近似はほとんど情報を与えません。第5節はそれを率直に、毎回単に零と答えても同程度の結果になると述べています。したがって本記録に引用した指数的な高速化は最悪時についての主張であり、それを述べているまさに同じ文が、平均的な問題例は古典的に容易であるとも述べています。論文は興味深い問題例について困難性を証明しておらず、古典的に多項式時間で解けない可能性のある問題例の族を挙げる未証明の仮説を提示するにとどめています。また、Jones 多項式の場合に用いられた証明の戦略は転用できないと述べています。対称群は有限であり、その表現が連続群の中で稠密になることはありえないからです。群指標については高速化がないことが明示されており、Lie 群に関する結果は多項式的な最高ウェイトに限られ、指数的な最高ウェイトと斜交群は未解決として残されています。Quantum Algorithm Zoo はこの研究を「Fast quantum algorithms for approximating the irreducible representations of groups」として引用していますが、論文自身の標題紙には「approximating some irreducible representations of groups」とあります。最後に、Zoo のこの項目は Kronecker 係数や表現論的な重複度に関するより新しい研究にも言及していますが、本記録はそれらを対象としていません。",
+    caveat: "This is a literature record: nothing was constructed, compiled, simulated or run, and no matrix element was estimated here. The approximation is additive, not multiplicative, and the paper says why that matters more than it sounds: for exponentially large unitary matrices the typical matrix element is exponentially small, so on average instances a polynomially precise additive approximation provides almost no information — section 5 puts it bluntly, that one could instead simply guess zero every time with similar results. The exponential speedup quoted on this record is therefore a worst-case statement, and the very sentence that states it also says average case instances are classically easy. The paper proves no hardness result for the interesting instances; it offers an unproven hypothesis naming a possible class of instances not solvable classically in polynomial time, and observes that the strategy used to prove the Jones polynomial case cannot transfer because the symmetric group is finite and so no representation of it can be dense in a continuous group. There is explicitly no speedup for group characters, and the Lie group results are restricted to polynomial highest weight, with exponential highest weight and the symplectic group left open. A secondary source cites this work as \"Fast quantum algorithms for approximating the irreducible representations of groups\"; the paper's own title page reads \"approximating some irreducible representations of groups\". Finally, that same source also names later work on Kronecker coefficients and representation-theoretic multiplicities, which this record does not cover.",
+    caveatJa: "本項目は文献に基づく記録です。ここで何かを構成・コンパイル・シミュレート・実行したことはなく、具体的な行列成分を推定したわけでもありません。近似は乗法的ではなく加法的であり、論文はそれが聞こえ以上に重要である理由を述べています。すなわち、指数的に大きなユニタリ行列では典型的な行列成分は指数的に小さいため、平均的な問題例では多項式精度の加法的近似はほとんど情報を与えません。第5節はそれを率直に、毎回単に零と答えても同程度の結果になると述べています。したがって本記録に引用した指数的な高速化は最悪時についての主張であり、それを述べているまさに同じ文が、平均的な問題例は古典的に容易であるとも述べています。論文は興味深い問題例について困難性を証明しておらず、古典的に多項式時間で解けない可能性のある問題例の族を挙げる未証明の仮説を提示するにとどめています。また、Jones 多項式の場合に用いられた証明の戦略は転用できないと述べています。対称群は有限であり、その表現が連続群の中で稠密になることはありえないからです。群指標については高速化がないことが明示されており、Lie 群に関する結果は多項式的な最高ウェイトに限られ、指数的な最高ウェイトと斜交群は未解決として残されています。二次資料はこの研究を「Fast quantum algorithms for approximating the irreducible representations of groups」として引用していますが、論文自身の標題紙には「approximating some irreducible representations of groups」とあります。最後に、同じ項目は Kronecker 係数や表現論的な重複度に関するより新しい研究にも言及していますが、本記録はそれらを対象としていません。",
     tags: ["group representation", "matrix element", "schur transform", "hadamard test", "symmetric group"],
     source: {
       id: "arxiv:0811.0562",
@@ -2859,6 +2859,25 @@ function speedupPrimaryLine(concept: ZooAlgorithm): { en: string; ja: string } {
   }
 }
 
+/**
+ * How the speedup class stands against the record's own primary paper, as a
+ * short clause rather than a full sentence -- spliced into `verification`,
+ * `method` and the "Speedup class" metadata row so none of them has to name
+ * where the class itself came from to say whether the primary paper backs it.
+ * Owner directive 2026-09-10 (ai-ops issue 217 lane): reader-facing text says the
+ * class is checked against the record's own paper, not against an outside index.
+ */
+function primaryCheckClause(concept: ZooAlgorithm): string {
+  switch (concept.speedupPrimary.states) {
+    case "reported":
+      return "checked against the record's own primary paper, which states it";
+    case "absent":
+      return "checked against the record's own primary paper, which does not state it";
+    default:
+      return "not yet checked against the record's own primary paper";
+  }
+}
+
 function zooEntry(concept: ZooAlgorithm): PublicRepositoryEntry {
   const complexityLine = concept.complexity === ""
     ? "Not stated by the sources read"
@@ -2875,13 +2894,13 @@ function zooEntry(concept: ZooAlgorithm): PublicRepositoryEntry {
     framework: "Qiskit",
     status: "verified_caveats",
     verification:
-      "Literature record · problem statement and speedup class checked against the Quantum Algorithm Zoo entry"
-      + " · primary reference checked against its arXiv abs page",
+      `Literature record · problem statement recorded from the literature; speedup class`
+      + ` ${primaryCheckClause(concept)} · primary reference checked against its arXiv abs page`,
     verificationMethods: ["research_paper"],
     method:
-      "Curation only. The problem statement and speedup class were checked against the Quantum Algorithm Zoo's"
-      + ` entry "${concept.zooName}" (${concept.zooSection}); the primary reference's title, authors and`
-      + " submission year were read from its arXiv abs page; the complexity claim was taken from a clause of that"
+      `Curation only. The problem statement was recorded from the literature; the speedup class is`
+      + ` ${primaryCheckClause(concept)}; the primary reference's title, authors and submission year were`
+      + " read from its arXiv abs page; the complexity claim was taken from a clause of that"
       + ` paper's abstract (${concept.complexityBasis}). No circuit was constructed, simulated or run.`,
     result:
       "Pass · the record's problem, speedup class and primary reference agree with the two sources named above.",
@@ -2893,14 +2912,16 @@ function zooEntry(concept: ZooAlgorithm): PublicRepositoryEntry {
     descriptionJa: concept.problemJa,
     introduction: `${concept.problem} ${concept.idea}`,
     introductionJa: `${concept.problemJa}${concept.ideaJa}`,
-    // The Zoo's name came out of this paragraph, and out of the resource label
-    // below, on the owner's ruling that *"less references to them the better"*.
-    // What did NOT come out is the claim's provenance: the sentence still says
-    // the class is a secondary-source classification and not this paper's, and
-    // the index is still named once, in `metadata`, which is the "keep track of
-    // which claims are from secondary sources" half of the same ruling. Dropping
-    // the attribution entirely would have turned a quotation into our own claim,
-    // which is the opposite of what he asked for.
+    // The Zoo's name came out of this paragraph on the owner's #18 ruling that
+    // *"less references to them the better"*, and came out of `verification`,
+    // `method` and `metadata` too on the 2026-09-10 follow-up (ai-ops issue 217 lane):
+    // no reader-facing string on this record names the index any more. What did
+    // NOT come out is the claim's provenance: the sentence still says the class
+    // is a secondary source's classification and not this paper's, and whether
+    // the record's own primary paper backs it is still tracked, in `resources`
+    // and in the "Speedup class" metadata row below. Dropping the attribution
+    // entirely would have turned a quotation into our own claim, which is the
+    // opposite of what either ruling asked for.
     explanation:
       `${concept.idea} This record's speedup class, "${concept.speedup}", is a secondary source's`
       + ` classification of the ${concept.zooSection.toLowerCase()} it files this under — not a claim its`
@@ -2933,13 +2954,14 @@ function zooEntry(concept: ZooAlgorithm): PublicRepositoryEntry {
       { label: "Reported cost", value: complexityLine },
     ],
     metadata: [
-      // The tracking half of the owner's #18 ruling, and the ONE place the outside
-      // index is named to a reader. It is here rather than in the prose because
-      // this is the row somebody re-deriving the class from first principles needs
-      // — "which claims are from secondary sources, so i can get expert opinion
-      // and rederive it" — and it is a lookup, not part of the argument.
-      { label: "Secondary source for the speedup class", value: `Quantum Algorithm Zoo — "${concept.zooName}"` },
-      { label: "Section it is filed under", value: concept.zooSection },
+      // The tracking half of the owner's #18 ruling. As of 2026-09-10 (ai-ops issue 217
+      // lane) no row names the index itself any more -- this one instead says
+      // whether the record's own primary paper backs the class, which is the
+      // fact somebody re-deriving the class from first principles actually needs.
+      // The row this comment used to describe, naming which outside index the
+      // class came from, is gone: without the name it was a dead end, not a
+      // lookup.
+      { label: "Speedup class", value: `${concept.speedup} (${primaryCheckClause(concept)})` },
       { label: "Complexity basis", value: concept.complexityBasis },
       { label: "Circuit", value: "Not supplied" },
     ],
