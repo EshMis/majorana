@@ -11468,6 +11468,77 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   line-height: 1.6;
 }
 .mj-papers-shape[data-shape="scattered"] { color: var(--text-2); }
+/* The papers index: a sticky toolbar (search + year strip) over grouped,
+   year-headed rows. Sticky rather than scrolling away, because the register
+   is 328 rows across ~40 years — a jump link or a live filter is only useful
+   if it stays reachable while the list itself scrolls under it. */
+.mj-papers-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) 0;
+  background: var(--bg-0);
+  border-bottom: var(--border-hairline) solid var(--border-0);
+}
+.mj-papers-search-input {
+  width: 100%;
+  max-width: 28rem;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border-0);
+  border-radius: var(--radius-control);
+  background: var(--bg-1);
+  color: var(--text-0);
+  font-size: var(--fs-13);
+}
+/* One row, horizontally scrollable rather than wrapped: ~40 year links
+   wrapped to fill the width would push the toolbar (and everything sticky
+   below it) to several lines tall. The scrollbar is contained to this strip,
+   never the page — see `check-invisible-hit-targets`'s sibling concern about
+   overflow leaking a layer up. */
+.mj-papers-year-strip {
+  display: flex;
+  gap: var(--sp-1);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.mj-papers-year-strip a {
+  flex: 0 0 auto;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-control);
+  color: var(--text-1);
+  font-size: var(--fs-12);
+  text-decoration: none;
+}
+.mj-papers-year-strip a:hover { color: var(--accent); background: var(--bg-1); }
+.mj-papers-year-group { margin-top: var(--sp-6); }
+.mj-papers-year-heading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-16);
+  font-weight: 500;
+  /* The jump target for the year strip's own links. Without this the sticky
+     toolbar covers the top of the heading it just navigated to. */
+  scroll-margin-top: calc(var(--sp-16) + var(--sp-6));
+}
+.mj-papers-year-count {
+  color: var(--text-2);
+  font-size: var(--fs-12);
+  font-weight: 400;
+}
+/* The compact report marks on an index row — only the axes that came back
+   "reported", never a chip for "absent" or "not established". The detail
+   page keeps the full bordered-chip breakdown (`.mj-papers-chip` above);
+   this is deliberately plainer, since it is a summary rather than the record. */
+.mj-papers-marks {
+  margin: var(--sp-1) 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-12);
+}
 .mj-layers-roots {
   display: flex;
   flex-direction: column;
