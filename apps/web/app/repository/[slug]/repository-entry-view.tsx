@@ -892,6 +892,10 @@ function CircuitDiagram({ entry, locale }: { entry: PublicRepositoryEntry; local
       className="mj-repo-circuit"
       role="img"
       aria-label={`${locale === "ja" ? entry.titleJa : entry.title}${locale === "ja" ? "の回路またはワークフロー図" : " circuit or workflow diagram"}`}
+      // A wide circuit scrolls sideways on a phone, so the region must take
+      // keyboard focus for the scroll to be reachable (axe:
+      // scrollable-region-focusable, caught on the 390px production sweep).
+      tabIndex={0}
     >
       {wires.map((wire, wireIndex) => (
         <div className="mj-repo-circuit-row" key={wire}>
