@@ -703,7 +703,7 @@ def test_model_constants_use_v4_pro_for_all_product_stages_and_are_env_overridab
     assert model_for("route") == "deepseek-v4-pro"
     assert model_for(Stage.PLAN) == "deepseek-v4-pro"
     assert model_for(Stage.GENERATE) == "deepseek-v4-pro"
-    assert model_for("audit") == "deepseek-v4-flash"
+    assert model_for("audit") == "deepseek-v4-pro"
     assert model_for(Stage.VERIFY) == "deepseek-v4-pro"
     monkeypatch.setenv("MAJORANA_MODEL_PLAN", "custom-model")
     assert model_for(Stage.PLAN) == "custom-model"
@@ -802,7 +802,7 @@ def test_model_defaults_follow_provider_profile(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "x")
     assert model_for(Stage.PLAN) == "deepseek-v4-pro"
     assert model_for(Stage.GENERATE) == "deepseek-v4-pro"
-    assert model_for("audit") == "deepseek-v4-flash"
+    assert model_for("audit") == "deepseek-v4-pro"
     assert model_for(Stage.VERIFY) == "deepseek-v4-pro"
 
 
