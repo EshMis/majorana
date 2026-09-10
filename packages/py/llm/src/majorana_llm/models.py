@@ -37,9 +37,15 @@ _DEFAULTS: dict[str, dict[str, str]] = {
         # before hitting the exact failure bench-14 found.
         "generate": "deepseek-v4-pro",
         # A small independent pass audits only complex planner-authored classical
-        # references before code generation. Use a different served model so one
-        # arithmetic transcription is not both proposition and proof.
-        "audit": "deepseek-v4-flash",
+        # references before code generation. This wants a DIFFERENT served model
+        # from "generate", so one arithmetic transcription is not both proposition
+        # and proof. It is deliberately not one today: the provider stopped serving
+        # deepseek-v4-flash on 2026-09-10, every run reaching audit failed, and the
+        # owner ruled "point audit at deepseek-v4-pro for now" (ai-ops 288). That
+        # makes audit and generate the same model, so the audit pass currently
+        # shares the generator's blind spots. Restore a distinct served model when
+        # one is available; ai-ops 290 tracks it.
+        "audit": "deepseek-v4-pro",
         "verify": "deepseek-v4-pro",
         "analyze": "deepseek-v4-pro",
         "writeback": "deepseek-v4-pro",  # library metadata + explanations

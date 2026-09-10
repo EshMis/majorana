@@ -63,7 +63,16 @@ async def test_the_exact_production_drift_is_reported_as_unsupported(monkeypatch
 
 @pytest.mark.asyncio
 async def test_current_defaults_pass_against_the_served_list(monkeypatch):
-    _serve(monkeypatch, {"deepseek-v4-pro", "deepseek-v4-flash"})
+    """Against what DeepSeek actually serves, which is v4-pro and not v4-flash.
+
+    The served set here was {v4-pro, v4-flash} until 2026-09-10, when the provider
+    stopped listing v4-flash and every run reaching the audit stage failed
+    (ai-ops 288). A fixture that keeps serving a model the provider dropped makes
+    this test pass for a world that no longer exists, so it is pinned to the real
+    list: with audit back on an unserved model, this goes red here rather than in
+    production.
+    """
+    _serve(monkeypatch, {"deepseek-v4-pro"})
 
     report = await check_configured_models()
 

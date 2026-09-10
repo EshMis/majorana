@@ -1007,7 +1007,7 @@ async def test_lindblad_reference_requires_independent_semantic_consensus(monkey
         "lindblad_reference_audit_extraction",
     ]
     assert llm.requests[1].model == "deepseek-v4-pro"
-    assert llm.requests[2].model == "deepseek-v4-flash"
+    assert llm.requests[2].model == "deepseek-v4-pro"
     extraction_request = json.loads(llm.requests[1].user)
     assert extraction_request["request"] == ports._task_prompt
     assert "source" not in extraction_request
@@ -1039,7 +1039,7 @@ async def test_omitted_lindblad_reference_is_enriched_only_after_dual_model_cons
         "lindblad_reference_audit_extraction",
     ]
     assert llm.requests[1].model == "deepseek-v4-pro"
-    assert llm.requests[2].model == "deepseek-v4-flash"
+    assert llm.requests[2].model == "deepseek-v4-pro"
 
 
 async def test_omitted_lindblad_reference_stays_weaker_when_models_disagree():
@@ -3547,7 +3547,7 @@ async def test_linear_system_reference_requires_dual_model_semantic_consensus(mo
         "linear_system_reference_audit_extraction",
     ]
     assert llm.requests[1].model == "deepseek-v4-pro"
-    assert llm.requests[2].model == "deepseek-v4-flash"
+    assert llm.requests[2].model == "deepseek-v4-pro"
     extraction_request = json.loads(llm.requests[1].user)
     assert extraction_request["request"] == ports._task_prompt
     assert "source" not in extraction_request
