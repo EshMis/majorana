@@ -26,7 +26,6 @@
 .lq-site-home .lq-site-hero-copy .mj-public-actions { justify-content: center; margin-top: var(--sp-5); }
 .lq-site-home .lq-landing-prompt-section { width: min(100%, 620px); margin: var(--sp-8) auto 0; padding: 0; text-align: left; }
 .lq-site-home .lq-landing-prompt-section .mj-landing-prompt { padding: var(--sp-4); min-height: 76px; }
-.lq-site-home .lq-prompt-example { margin: var(--sp-2) auto 0; text-align: center; font-size: var(--fs-12); }
 .lq-hero-orbits { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; opacity: .35; }
 .lq-hero-orbits i { position: absolute; left: 50%; top: 50%; width: 1040px; height: 380px; border: 1px solid var(--border-0); border-radius: 50%; transform: translate(-50%, -50%) rotate(-18deg); }
 .lq-hero-orbits i:nth-child(2) { transform: translate(-50%, -50%) rotate(18deg); }
@@ -46,7 +45,7 @@
 .lq-site-home .lq-site-product > span { align-self: start; }
 .lq-site-home .lq-site-product p { line-height: 1.65; }
 .lq-site-home .lq-site-product:hover { border-color: var(--accent); transform: translateY(-2px); }
-.lq-site-home .lq-site-demo { grid-template-columns: .65fr 1.35fr; margin-block: var(--sp-16); padding: var(--sp-8); background: var(--bg-1); gap: var(--sp-10); }
+.lq-site-home .lq-site-demo { margin-block: 0 var(--sp-16); }
 .lq-site-home .lq-site-principles { gap: var(--sp-8); }
 .lq-site-home .lq-site-principles article { border-left: 2px solid var(--accent); padding: var(--sp-2) 0 var(--sp-2) var(--sp-5); }
 .lq-site-home .mj-company-benchmark { margin-top: var(--sp-12); }
@@ -138,7 +137,7 @@
   .lq-site-home .lq-site-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lq-site-home .lq-site-product, .lq-site-home .lq-site-product:nth-child(n + 4) { grid-column: auto; padding: var(--sp-5); }
   .lq-site-home .lq-site-product:last-child { grid-column: 1 / -1; }
-  .lq-site-home .lq-site-demo { grid-template-columns: 1fr; padding: var(--sp-5); gap: var(--sp-5); }
+  .lq-site-home .lq-site-demo { margin-bottom: var(--sp-10); }
   .lq-site-home .lq-site-principles { grid-template-columns: 1fr; }
   .lq-site-home .mj-company-final-cta { padding: var(--sp-6); }
   .lq-workspace-intro { padding-block: var(--sp-10); }

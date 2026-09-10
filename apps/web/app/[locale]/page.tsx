@@ -66,15 +66,24 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         <LiquidGridBackground />
         <div className="lq-hero-orbits" aria-hidden="true"><i /><i /><i /></div>
         <div className="lq-site-hero-copy">
-          <p className="mj-section-label">{copy.hero.label}</p>
           <h1 id="home-heading">{copy.hero.title.split("\n").map((line) => <span key={line}>{line}</span>)}</h1>
           <p>{copy.hero.lede}</p>
           <LandingPrompt copy={copy.promptDemo} />
-          <div className="mj-public-actions">
-            <a className="mj-primary-button" href="/run">{copy.hero.primary}</a>
-            <Link className="mj-text-link" href="/repository">{copy.hero.secondary} <span aria-hidden="true">→</span></Link>
-          </div>
         </div>
+      </section>
+
+      {/* The walkthrough sits directly under the cover, page-wide and by itself; the
+          heading and paragraph that used to sit beside it are now its accessible
+          name and a visually hidden description (owner, 2026-09-10). */}
+      <section className="lq-site-demo" aria-label={copy.visual.demoLabel}>
+        <p className="sr-only" id="lq-landing-demo-description">{copy.visual.demoDescription}</p>
+        <LandingDemoVideo
+          describedById="lq-landing-demo-description"
+          fallback={copy.visual.demoFallback}
+          label={copy.visual.demoLabel}
+          poster="/media/leona-product-demo-poster.jpg"
+          src="/media/leona-product-demo.mp4"
+        />
       </section>
 
       <Reveal>
@@ -103,21 +112,6 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             </a>
           ))}
         </div>
-      </section>
-
-      <section className="lq-site-demo" aria-labelledby="demo-heading">
-        <div>
-          <p className="mj-section-label">{copy.visual.label}</p>
-          <h2 id="demo-heading">{copy.visual.demoLabel}</h2>
-          <p id="lq-landing-demo-description">{copy.visual.demoDescription}</p>
-        </div>
-        <LandingDemoVideo
-          describedById="lq-landing-demo-description"
-          fallback={copy.visual.demoFallback}
-          label={copy.visual.demoLabel}
-          poster="/media/leona-product-demo-poster.jpg"
-          src="/media/leona-product-demo.mp4"
-        />
       </section>
 
       <section className="lq-site-evidence" aria-labelledby="evidence-heading">

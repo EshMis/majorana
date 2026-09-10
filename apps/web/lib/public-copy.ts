@@ -63,9 +63,17 @@ export const LOADING_COPY: Record<PublicLocale, {
 };
 
 export const HOME_COPY: Record<PublicLocale, {
-  hero: { label: string; title: string; lede: string; primary: string; secondary: string };
+  hero: { title: string; lede: string };
+  /**
+   * `prompts` rotate through the cover's box, typed and erased by the shared
+   * composer ghost (`lib/composer-ghost.ts`). The same rules as the workspace
+   * list apply and are asserted in `lib/landing-prompts.test.ts`: short enough
+   * to type out, at least half free of quantum vocabulary, same count in both
+   * languages.
+   */
   promptDemo: { label: string; submit: string; retry: string; prompts: string[] };
-  visual: { label: string; demoLabel: string; demoDescription: string; demoFallback: string };
+  /** `demoLabel` names the walkthrough video; `demoDescription` is read to screen readers only. */
+  visual: { demoLabel: string; demoDescription: string; demoFallback: string };
   example: { label: string; title: string; body: string; link: string };
   product: { label: string; title: string; items: Array<{ title: string; body: string; href: string }> };
   principles: { label: string; title: string; items: Array<{ title: string; body: string }> };
@@ -75,22 +83,23 @@ export const HOME_COPY: Record<PublicLocale, {
 }> = {
   en: {
     hero: {
-      "label": "Quantum software development",
       title: "A self-evolving quantum solution platform.",
       lede: "Generate, run, and reuse quantum circuits.",
-      "primary": "Open workspace",
-      "secondary": "Explore the Atlas"
     },
     promptDemo: {
       "label": "Describe a quantum task",
       "submit": "Continue in Nala",
       "retry": "Try opening the workspace again.",
       "prompts": [
-        "Build a Bell state and verify the measured distribution."
+        "Build a Bell state and verify the measured distribution.",
+        "Split 6 suppliers into two groups, cutting the fewest links.",
+        "Pick 8 stocks for the best return at a fixed risk.",
+        "Search 16 records for the one that matches.",
+        "Find the ground-state energy of an H₂ molecule.",
+        "Schedule 6 jobs on 3 machines to finish soonest."
       ]
     },
     visual: {
-      "label": "Product walkthrough",
       "demoLabel": "See Leona in action",
       "demoDescription": "Follow a circuit from generation and verification to editing in Studio and reuse through the Atlas.",
       "demoFallback": "Open the product demo video"
@@ -232,22 +241,23 @@ export const HOME_COPY: Record<PublicLocale, {
   },
   ja: {
     hero: {
-      "label": "量子ソフトウェア開発",
       title: "次世代\n量子コンピューティングプラットフォーム",
       lede: "量子回路の開発から活用まで、ひとつのプラットフォームで",
-      "primary": "ワークスペースを開く",
-      "secondary": "Atlasを見る"
     },
     promptDemo: {
       "label": "取り組みたい量子の課題を入力",
       "submit": "Nalaで続ける",
       "retry": "もう一度ワークスペースを開いてください。",
       "prompts": [
-        "ベル状態を作り、測定分布を検証してください。"
+        "ベル状態を作り、測定分布を検証してください。",
+        "6社の取引先を2組に分け、切る取引を最少にしてください。",
+        "リスク一定で、8銘柄の最適な組み合わせを選んでください。",
+        "16件のデータから該当する1件を探してください。",
+        "H₂分子の基底状態エネルギーを求めてください。",
+        "6件の作業を3台の機械に割り当て、最短で終わらせてください。"
       ]
     },
     visual: {
-      "label": "プロダクト紹介",
       "demoLabel": "Leonaの操作を見る",
       "demoDescription": "回路の生成と検証から、Studioでの編集、Atlasを使った再利用までを紹介します。",
       "demoFallback": "プロダクトデモ動画を開く"
