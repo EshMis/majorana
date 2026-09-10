@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useState } from "react";
 import type { PublicLocale } from "../../../lib/public-locale";
 import { ACCOUNT_COPY, SHARING_COPY } from "../../../lib/workspace-locale";
 import { AccountRequestError, errorDetail, type Me, useAccountOverview } from "./account-overview";
@@ -14,19 +14,20 @@ import { PaneSkeleton } from "./pane-skeleton";
 export function AccountSettings({ initialEmail, locale }: { initialEmail: string; locale: PublicLocale }) {
   const copy = ACCOUNT_COPY[locale];
   const { me, setMe, workspace, loading, loadError, reload } = useAccountOverview(copy);
-  const [displayName, setDisplayName] = useState("");
+  // `null` means "not edited yet": the field shows the loaded record until the
+  // reader types, and a re-render never resets what they typed. This used to be
+  // seeded by an effect on `me`, and on a slow CI box the passive effect ran
+  // AFTER the test had typed a new name, so the save sent the old one — the
+  // same reset a reader would get if the record re-rendered while they typed.
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [autoKeep, setAutoKeep] = useState(false);
+  const [autoKeep, setAutoKeep] = useState<boolean | null>(null);
   const [savingAutoKeep, setSavingAutoKeep] = useState(false);
   const [profileFeedback, setProfileFeedback] = useState<{ message: string; error?: boolean } | null>(null);
   const [workspaceFeedback, setWorkspaceFeedback] = useState<{ message: string; error?: boolean } | null>(null);
 
-  useEffect(() => {
-    if (me) setDisplayName(me.display_name ?? "");
-  }, [me]);
-  useEffect(() => {
-    if (workspace) setAutoKeep(Boolean(workspace.workspace.auto_keep_artifacts));
-  }, [workspace]);
+  const shownName = displayName ?? me?.display_name ?? "";
+  const autoKeepOn = autoKeep ?? Boolean(workspace?.workspace.auto_keep_artifacts);
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,7 +38,7 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
       const response = await fetch("/api/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ display_name: displayName }),
+        body: JSON.stringify({ display_name: shownName }),
       });
       let payload: Me | { title?: string; error?: string };
       try {
@@ -49,7 +50,8 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
         throw new AccountRequestError(errorDetail(payload, copy.profileSaveFailed));
       }
       setMe(payload);
-      setDisplayName(payload.display_name ?? "");
+      // Back to the record: the saved name is now what `me` holds.
+      setDisplayName(null);
       setProfileFeedback({ message: copy.profileSaved });
     } catch (cause) {
       setProfileFeedback({ message: cause instanceof AccountRequestError ? cause.message : copy.profileSaveFailed, error: true });
@@ -110,7 +112,7 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
         <form className="mj-account-profile-form" onSubmit={saveProfile}>
           <label>
             <span>{copy.displayName}</span>
-            <input name="displayName" autoComplete="name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} maxLength={120} placeholder={copy.yourName} disabled={saving} />
+            <input name="displayName" autoComplete="name" value={shownName} onChange={(event) => setDisplayName(event.target.value)} maxLength={120} placeholder={copy.yourName} disabled={saving} />
           </label>
           <button className="mj-primary-button" disabled={saving} type="submit">{saving ? copy.saving : copy.saveName}</button>
         </form>
@@ -133,7 +135,7 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
         <label className="mj-account-toggle">
           <input
             type="checkbox"
-            checked={autoKeep}
+            checked={autoKeepOn}
             disabled={savingAutoKeep}
             onChange={(event) => saveAutoKeep(event.target.checked)}
           />
