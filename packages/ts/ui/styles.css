@@ -9052,34 +9052,37 @@ div.mj-rail-row:hover {
   font-size: var(--fs-13);
 }
 
-/* Algorithm groups (Owner Inbox 2026-07-19): families collapse into clickable
-   disclosure groups. */
-.mj-repo-groups { display: flex; flex-direction: column; gap: var(--sp-2); }
+/* Algorithm groups: the algorithms view is sectioned by method (the technique
+   facet in `topics.ts`, in that file's order), each section a box with its
+   heading and count, and a sticky index above them that jumps between sections
+   (`ux-atlas.css`). The family disclosure groups of 2026-07-19 gave way to this
+   in the 2026-09-10 Atlas pass: sections stay open, so a reader scanning for a
+   method sees the entries, not thirteen closed rows. */
+.mj-repo-groups { display: flex; flex-direction: column; gap: var(--sp-5); }
 .mj-repo-group {
   border: 1px solid var(--border-0);
   border-radius: var(--radius-card);
   background: var(--bg-1);
+  /* Room for the sticky index, which wraps to two rows on a desktop width. */
+  scroll-margin-top: calc(var(--sp-16) + var(--sp-12));
 }
-.mj-repo-group > summary {
+.mj-repo-group > h2 {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: baseline;
   gap: var(--sp-3);
+  margin: 0;
   padding: var(--sp-3) var(--sp-4);
-  cursor: pointer;
+  border-bottom: var(--border-hairline) solid var(--border-0);
   color: var(--text-0);
-  font-size: var(--fs-14);
-  font-weight: 600;
-  list-style: none;
+  font-size: var(--fs-16);
+  font-weight: 500;
 }
-.mj-repo-group > summary::-webkit-details-marker { display: none; }
 .mj-repo-group-count {
   color: var(--text-2);
   font-family: var(--font-mono);
   font-size: var(--fs-12);
   font-weight: 400;
 }
-.mj-repo-group[open] > summary { border-bottom: var(--border-hairline) solid var(--border-0); }
 .mj-repo-group .mj-repo-list { padding: var(--sp-3); }
 
 /* Variant folding (Owner Inbox 2026-07-19): curated qubit-count / form variants
