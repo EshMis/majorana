@@ -77,7 +77,7 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
       label: "Where we are going",
       paragraphs: [
         "Leona Quantum started with three researchers who kept running into the same wall. Quantum computing is full of ideas that are hard to get from a paper onto a machine, and harder still to check once they are there. We are building the workspace that closes that gap: a question becomes a circuit, the circuit runs, and the result comes back with its evidence attached.",
-        "Our ambition is a platform that gets better with every run it makes. Each verified circuit, each paper tied to its method in the Atlas and each lesson someone completes teaches the system a little more about how quantum work is actually done. A chemist, a student and a hardware team should reach the same tools and trust the same answers, and the record of how those answers were produced should stay open.",
+        "Our ambition is a platform that gets better with every run it makes. Each verified circuit and each paper tied to its method in the Atlas teaches the system a little more about how quantum work is done, and so does every lesson someone finishes. A chemist and a hardware engineer should reach the same tools and trust the same answers, and the record of how those answers were produced should stay open.",
       ],
     },
     team: {
@@ -146,8 +146,8 @@ export const ABOUT_COPY: Record<PublicLocale, AboutCopy> = {
     vision: {
       label: "目指す場所",
       paragraphs: [
-        "Leona Quantumは、同じ壁に何度もぶつかってきた3人の研究者から始まりました。量子コンピューティングには、論文から実機へ運ぶのが難しいアイデアがあふれていて、運んだあとに確かめるのはさらに難しい。その隔たりを埋めるワークスペースを作っています。問いが回路になり、回路が動き、結果が検証記録とともに返ってくる場所です。",
-        "私たちが目指すのは、実行のたびに良くなっていくプラットフォームです。検証済みの回路、Atlasで手法と結びついた論文、誰かが修了した教材のひとつひとつが、量子の仕事が実際にどう進むのかをシステムに教えていきます。化学者も、学生も、ハードウェアのチームも、同じ道具にたどり着いて同じ答えを信頼できるように。そして、その答えがどう作られたかの記録は、開かれたままにしておきます。",
+        "Leona Quantumは、同じ壁に何度もぶつかってきた3人の研究者から始まりました。量子コンピューティングには、論文から実機へ運ぶのが難しいアイデアがあふれていて、運んだあとに確かめるのはさらに難しいものです。その隔たりを埋めるワークスペースを作っています。問いが回路になり、回路が動き、結果が検証記録とともに返ってくる場所です。",
+        "私たちが目指すのは、実行のたびに良くなっていくプラットフォームです。検証済みの回路とAtlasで手法に結びついた論文のひとつひとつが、量子の仕事がどう進むのかをシステムに教えていき、誰かが修了した教材もそれに加わります。化学者もハードウェアの技術者も同じ道具にたどり着いて、同じ答えを信頼できるように。そして、その答えがどう作られたかの記録は、開かれたままにしておきます。",
       ],
     },
     team: {

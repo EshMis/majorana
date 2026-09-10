@@ -164,7 +164,7 @@
 .mj-about-site .mj-about-team { padding-block: var(--sp-12); }
 .mj-about-site .mj-about-team-heading { display: block; margin-bottom: var(--sp-10); }
 .mj-about-team-heading h1 { margin-bottom: 0; }
-/* The vision, after the people: a plain first paragraph and a serif second one. */
+/* The vision, after the people: a serif opening paragraph, then a plain one. */
 .lq-about-vision { max-width: 72ch; margin: var(--sp-16) auto var(--sp-4); }
 .lq-about-vision > p:not(.mj-section-label) { margin: var(--sp-4) 0 0; color: var(--text-1); font-size: var(--fs-16); line-height: 1.75; }
 .lq-about-vision > p:nth-of-type(2) { color: var(--text-0); font: 400 var(--fs-display-3)/1.45 var(--font-display); }

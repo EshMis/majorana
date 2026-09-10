@@ -97,7 +97,7 @@ export const HOME_COPY: Record<PublicLocale, {
     how: {
       label: "How it fits together",
       title: "From a question to a result you can check.",
-      lede: "Five parts on one thread. Ask, build, look it up, learn, share. Each hands its work to the next.",
+      lede: "Leona is five parts on one thread. You ask, build, look things up, learn and share, and each part hands its work to the next.",
       flowLabel: "The five parts of Leona",
       stages: [
         {
@@ -247,7 +247,7 @@ export const HOME_COPY: Record<PublicLocale, {
           ],
         },
       ],
-      note: "LeonaQ's figures come from our own evaluation. The comparator figures are the ones reported in the Qiskit HumanEval paper, Qiskit's model card and the QuanBench+ paper, where Gemini 3 Pro, GPT-5.1 and Claude 3.7 Sonnet appear here under their family names. Datasets, prompts and environments differ between those runs and ours, so treat this as directional rather than a controlled head-to-head.",
+      note: "LeonaQ's figures come from our own evaluation. The comparator figures are the ones reported in the Qiskit HumanEval paper, Qiskit's model card and the QuanBench+ paper. Gemini 3 Pro, GPT-5.1 and Claude 3.7 Sonnet appear here under their family names. Datasets, prompts and environments differ between those runs and ours, so treat this as directional rather than a controlled head-to-head.",
       sourcesLabel: "Sources",
       sources: [
         { label: "Qiskit HumanEval paper · Table II", href: "https://arxiv.org/abs/2406.14712" },
@@ -283,7 +283,7 @@ export const HOME_COPY: Record<PublicLocale, {
     how: {
       label: "全体のつながり",
       title: "問いから、確かめられる結果まで。",
-      lede: "5つの部品が1本の流れでつながります。尋ねる、組み立てる、調べる、学ぶ、共有する。それぞれが次の作業へ受け渡します。",
+      lede: "Leonaは、5つの部品がひとつの流れでつながっています。尋ねて、組み立てて、調べて、学んで、共有する。それぞれが次の作業へ受け渡します。",
       flowLabel: "Leonaを構成する5つの部品",
       stages: [
         {
