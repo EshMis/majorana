@@ -22,7 +22,7 @@
     "@workos-inc/node": "^10.13.0",
     "isomorphic-dompurify": "^4.1.0",
     "katex": "^0.18.5",
-    "next": "^16.3.3",
+    "next": "^16.3.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
