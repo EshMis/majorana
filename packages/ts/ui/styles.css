@@ -3082,7 +3082,7 @@ a.mj-facet-option:hover {
 .mj-usage-spend-table td { padding: var(--sp-1) 0; font-family: var(--font-mono); text-align: right; }
 .mj-usage-spend-note { margin: var(--sp-3) 0 0; color: var(--text-2); font-size: var(--fs-12); }
 /* A link inside running text is told apart by more than its colour. */
-.mj-meter-sub a, .mj-account-detail p a { text-decoration: underline; text-underline-offset: var(--sp-1); }
+.mj-meter-sub a, .mj-account-detail p a, .mj-account-detail li a, .mj-account-detail small a { text-decoration: underline; text-underline-offset: var(--sp-1); }
 
 .mj-account-detail {
   flex: 1 1 auto;
