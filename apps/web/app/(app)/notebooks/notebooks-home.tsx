@@ -29,8 +29,43 @@ const LEVEL_OPTIONS: AudienceLevel[] = ["newcomer", "engineer", "student", "rese
 const MATH_OPTIONS: MathLevel[] = ["none", "minimal", "full"];
 const LANGUAGE_OPTIONS: Array<"en" | "ja"> = ["en", "ja"];
 
+/**
+ * The starters shown before "Show all briefs" is pressed, curated by id
+ * rather than by taking the API's first six. A future id the server adds is
+ * not hidden by this list — it simply lands in "Show all" instead of here —
+ * and an id below that the server stops returning is skipped, not rendered
+ * blank.
+ */
+const DEFAULT_STARTER_IDS = [
+  "first-circuit",
+  "bell-state",
+  "grover-2q",
+  "vqe-one-qubit",
+  "hardware-first-job",
+  "reproduce-a-paper-circuit",
+] as const;
+
+const BRIEF_PREVIEW_MAX_LENGTH = 110;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+/**
+ * A starter card's preview: the brief's first sentence, capped so a run-on
+ * brief (several starters have no period before 130+ characters) still reads
+ * as one line. The cut lands on a word boundary — the cap exists for a clean
+ * line, not for a word sliced in half.
+ */
+export function briefPreview(brief: string, maxLength = BRIEF_PREVIEW_MAX_LENGTH): string {
+  const trimmed = brief.trim();
+  const periodIndex = trimmed.indexOf(".");
+  const sentence = periodIndex === -1 ? trimmed : trimmed.slice(0, periodIndex + 1);
+  if (sentence.length <= maxLength) return sentence;
+  const headroom = sentence.slice(0, maxLength - 1);
+  const breakAt = headroom.lastIndexOf(" ");
+  const cut = breakAt > 0 ? headroom.slice(0, breakAt) : headroom;
+  return `${cut.trimEnd()}…`;
 }
 
 /**
@@ -99,6 +134,7 @@ export function NotebooksHome({ locale = "en", seedSlug = "" }: { locale?: Publi
   const [loadAttempt, setLoadAttempt] = useState(0);
 
   const [templates, setTemplates] = useState<NotebookTemplates | null>(null);
+  const [showAllStarters, setShowAllStarters] = useState(false);
 
   const [brief, setBrief] = useState("");
   const [kind, setKind] = useState<NotebookKind>("lesson");
@@ -165,6 +201,20 @@ export function NotebooksHome({ locale = "en", seedSlug = "" }: { locale?: Publi
     if (!needle) return items;
     return items.filter((item) => item.title.toLocaleLowerCase(locale).includes(needle));
   }, [items, locale, query]);
+
+  // Curated six first, the rest of whatever the API returned second — never
+  // reordered once revealed, so "Show all" only ever appends.
+  const { defaultStarters, restStarters } = useMemo(() => {
+    const all = templates?.starters ?? [];
+    const byId = new Map(all.map((starter) => [starter.id, starter] as const));
+    const defaults = DEFAULT_STARTER_IDS
+      .map((id) => byId.get(id))
+      .filter((starter): starter is NotebookStarter => starter !== undefined);
+    const defaultIds = new Set(defaults.map((starter) => starter.id));
+    const rest = all.filter((starter) => !defaultIds.has(starter.id));
+    return { defaultStarters: defaults, restStarters: rest };
+  }, [templates]);
+  const visibleStarters = showAllStarters ? [...defaultStarters, ...restStarters] : defaultStarters;
 
   /**
    * Apply a starter as a whole REQUEST, not just as text in the box.
@@ -308,10 +358,10 @@ export function NotebooksHome({ locale = "en", seedSlug = "" }: { locale?: Publi
           </label>
 
           {templates && templates.starters.length > 0 ? (
-            <details className="mj-notebooks-disclosure mj-notebooks-starters">
-              <summary>{copy.startersLabel}</summary>
+            <div className="mj-notebooks-starters">
+              <h2 className="mj-notebooks-starters-label">{copy.startersLabel}</h2>
               <div className="mj-notebooks-starter-list">
-                {templates.starters.map((starter) => (
+                {visibleStarters.map((starter) => (
                   <button
                     key={starter.id}
                     type="button"
@@ -325,10 +375,20 @@ export function NotebooksHome({ locale = "en", seedSlug = "" }: { locale?: Publi
                         ? ` · ${copy.audienceLevelOption[starter.level as AudienceLevel]}`
                         : ""}
                     </span>
+                    <span className="mj-notebooks-starter-preview">"{briefPreview(starter.brief)}"</span>
                   </button>
                 ))}
               </div>
-            </details>
+              {restStarters.length > 0 && !showAllStarters ? (
+                <button
+                  type="button"
+                  className="mj-secondary-button mj-notebooks-show-more"
+                  onClick={() => setShowAllStarters(true)}
+                >
+                  {copy.showMoreBriefs(restStarters.length)}
+                </button>
+              ) : null}
+            </div>
           ) : null}
 
           <details className="mj-notebooks-disclosure">

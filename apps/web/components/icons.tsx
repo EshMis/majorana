@@ -205,3 +205,13 @@ export function BrandMark({ size = 20, ...props }: IconProps) {
     </svg>
   );
 }
+
+/** A dial: the rail's "Usage & limits" entry. */
+export function GaugeIcon(props: IconProps) {
+  return <Icon {...props}><path d="M2.5 11.5a5.5 5.5 0 0 1 11 0" /><path d="M8 11.5l2.7-4.2" /><circle cx="8" cy="11.5" r="1" /></Icon>;
+}
+
+/** A door with an arrow through it: the rail's "Log out" entry. */
+export function SignOutIcon(props: IconProps) {
+  return <Icon {...props}><path d="M6.5 2.5H3.5v11h3" /><path d="M10 5.5 12.5 8 10 10.5M6.5 8h6" /></Icon>;
+}

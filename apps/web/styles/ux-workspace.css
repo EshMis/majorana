@@ -108,7 +108,7 @@
   .mj-notebook-workspace,
   .mj-course-workspace { padding: var(--sp-5) var(--sp-4) var(--sp-8); }
   .mj-notebooks-composer { padding: var(--sp-4); }
-  .mj-notebooks-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+  .mj-notebooks-fields { gap: var(--sp-3); }
   .mj-notebooks-library-toolbar { flex-wrap: wrap; }
   .mj-notebooks-library-toolbar h2 { width: 100%; }
   .mj-notebook-workspace-actions { width: 100%; }

@@ -8,13 +8,6 @@
   gap: var(--sp-6);
   margin-bottom: var(--sp-8);
 }
-.mj-nala-orbit {
-  width: var(--sp-16);
-  height: var(--sp-16);
-  color: var(--accent);
-  stroke: currentColor;
-  stroke-width: 1;
-}
 .mj-run-home-hero h1 {
   font-family: var(--font-ui);
   font-size: var(--fs-28);
@@ -27,13 +20,16 @@
   padding: var(--sp-4);
   background: var(--bg-0);
 }
+/* One line above the controls (owner, 2026-09-10): the box keeps the shared
+   32px minimum and grows with what is typed, up to four lines' worth. The
+   rotating suggestion is drawn behind it at the same size. */
 .mj-run-home .mj-composer-input,
 .mj-run-task .mj-composer-input {
-  min-height: var(--sp-16);
   font-size: var(--fs-16);
   max-height: calc(var(--sp-16) * 4);
 }
-.mj-run-home .mj-composer-input { min-height: calc(var(--sp-16) + var(--sp-6)); }
+.mj-run-home .mj-composer-ghost-overlay,
+.mj-run-task .mj-composer-ghost-overlay { font-family: var(--font-ui); font-size: var(--fs-16); }
 .mj-composer-input::placeholder { font-family: var(--font-ui); color: var(--text-1); }
 .mj-composer:focus-within { border-color: var(--accent); }
 .mj-composer-feedback {

@@ -1,8 +1,10 @@
 "use client";
 
-import { useId, useRef, type FormEvent, type Ref } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type FormEvent, type Ref } from "react";
 import { ChevronIcon, PaperclipIcon } from "./icons";
+import { ComposerGhostOverlay } from "./composer-ghost-overlay";
 import type { PublicLocale } from "../lib/public-locale";
+import { DELETE_MS_PER_CHARACTER, TYPE_MS_PER_CHARACTER, composerGhost, type GhostFrame } from "../lib/composer-ghost";
 import { COMPOSER_MODES, type ComposerMode } from "../lib/run-mode";
 import {
   COMPOSER_FRAMEWORKS,
@@ -41,6 +43,7 @@ export function RunComposer({
   inputRef,
   centered = false,
   locale = "en",
+  suggestions,
 }: {
   value: string;
   pending: boolean;
@@ -67,9 +70,18 @@ export function RunComposer({
   inputRef?: Ref<HTMLTextAreaElement>;
   centered?: boolean;
   locale?: PublicLocale;
+  /**
+   * Prompts typed into the empty box one after another, the same rotation the
+   * cover draws (`lib/composer-ghost.ts`). Tab accepts the one on screen.
+   * Omitted on a conversation in progress, where the box has a history to
+   * stand next to.
+   */
+  suggestions?: readonly string[];
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const helpId = useId();
+  const ghost = useGhostPrompt(suggestions, value);
   const labels = locale === "ja"
     ? {
         task: "メッセージ",
@@ -112,6 +124,21 @@ export function RunComposer({
         reading: "Reading attachments…",
       };
 
+  // One line until there is more to show: the box grows with its contents and
+  // the stylesheet's max-height caps it, after which it scrolls.
+  useLayoutEffect(() => {
+    const element = textareaRef.current;
+    if (!element) return;
+    element.style.height = "auto";
+    element.style.height = `${element.scrollHeight}px`;
+  }, [value]);
+
+  function bindTextarea(element: HTMLTextAreaElement | null) {
+    textareaRef.current = element;
+    if (typeof inputRef === "function") inputRef(element);
+    else if (inputRef) (inputRef as { current: HTMLTextAreaElement | null }).current = element;
+  }
+
   return (
     <div className={`mj-composer-dock${centered ? " mj-composer-dock--centered" : ""}`}>
       <form className="mj-composer" onSubmit={onSubmit} aria-busy={pending || disabled || readingAttachments}>
@@ -149,8 +176,9 @@ export function RunComposer({
           </div>
         ) : null}
         <div className="mj-composer-ghost-wrap">
+          {ghost ? <ComposerGhostOverlay frame={ghost} /> : null}
           <textarea
-            ref={inputRef}
+            ref={bindTextarea}
             className="mj-composer-input"
             value={value}
             onChange={(event) => onChange(event.target.value)}
@@ -164,8 +192,16 @@ export function RunComposer({
                 event.currentTarget.form?.requestSubmit();
                 return;
               }
+              // Tab only steals focus movement while there is something to
+              // accept and the box is empty, so the composer never becomes a
+              // keyboard trap.
+              if (event.key === "Tab" && !event.shiftKey && !event.nativeEvent.isComposing && !value && ghost) {
+                event.preventDefault();
+                onChange(ghost.suggestion);
+              }
             }}
-            placeholder={basePlaceholder(locale)}
+            // Empty while the ghost draws, so the two never overprint.
+            placeholder={ghost ? "" : basePlaceholder(locale)}
             aria-label={labels.task}
             aria-describedby={helpId}
             rows={1}
@@ -271,6 +307,56 @@ export function RunComposer({
       </form>
     </div>
   );
+}
+
+/**
+ * The rotating suggestion as a clock. Runs only while there are suggestions,
+ * the box is empty and the tab is visible; restarts from the first character
+ * whenever the box empties; holds the first prompt still under reduced motion.
+ * Bare timers on purpose: the test harness mocks the global clock.
+ */
+function useGhostPrompt(suggestions: readonly string[] | undefined, typedValue: string): GhostFrame | null {
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const active = Boolean(suggestions?.length) && typedValue.length === 0;
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduceMotion(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    if (!active || reduceMotion) return;
+    setElapsedMs(0);
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const start = () => {
+      const started = Date.now();
+      timer = setInterval(() => setElapsedMs(Date.now() - started), Math.min(TYPE_MS_PER_CHARACTER, DELETE_MS_PER_CHARACTER));
+    };
+    const stop = () => {
+      if (timer !== undefined) clearInterval(timer);
+      timer = undefined;
+    };
+    const onVisibility = () => {
+      stop();
+      if (document.visibilityState !== "hidden") {
+        setElapsedMs(0);
+        start();
+      }
+    };
+    if (document.visibilityState !== "hidden") start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [active, reduceMotion]);
+
+  return composerGhost({ elapsedMs, suggestions, typedValue, reduceMotion });
 }
 
 function formatAttachmentSize(size: number): string {
