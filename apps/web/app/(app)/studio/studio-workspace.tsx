@@ -810,7 +810,7 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
               </div>
 
               <details className="leona-studio-qapp-disclosure">
-                <summary>{locale === "ja" ? "この回路からQappを作成" : "Create a Qapp from this circuit"}</summary>
+                <summary>{copy.qappTitle}</summary>
               <form
                 className="mj-studio-qapp-request"
                 onSubmit={(event) => {
@@ -819,22 +819,18 @@ export function StudioWorkspace({ artifactId, newDraft = false, locale = "en", l
                 }}
               >
                 <label className="mj-studio-qapp-field" htmlFor="studio-qapp-prompt">
-                  <span>{locale === "ja" ? "Qappプロンプト" : "Qapp prompt"}</span>
+                  <span>{copy.qappPrompt}</span>
                   <textarea
                     id="studio-qapp-prompt"
                     value={qappPrompt}
                     onChange={(event) => setQappPrompt(event.target.value)}
                     disabled={busy !== null}
-                    placeholder={locale === "ja"
-                      ? "例：位相とショット数を操作でき、測定結果を円グラフで比較するQappにしてください。"
-                      : "Example: Make phase and shots adjustable, and compare measurements in a pie chart."}
+                    placeholder={copy.qappPlaceholder}
                   />
                 </label>
                 <div className="mj-studio-qapp-submit">
                   <p id="studio-qapp-help">
-                    {locale === "ja"
-                      ? "空欄なら回路に合わせて自動設計します。送信後はRunで生成状況を表示します。"
-                      : "Leave blank for automatic design. Run opens after submission to show generation progress."}
+                    {copy.qappHelp}
                   </p>
                   <button
                     className="mj-secondary-button"
@@ -1207,7 +1203,6 @@ export function CircuitBuilder({ seed, framework, selectedGate, onSelectGate, on
   const [builderMessage, setBuilderMessage] = useState<string | null>(null);
   const [applyConfirmPending, setApplyConfirmPending] = useState(false);
   const [compressionStrategy, setCompressionStrategy] = useState<CircuitCompressionStrategy>("balanced");
-  const [optimizationMode, setOptimizationMode] = useState<"local" | "compiler">("compiler");
   const [compressionConfirmPending, setCompressionConfirmPending] = useState(false);
   const [compressionSnapshot, setCompressionSnapshot] = useState<{ before: BuilderStep[]; afterSignature: string } | null>(null);
   const [externalCompiler, setExternalCompiler] = useState<ExternalCircuitCompiler>("qiskit");
@@ -1300,13 +1295,13 @@ export function CircuitBuilder({ seed, framework, selectedGate, onSelectGate, on
     { value: "rotation_folding", label: copy.compressionRotations, description: copy.compressionRotationsDescription },
     { value: "pattern_rewrite", label: copy.compressionPatterns, description: copy.compressionPatternsDescription },
   ];
-  const externalCompilerOptions: { value: ExternalCircuitCompiler; label: string; description: string; recommended?: boolean }[] = [
-    { value: "qiskit", label: copy.externalQiskit, description: copy.externalQiskitDescription, recommended: true },
-    { value: "cirq", label: copy.externalCirq, description: copy.externalCirqDescription },
-    { value: "pytket", label: copy.externalPytket, description: copy.externalPytketDescription },
-    { value: "pennylane", label: copy.externalPennyLane, description: copy.externalPennyLaneDescription },
-    { value: "pyzx", label: copy.externalPyZX, description: copy.externalPyZXDescription },
-    { value: "bqskit", label: copy.externalBqskit, description: copy.externalBqskitDescription },
+  const externalCompilerOptions: { value: ExternalCircuitCompiler; label: string; recommended?: boolean }[] = [
+    { value: "qiskit", label: copy.externalQiskit, recommended: true },
+    { value: "cirq", label: copy.externalCirq },
+    { value: "pytket", label: copy.externalPytket },
+    { value: "pennylane", label: copy.externalPennyLane },
+    { value: "pyzx", label: copy.externalPyZX },
+    { value: "bqskit", label: copy.externalBqskit },
   ];
 
   const onCircuitChangeRef = useRef(onCircuitChange);
@@ -1674,76 +1669,51 @@ export function CircuitBuilder({ seed, framework, selectedGate, onSelectGate, on
             </div>
           </header>
 
-          <ol className="mj-studio-optimizer-steps" aria-label={copy.optimizationWorkflowLabel}>
-            {[copy.optimizationStepChoose, copy.optimizationStepCompare, copy.optimizationStepApply].map((label, index) => (
-              <li key={label}><span>{index + 1}</span>{label}</li>
-            ))}
-          </ol>
+          <div className="mj-studio-optimizer-panel">
+            <span className="mj-section-label">{copy.optimizationLocal}</span>
+            <fieldset className="mj-studio-compression-strategies">
+              <legend className="mj-section-label">{copy.compressionStrategy}</legend>
+              <div>
+                {compressionOptions.map((option) => (
+                  <label key={option.value} data-selected={compressionStrategy === option.value ? "true" : undefined}>
+                    <input
+                      type="radio"
+                      name="studio-compression-strategy"
+                      value={option.value}
+                      checked={compressionStrategy === option.value}
+                      onChange={() => setCompressionStrategy(option.value)}
+                    />
+                    <span><strong>{option.label}</strong><small>{option.description}</small></span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
-          <div className="mj-studio-optimizer-tabs" role="tablist" aria-label={copy.compression}>
-            <button
-              id="studio-optimizer-local-tab"
-              type="button"
-              role="tab"
-              aria-selected={optimizationMode === "local"}
-              aria-controls="studio-optimizer-local-panel"
-              onClick={() => setOptimizationMode("local")}
-            >
-              <span><strong>{copy.optimizationLocal}</strong><small>{copy.optimizationLocalDescription}</small></span>
-            </button>
-            <button
-              id="studio-optimizer-compiler-tab"
-              type="button"
-              role="tab"
-              aria-selected={optimizationMode === "compiler"}
-              aria-controls="studio-optimizer-compiler-panel"
-              onClick={() => setOptimizationMode("compiler")}
-            >
-              <span><strong>{copy.optimizationExternal}</strong><small>{copy.optimizationExternalDescription}</small></span>
-              <b aria-hidden="true">6</b>
-            </button>
+            <dl className="mj-studio-compression-metrics" aria-live="polite">
+              <CompressionMetric label={copy.compressionOperations} before={compression.before.operations} after={compression.after.operations} />
+              <CompressionMetric label={copy.compressionDepth} before={compression.before.depth} after={compression.after.depth} />
+              <CompressionMetric label={copy.compressionTwoQubit} before={compression.before.twoQubitOperations} after={compression.after.twoQubitOperations} />
+            </dl>
+
+            <p className="mj-studio-compression-boundary">{copy.compressionBoundary}</p>
+            {!compression.changed ? <p className="mj-studio-compression-empty" role="status">{copy.compressionNoChange}</p> : null}
+            <div className="mj-studio-compression-actions">
+              <button className="mj-primary-button" type="button" onClick={applyCompression} disabled={!compression.changed}>
+                {compressionConfirmPending ? copy.compressionConfirmApply : copy.compressionApply}
+              </button>
+              {compressionConfirmPending ? (
+                <button className="mj-secondary-button" type="button" onClick={() => { setCompressionConfirmPending(false); setBuilderMessage(null); }}>{copy.cancel}</button>
+              ) : null}
+              {canUndoCompression ? <button className="mj-secondary-button" type="button" onClick={undoCompression}>{copy.compressionUndo}</button> : null}
+            </div>
           </div>
 
-          {optimizationMode === "local" ? (
-            <div id="studio-optimizer-local-panel" className="mj-studio-optimizer-panel" role="tabpanel" aria-labelledby="studio-optimizer-local-tab">
-              <fieldset className="mj-studio-compression-strategies">
-                <legend className="mj-section-label">{copy.compressionStrategy}</legend>
-                <div>
-                  {compressionOptions.map((option) => (
-                    <label key={option.value} data-selected={compressionStrategy === option.value ? "true" : undefined}>
-                      <input
-                        type="radio"
-                        name="studio-compression-strategy"
-                        value={option.value}
-                        checked={compressionStrategy === option.value}
-                        onChange={() => setCompressionStrategy(option.value)}
-                      />
-                      <span><strong>{option.label}</strong><small>{option.description}</small></span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-
-              <dl className="mj-studio-compression-metrics" aria-live="polite">
-                <CompressionMetric label={copy.compressionOperations} before={compression.before.operations} after={compression.after.operations} />
-                <CompressionMetric label={copy.compressionDepth} before={compression.before.depth} after={compression.after.depth} />
-                <CompressionMetric label={copy.compressionTwoQubit} before={compression.before.twoQubitOperations} after={compression.after.twoQubitOperations} />
-              </dl>
-
-              <p className="mj-studio-compression-boundary">{copy.compressionBoundary}</p>
-              {!compression.changed ? <p className="mj-studio-compression-empty" role="status">{copy.compressionNoChange}</p> : null}
-              <div className="mj-studio-compression-actions">
-                <button className="mj-primary-button" type="button" onClick={applyCompression} disabled={!compression.changed}>
-                  {compressionConfirmPending ? copy.compressionConfirmApply : copy.compressionApply}
-                </button>
-                {compressionConfirmPending ? (
-                  <button className="mj-secondary-button" type="button" onClick={() => { setCompressionConfirmPending(false); setBuilderMessage(null); }}>{copy.cancel}</button>
-                ) : null}
-                {canUndoCompression ? <button className="mj-secondary-button" type="button" onClick={undoCompression}>{copy.compressionUndo}</button> : null}
-              </div>
-            </div>
-          ) : (
-            <div id="studio-optimizer-compiler-panel" className="mj-studio-optimizer-panel" role="tabpanel" aria-labelledby="studio-optimizer-compiler-tab">
+          {/* Folded by default: a compiler run is a deliberate, heavier detour
+              from the quick in-browser rewrites above, not a second front-door
+              choice. Closed keeps the fast path the thing everyone sees first. */}
+          <details className="mj-sim-details">
+            <summary>{copy.optimizationExternal}</summary>
+            <div className="mj-studio-optimizer-panel">
               <div className="mj-studio-external-compression-head">
                 <div>
                   <h4>{copy.externalCompilation}</h4>
@@ -1770,12 +1740,9 @@ export function CircuitBuilder({ seed, framework, selectedGate, onSelectGate, on
                         disabled={externalBusy}
                         onChange={() => setExternalCompiler(option.value)}
                       />
-                      <span>
-                        <span className="mj-studio-compiler-name">
-                          <strong>{option.label}</strong>
-                          {option.recommended ? <em>{copy.externalRecommended}</em> : null}
-                        </span>
-                        <small>{option.description}</small>
+                      <span className="mj-studio-compiler-name">
+                        <strong>{option.label}</strong>
+                        {option.recommended ? <em>{copy.externalRecommended}</em> : null}
                       </span>
                       <i aria-hidden="true">✓</i>
                     </label>
@@ -1821,7 +1788,7 @@ export function CircuitBuilder({ seed, framework, selectedGate, onSelectGate, on
                 </div>
               ) : null}
             </div>
-          )}
+          </details>
         </section>
       )}
 
@@ -1991,7 +1958,7 @@ function CodeEditor({
         <>
           {/* The framework picker lived in the inspector, one panel away from
               the code it retargets, which is why the conversions read as absent
-              (Owner Inbox 2026-07-31). All eight are offered here; the four that
+              (Owner Inbox 2026-07-31). All ten are offered here; the seven that
               cannot be executed say so in the option itself. */}
           <label className="mj-studio-framework-select">
             <span className="sr-only">{locale === "ja" ? "フレームワーク" : "Framework"}</span>
@@ -2021,7 +1988,6 @@ function CodeEditor({
         <details className="mj-studio-code-about">
           <summary>{copy.aboutConversions}</summary>
           <p>{copy.conversionExplainer}</p>
-          <p className="mj-studio-editor-note">{copy.editorNote}</p>
         </details>
       </div>
     </StudioPanelSurface>
@@ -2204,18 +2170,7 @@ function SimulationPanel({
             <span className="mj-studio-lane-title">{copy.cpuLane}</span>
             <span className="mj-mono-muted">{eligibility.eligible ? copy.cpuEligible : copy.cpuUnavailableShort}</span>
           </div>
-        <details className="mj-sim-details">
-          <summary>{copy.simulationContextDetails}</summary>
-          <p className="mj-studio-simulation-boundary">{copy.simulationBoundary}</p>
-          <dl className="mj-studio-contract">
-            <div><dt>{copy.simulationArtifact}</dt><dd>{artifact?.title ?? copy.newDraftSource}</dd></div>
-            <div><dt>{copy.sourceFingerprint}</dt><dd>{eligibility.sourceFingerprint}</dd></div>
-            {eligibility.eligible && eligibility.interchangeFingerprint ? <div><dt>{copy.interchangeFingerprint}</dt><dd>{eligibility.interchangeFingerprint}</dd></div> : null}
-            {eligibility.eligible ? <div><dt>{copy.simulationModel}</dt><dd>{simulationModelLabel(eligibility.model, copy)}</dd></div> : null}
-            <div><dt>{copy.simulator}</dt><dd>{copy.browserCpu}</dd></div>
-          </dl>
-          <p className="mj-studio-sampling-note">{copy.samplingNote}</p>
-        </details>
+        <p className="mj-studio-simulation-boundary">{copy.simulationBoundary}</p>
 
         {eligibility.eligible ? (
           rerunPending ? (
@@ -2258,21 +2213,6 @@ function SimulationPanel({
             ) : null}
           </div>
         )}
-        </div>
-
-        {/* The GPU lane is listed because it is a lane, and it says exactly what
-            is true of it — a provider is being arranged and nothing is wired to
-            it yet (Owner Inbox 2026-07-31). What it deliberately does NOT have
-            is a run button: an earlier version of this lane was a control that
-            existed only to be disabled, which was removed for being a promise
-            the screen could not keep. A named status is information; a dead
-            button is a lie. The control appears with the provider. */}
-        <div className="mj-studio-lane" data-state="pending">
-          <div className="mj-studio-lane-head">
-            <span className="mj-studio-lane-title">{copy.gpuLane}</span>
-            <span className="mj-mono-muted">{copy.gpuPending}</span>
-          </div>
-          <p>{copy.gpuExplainer}</p>
         </div>
 
         <div className="mj-studio-lane">

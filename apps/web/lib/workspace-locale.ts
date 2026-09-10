@@ -235,6 +235,10 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     workingCircuit: string;
     editingVersion: (version: string, framework: string) => string;
     newDraft: string;
+    qappTitle: string;
+    qappPrompt: string;
+    qappPlaceholder: string;
+    qappHelp: string;
     copyCode: string;
     copied: string;
     downloadExport: string;
@@ -280,7 +284,6 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     simulationOtherBar: (states: number) => string;
     simulationRecordSummary: (shots: string, qubits: number) => string;
     simulationDetails: string;
-    simulationContextDetails: string;
     readingConcentrated: (state: string, share: string) => string;
     readingPaired: (first: string, second: string, share: string) => string;
     readingSpread: (states: number, state: string, share: string) => string;
@@ -327,9 +330,6 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     collapsePanel: string;
     computeLanes: string;
     cpuUnavailableShort: string;
-    gpuLane: string;
-    gpuPending: string;
-    gpuExplainer: string;
     aboutConversions: string;
     conversionExplainer: string;
     conversionUnavailable: (target: string, source: string) => string;
@@ -358,7 +358,6 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     shots: string;
     seed: string;
     seedAuto: string;
-    samplingNote: string;
     execute: string;
     existingVersion: string;
     newDraftSource: string;
@@ -383,7 +382,6 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     sourceEditorInput: string;
     implementation: (framework: string) => string;
     sourceReferenceHeading: (source: string, target: string) => string;
-    editorNote: string;
     versionHistory: string;
     repositoryView: string;
     currentVersion: (id: string) => string;
@@ -436,14 +434,8 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     appliedToCode: string;
     compression: string;
     compressionIntro: string;
-    optimizationWorkflowLabel: string;
-    optimizationStepChoose: string;
-    optimizationStepCompare: string;
-    optimizationStepApply: string;
     optimizationLocal: string;
-    optimizationLocalDescription: string;
     optimizationExternal: string;
-    optimizationExternalDescription: string;
     compressionStrategy: string;
     compressionInverse: string;
     compressionInverseDescription: string;
@@ -469,17 +461,11 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     externalLevel: string;
     externalCompiler: string;
     externalQiskit: string;
-    externalQiskitDescription: string;
     externalCirq: string;
-    externalCirqDescription: string;
     externalPytket: string;
-    externalPytketDescription: string;
     externalPennyLane: string;
-    externalPennyLaneDescription: string;
     externalPyZX: string;
-    externalPyZXDescription: string;
     externalBqskit: string;
-    externalBqskitDescription: string;
     externalRecommended: string;
     externalLevelHelp: string;
     externalLevelOption: (level: number) => string;
@@ -983,7 +969,11 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       ungroupedEmpty: "Every circuit is filed under a project.",
       workingCircuit: "Working circuit",
       editingVersion: (version, framework) => `Editing version ${version} · ${framework}`,
-      newDraft: "A clean draft for exploring a circuit before it is saved.",
+      newDraft: "Unsaved draft",
+      qappTitle: "Create a Qapp",
+      qappPrompt: "Qapp prompt",
+      qappPlaceholder: "e.g. adjustable phase and shots, with results shown as a pie chart",
+      qappHelp: "Leave blank to auto-design it. Run opens after submission.",
       copyCode: "Copy code",
       copied: "Copied",
       downloadExport: "Download export",
@@ -992,14 +982,14 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       cpuLane: "CPU lane",
       cpuEligible: "CPU eligible",
       cpuUnavailable: (reason) => ({
-        artifact_required: "Save this draft before creating an artifact-owned simulation record.",
-        framework_unavailable: "CPU execution is available only for Qiskit, PennyLane, and Cirq source.",
-        source_unavailable: "The in-browser lane can only rebuild circuits written in Studio's own gate shape, and this one is beyond it — so nothing is simulated here rather than a result being invented.",
-        source_limit: "This source is too large for the bounded CPU simulation lane.",
-        qubit_limit: "This circuit is wider than the browser simulation lane can run on your plan.",
-        operation_limit: "This source exceeds the bounded CPU operation limit.",
+        artifact_required: "Save this draft first.",
+        framework_unavailable: "CPU execution supports only Qiskit, PennyLane, and Cirq source.",
+        source_unavailable: "This circuit is outside the browser lane's supported gate shape.",
+        source_limit: "This source is too large for the browser simulation lane.",
+        qubit_limit: "This circuit is wider than your plan's browser simulation limit.",
+        operation_limit: "This source exceeds the browser operation limit.",
       }[reason] ?? "CPU simulation is unavailable for this source."),
-      sandboxFallbackExplainer: "Run it for real instead: the sandbox executes this exact source and reports whatever it produces, including the error if it does not work.",
+      sandboxFallbackExplainer: "The sandbox runs this exact source and reports the result, errors included.",
       runInSandbox: "Run this code for real",
       openSimulation: "Open simulation",
       simulationArtifactRequired: "Save this draft before creating an artifact-owned simulation record.",
@@ -1008,7 +998,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       simulationPersistenceUnavailable: "The CPU result was not recorded because this browser cannot store local simulation records.",
       cpuSimulationRecorded: "CPU simulation recorded in this browser. It did not start a Nala Run or verify this artifact.",
       simulationFailed: "CPU simulation failed before a record could be created.",
-      simulationBoundary: "This bounded statevector runs in this browser from the parsed gate model. It records the exact draft fingerprint; unsaved edits do not update a saved version. Its local record is not verification, a Nala Run, or hardware execution.",
+      simulationBoundary: "Runs in your browser on the parsed circuit. A local check, not verification.",
       simulationArtifact: "Artifact",
       sourceFingerprint: "Source fingerprint",
       interchangeFingerprint: "Interchange fingerprint",
@@ -1019,7 +1009,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       browserCpu: "Browser CPU",
       runCpuSimulation: "Run CPU simulation",
       rerunCpuSimulation: "Run CPU simulation again",
-      rerunPrompt: "This exact source already has a local simulation record. Confirm to create another record; it will not overwrite the earlier result.",
+      rerunPrompt: "This source already has a local record. Run again to add another, without overwriting it.",
       confirmRerun: "Confirm rerun",
       cancel: "Cancel",
       hardwareLanes: "Hardware lanes",
@@ -1036,10 +1026,9 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       simulationOtherBar: (states) => `${states} more states`,
       simulationRecordSummary: (shots, qubits) => `${shots} shots · ${qubits} qubits`,
       simulationDetails: "Record details",
-      simulationContextDetails: "Provenance & eligibility details",
-      readingConcentrated: (state, share) => `${share} of shots landed on |${state}⟩ — a single dominant outcome in this sample.`,
-      readingPaired: (first, second, share) => `Shots concentrated on |${first}⟩ and |${second}⟩ (${share} combined) — the correlated-pair signature.`,
-      readingSpread: (states, state, share) => `${states} distinct outcomes in this sample; the most frequent was |${state}⟩ at ${share}.`,
+      readingConcentrated: (state, share) => `${share} of shots landed on |${state}⟩, the dominant outcome.`,
+      readingPaired: (first, second, share) => `Shots concentrated on |${first}⟩ and |${second}⟩ (${share} combined).`,
+      readingSpread: (states, state, share) => `${states} distinct outcomes; the most frequent was |${state}⟩ at ${share}.`,
       hardwareCatalogLoading: "Loading the device catalog…",
       hardwareCatalogUnavailable: "The QPU device catalog is unavailable because the control plane could not be reached.",
       hardwareDevice: "Device",
@@ -1053,21 +1042,21 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       hardwareEstimating: "Estimating…",
       hardwareEstimateFailed: "The estimate is unavailable because the control plane could not be reached.",
       hardwareRequestSubmission: "Request hardware submission",
-      hardwareVerifiedRequired: "Hardware submission will require a verified saved version of this circuit.",
-      hardwareInterchangeRequired: "This version stores no OpenQASM interchange export, which is what hardware runs. Rerun Verify & save to produce one.",
+      hardwareVerifiedRequired: "Requires a verified saved version of this circuit.",
+      hardwareInterchangeRequired: "No OpenQASM export is stored for this version. Rerun Verify & save to produce one.",
       hardwareJobStatus: "Job status",
       hardwareJobId: "Provider job",
       hardwareJobError: "Provider error",
       hardwareRawCounts: "Raw device counts",
       hardwareBlockedReason: (reason) => ({
-        submission_disabled: "Hardware submission is switched off in this deployment by the owner. The device, rates, and estimate above are exactly what a real submission will use.",
-        credentials_unconfigured: "No provider credentials are configured in this deployment, so nothing can be submitted.",
-        provider_dependency_missing: "The provider SDK is not installed in this deployment, so nothing can be submitted.",
+        submission_disabled: "Hardware submission is off in this deployment.",
+        credentials_unconfigured: "No provider credentials are configured, so nothing can be submitted.",
+        provider_dependency_missing: "The provider SDK is not installed, so nothing can be submitted.",
       }[reason] ?? "Hardware submission is unavailable in this deployment."),
       hardwareSpendExhausted: (estimate, limit, spent) =>
-        `This run is estimated at ${estimate}. Your plan includes ${limit} of hardware time per week and ${spent} is already committed. Free-queue devices and browser simulation stay available.`,
+        `Estimated at ${estimate}. Your plan includes ${limit} of hardware time weekly, and ${spent} is already committed. Free-queue devices and browser simulation stay available.`,
       hardwareSpendFreeTier: (estimate) =>
-        `This run is estimated at ${estimate}, and billed hardware is not part of the free plan. Free-queue devices and browser simulation stay available.`,
+        `Estimated at ${estimate}. Billed hardware is not part of the free plan; free-queue devices and browser simulation stay available.`,
       verifySave: "Verify & save",
       starting: "Starting…",
       bringYourOwn: "Save without running",
@@ -1085,15 +1074,12 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       collapsePanel: "Return this panel to the page",
       computeLanes: "Compute lanes",
       cpuUnavailableShort: "Not eligible",
-      gpuLane: "GPU lane",
-      gpuPending: "No provider connected",
-      gpuExplainer: "A GPU simulation provider is being arranged. Nothing is wired to it yet, so this lane cannot run a circuit and there is no control here to press. When the provider is connected, this lane gains a run control and its own cost and limit figures.",
       aboutConversions: "About these conversions",
-      conversionExplainer: "Each framework tab is generated from this circuit's own stored source through a bounded gate set. Where a conversion goes through standard-gate decomposition, the note above says so; stored native source is never rewritten and carries no note. Four of the eight are export formats — they can be produced and downloaded, but Leona Quantum executes only Qiskit, PennyLane, and Cirq.",
+      conversionExplainer: "Studio supports ten frameworks. Qiskit, PennyLane, and Cirq run here; the other seven are export-only.",
       conversionUnavailable: (target, source) => `No ${target} conversion could be produced from this circuit, so the ${source} source is shown instead. Exports and runs made here use ${source}.`,
-      exportOnlyFramework: "This format is for copy and export. Sandbox execution is limited to Qiskit, PennyLane, and Cirq.",
+      exportOnlyFramework: "Copy and export only. Running here needs Qiskit, PennyLane, or Cirq.",
       uncommittedEdits: "Edited since the last saved version",
-      uncommittedEditsNote: "These edits exist only in this browser until a verification run saves them as the next version.",
+      uncommittedEditsNote: "Local to this browser until a verification run saves the next version.",
       footer: "Edits stay in this browser until a verification run saves them as the next version.",
       openRun: "Open live run",
       countCircuits: (count) => (count === 1 ? "1 circuit" : `${count} circuits`),
@@ -1109,12 +1095,11 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       evidenceStructural: "Structural evidence — the shape of the answer was checked, not its physics",
       evidenceCaveats: "Public reference — verified with caveats",
       evidenceFailed: "Verification failed",
-      evidenceNotLoaded: "Open the full record to load this version's checks.",
+      evidenceNotLoaded: "Open the full record for this version's checks.",
       openFullRecord: "Open the full verification record",
       shots: "Shots",
       seed: "Seed",
       seedAuto: "auto",
-      samplingNote: "CPU simulation uses these inputs; Verify & save passes them through to the run planner. Leave seed blank to record a browser-chosen seed.",
       execute: "Execute",
       existingVersion: "Existing version",
       newDraftSource: "New draft",
@@ -1139,13 +1124,12 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       sourceEditorInput: "source editor",
       implementation: (framework) => `${framework} implementation`,
       sourceReferenceHeading: (source, target) => `${source} source · no ${target} conversion`,
-      editorNote: "Edit the draft directly. Simulate or verify it to produce evidence before it becomes a saved version.",
       versionHistory: "Version history",
       repositoryView: "atlas view",
       currentVersion: (id) => `Current · ${id}`,
       draftNotSaved: "Draft · not saved",
       currentVersionNote: "The current saved version remains unchanged until a passing verification run saves the next version.",
-      draftVersionNote: "Run verification to create the first durable artifact version.",
+      draftVersionNote: "Run verification to create the first saved version.",
       verificationQueued: "Verification run queued",
       verificationAttach: (id) => `Run ${id} will attach evidence when it finishes.`,
       versionLabel: (seq) => `Version ${seq}`,
@@ -1171,7 +1155,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       restoring: "Restoring…",
       restoreConfirmTitle: "Restore this version?",
       restoreConfirmBody: (seq) =>
-        `Version ${seq} becomes the current version. Nothing is deleted — every version stays in this list.`,
+        `Version ${seq} becomes current. Nothing is deleted; every version stays in this list.`,
       restoreLossIntro: "This artifact would no longer have:",
       restoreCancel: "Cancel",
       restoreConfirmAnyway: "Restore anyway",
@@ -1194,7 +1178,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
         M: "Measurement records the final computational-basis result.",
       },
       palette: "Gate palette",
-      builderHint: "Pick a gate, then click a wire to place it. Click a placed gate to select it; Shift-click to select multiple.",
+      builderHint: "Pick a gate, then click a wire to place it.",
       pickTarget: "Now select the remaining qubits.",
       addQubit: "Add qubit",
       removeQubit: "Remove qubit",
@@ -1203,15 +1187,9 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       applyToCode: "Apply to code",
       appliedToCode: "Generated code applied to all framework drafts.",
       compression: "Circuit compression",
-      compressionIntro: "Choose a method, compare before and after, then apply only the result you want to keep.",
-      optimizationWorkflowLabel: "Circuit optimization workflow",
-      optimizationStepChoose: "Choose a method",
-      optimizationStepCompare: "Compare the result",
-      optimizationStepApply: "Apply to Studio",
+      compressionIntro: "Compare before and after, then apply the result you want.",
       optimizationLocal: "Quick exact rewrites",
-      optimizationLocalDescription: "Runs instantly in the browser. Best for obvious cancellations and rotation folding.",
       optimizationExternal: "Compiler optimization",
-      optimizationExternalDescription: "Runs one of six real compiler SDKs on the Worker and returns an editable Studio circuit.",
       compressionStrategy: "Compression strategy",
       compressionInverse: "Cancel inverse pairs",
       compressionInverseDescription: "Removes matching self-inverse gates when no operation on the same qubits lies between them.",
@@ -1228,7 +1206,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       compressionApply: "Compress circuit",
       compressionConfirmApply: "Replace code and compress",
       compressionUndo: "Undo compression",
-      compressionBoundary: "Measurements and custom gates stay as rewrite boundaries on their qubits. Compression does not claim hardware routing or device-native optimization.",
+      compressionBoundary: "Measurements and custom gates stay as rewrite boundaries; this is not hardware routing.",
       compressionOverwrite: "The Code tab no longer matches this diagram. Compression replaces it with generated code for the compressed diagram. Continue?",
       compressionApplied: (removed, beforeDepth, afterDepth) => `Compressed the circuit by ${removed} operations. Logical depth: ${beforeDepth} → ${afterDepth}. Framework drafts were regenerated.`,
       compressionUndone: "Compression was undone and the framework drafts were regenerated.",
@@ -1237,21 +1215,15 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       externalLevel: "Optimization level",
       externalCompiler: "Compiler",
       externalQiskit: "Qiskit",
-      externalQiskitDescription: "IBM's preset pass manager with a deterministic seed and Studio-compatible basis gates.",
       externalCirq: "Cirq",
-      externalCirqDescription: "Google Quantum AI's merge, target-gateset decomposition, and cleanup transformer pipeline.",
       externalPytket: "pytket",
-      externalPytketDescription: "Quantinuum's peephole compiler with implicit wire swaps disabled before rebasing to Studio gates.",
       externalPennyLane: "PennyLane",
-      externalPennyLaneDescription: "Xanadu's compile transform: commuting, inverse cancellation, and rotation merging over repeated passes.",
       externalPyZX: "PyZX",
-      externalPyZXDescription: "ZX-calculus and phase-polynomial optimization for bounded Clifford+T circuits.",
       externalBqskit: "BQSKit",
-      externalBqskitDescription: "Berkeley's synthesis-based compiler for deeper optimization of small circuits.",
       externalRecommended: "Recommended",
       externalLevelHelp: "1 is fastest, 2 is balanced, and 3 searches more thoroughly.",
       externalLevelOption: (level) => level === 1 ? "1 · Fast" : level === 2 ? "2 · Balanced" : "3 · Thorough",
-      externalBoundary: "Only bound built-in gates are sent—never source code. General jobs are limited to 64 qubits and 1,024 operations. PyZX is limited to 16 qubits / 512 operations and Clifford+T angles; BQSKit to 8 qubits / 128 operations.",
+      externalBoundary: "Only built-in gates are sent, never source code: up to 64 qubits / 1,024 operations (PyZX 16/512, Clifford+T only; BQSKit 8/128).",
       externalRun: "Run compiler",
       externalRunSelected: (compiler) => `Run ${compiler}`,
       externalRunning: "Compiling…",
@@ -1259,7 +1231,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       externalFailed: "The external compiler did not return a usable Studio circuit.",
       externalConnectionLost: "The compiler event stream closed before a result arrived.",
       externalPreview: (compiler, version) => `${compiler} ${version} result`,
-      externalUnverified: "This is compiler output, not verification evidence. Equivalence is reported up to global phase; verify the edited draft before relying on it.",
+      externalUnverified: "Compiler output, not verification evidence; verify the edited draft before relying on it.",
       externalApply: "Apply compiler result",
       externalConfirmApply: "Replace code with compiler result",
       externalApplied: (compiler, before, after) => `${compiler} result applied (${before} → ${after} gates). Framework drafts were regenerated; verification is stale.`,
@@ -1282,15 +1254,15 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       hideInspector: "Hide inspector",
       showInspector: "Inspector",
       circuitRestored: "Circuit loaded from the saved artifact. Edits stay in this draft until you verify & save.",
-      circuitReadOnly: "This is the framework-native circuit that ran. Unsupported operations are preserved as named blocks, so the diagram is read-only and the original code remains unchanged.",
-      circuitReadOnlyTruncated: (shown, total) => `Read-only preview: showing ${shown} of ${total} framework operations. The original code remains complete and unchanged.`,
+      circuitReadOnly: "This is the framework-native circuit that ran, read-only. The original code is unchanged.",
+      circuitReadOnlyTruncated: (shown, total) => `Read-only preview: ${shown} of ${total} operations. The original code is unchanged.`,
       readOnly: "Read-only",
       readOnlyHint: "Inspect the executed circuit here. Edit the high-level program in the Code tab.",
       circuitNotRebuildable: "This artifact's code goes beyond the visual builder — edit it in the Code tab.",
       sourceFallbackNote: (target, source) => `No safe ${target} conversion exists for this circuit, so this tab shows the stored ${source} source — it is a source reference, not ${target} code. Exports and runs from this tab use ${source}.`,
       circuitTooLargeToDraw: "This circuit is too large to draw as a diagram — its qubit or gate count would render an unreadable canvas. The Code tab holds the full source to read and run.",
-      canvasOutOfDate: "The Code tab has changed since this diagram was drawn, so the diagram no longer shows what will run.",
-      canvasBeyondBuilder: "The code in the Code tab is outside what this editor can draw, so the diagram below is not a picture of it. The code is what runs.",
+      canvasOutOfDate: "The Code tab changed since this diagram was drawn; it no longer shows what will run.",
+      canvasBeyondBuilder: "This code is outside what the editor can draw. The code is what runs.",
       rebuildFromCode: "Rebuild from code",
       rebuiltFromCode: "Diagram rebuilt from the code in the Code tab.",
       applyOverwritesEditedCode: "The Code tab has changed since this diagram was drawn. Applying replaces that code with the diagram. Continue?",
@@ -1801,7 +1773,11 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       ungroupedEmpty: "すべての回路がいずれかのプロジェクトに入っています。",
       workingCircuit: "作業中の回路",
       editingVersion: (version, framework) => `バージョン${version}を編集中 · ${framework}`,
-      newDraft: "保存する前の回路を試すための新しい下書きです。",
+      newDraft: "未保存の下書き",
+      qappTitle: "Qappを作成",
+      qappPrompt: "Qappプロンプト",
+      qappPlaceholder: "例：位相とショット数を調整でき、結果を円グラフで表示するQapp",
+      qappHelp: "空欄なら自動設計します。送信後はRunで進捗を確認できます。",
       copyCode: "コードをコピー",
       copied: "コピー済み",
       downloadExport: "エクスポートをダウンロード",
@@ -1810,14 +1786,14 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       cpuLane: "CPUシミュレーション",
       cpuEligible: "CPUで実行可能",
       cpuUnavailable: (reason) => ({
-        artifact_required: "この保存済み回路のシミュレーション記録を作成する前に、下書きを保存してください。",
+        artifact_required: "先に下書きを保存してください。",
         framework_unavailable: "CPU実行はQiskit、PennyLane、Cirqのソースでのみ利用できます。",
-        source_unavailable: "この回路はブラウザ内では実行できません。対応していない回路の結果は表示しません。",
-        source_limit: "このソースはブラウザ内CPUシミュレーションには大きすぎます。",
-        qubit_limit: "この回路は、お使いのプランでブラウザシミュレーションを実行できる幅を超えています。",
-        operation_limit: "このソースは限定CPU操作数の上限を超えています。",
+        source_unavailable: "この回路はブラウザ内シミュレーションの対応範囲外です。",
+        source_limit: "このソースはブラウザシミュレーションには大きすぎます。",
+        qubit_limit: "この回路は、お使いのプランのブラウザシミュレーション上限を超えています。",
+        operation_limit: "このソースは操作数の上限を超えています。",
       }[reason] ?? "このソースではCPUシミュレーションを利用できません。"),
-      sandboxFallbackExplainer: "代わりにサンドボックスで実行できます。ソースをそのまま実行し、動作しない場合はエラーも含めて結果を表示します。",
+      sandboxFallbackExplainer: "サンドボックスはこのソースをそのまま実行し、エラーを含めて結果を表示します。",
       runInSandbox: "サンドボックスで実行",
       openSimulation: "シミュレーションを開く",
       simulationArtifactRequired: "この保存済み回路のシミュレーション記録を作成する前に、下書きを保存してください。",
@@ -1826,7 +1802,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       simulationPersistenceUnavailable: "ブラウザにシミュレーション履歴を保存できなかったため、CPU結果を記録しませんでした。",
       cpuSimulationRecorded: "CPUシミュレーションをこのブラウザに記録しました。この結果は正式な検証結果ではありません。",
       simulationFailed: "記録を作成する前にCPUシミュレーションが失敗しました。",
-      simulationBoundary: "対応しているゲートをもとに、ブラウザ上で状態ベクトルシミュレーションを実行します。実行した下書きの識別情報は記録しますが、未保存の編集は保存済みバージョンを更新しません。この履歴はローカルシミュレーションの結果であり、正式な検証結果や実機の実行結果ではありません。",
+      simulationBoundary: "ブラウザー上で解析済みの回路を実行します。ローカルの確認であり、検証ではありません。",
       simulationArtifact: "保存した回路",
       sourceFingerprint: "ソース識別子",
       interchangeFingerprint: "変換後回路の識別子",
@@ -1837,7 +1813,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       browserCpu: "ブラウザCPU",
       runCpuSimulation: "CPUシミュレーションを実行",
       rerunCpuSimulation: "CPUシミュレーションをもう一度実行",
-      rerunPrompt: "同じソースコードのシミュレーション記録があります。確認すると、以前の結果を上書きせずに新しい記録を作成します。",
+      rerunPrompt: "このソースの記録は既にあります。再実行すると上書きせず新しい記録を追加します。",
       confirmRerun: "再実行を確認",
       cancel: "キャンセル",
       hardwareLanes: "量子コンピュータで実行",
@@ -1854,10 +1830,9 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       simulationOtherBar: (states) => `他 ${states} 状態`,
       simulationRecordSummary: (shots, qubits) => `${shots} ショット · ${qubits} 量子ビット`,
       simulationDetails: "記録の詳細",
-      simulationContextDetails: "実行元と実行条件",
-      readingConcentrated: (state, share) => `ショットの${share}が |${state}⟩ に集中しました。この状態が最も多く観測されました。`,
-      readingPaired: (first, second, share) => `ショットは |${first}⟩ と |${second}⟩ に集中しました（合計${share}）。2つの状態に測定結果が集中しています。`,
-      readingSpread: (states, state, share) => `このサンプルでは${states}種類の結果が観測され、最頻は |${state}⟩（${share}）でした。`,
+      readingConcentrated: (state, share) => `ショットの${share}が |${state}⟩ に集中しました。`,
+      readingPaired: (first, second, share) => `ショットは |${first}⟩ と |${second}⟩ に集中しました（合計${share}）。`,
+      readingSpread: (states, state, share) => `${states}種類の結果があり、最頻は |${state}⟩（${share}）でした。`,
       hardwareCatalogLoading: "デバイスカタログを読み込み中…",
       hardwareCatalogUnavailable: "サーバーに接続できないため、量子コンピュータの一覧を利用できません。",
       hardwareDevice: "デバイス",
@@ -1871,21 +1846,21 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       hardwareEstimating: "見積もり中…",
       hardwareEstimateFailed: "サーバーに接続できないため、見積もりを利用できません。",
       hardwareRequestSubmission: "ハードウェア実行をリクエスト",
-      hardwareVerifiedRequired: "量子コンピュータで実行するには、この回路を検証して保存してください。",
-      hardwareInterchangeRequired: "このバージョンにはハードウェア実行に使うOpenQASMエクスポートが保存されていません。「検証して保存」を再実行してください。",
+      hardwareVerifiedRequired: "この回路の検証済み保存バージョンが必要です。",
+      hardwareInterchangeRequired: "このバージョンにOpenQASMエクスポートがありません。「検証して保存」を再実行してください。",
       hardwareJobStatus: "ジョブの状態",
       hardwareJobId: "実機側のジョブID",
       hardwareJobError: "プロバイダーのエラー",
       hardwareRawCounts: "測定結果（生データ）",
       hardwareBlockedReason: (reason) => ({
-        submission_disabled: "現在の環境では、管理者が量子コンピュータでの実行を無効にしています。上記の実機、料金、見積もりは、実行機能の有効化後に使用されます。",
-        credentials_unconfigured: "現在の環境には実機提供元の認証情報が設定されていないため、実行できません。",
-        provider_dependency_missing: "現在の環境は、この実機提供元に対応していません。",
+        submission_disabled: "この環境ではハードウェア実行が無効になっています。",
+        credentials_unconfigured: "実機提供元の認証情報が未設定のため、実行できません。",
+        provider_dependency_missing: "この環境はこの実機提供元に対応していません。",
       }[reason] ?? "現在の環境では量子コンピュータでの実行を利用できません。"),
       hardwareSpendExhausted: (estimate, limit, spent) =>
-        `この実行の見積もりは${estimate}です。現在のプランに含まれる実機の実行枠は週あたり${limit}で、すでに${spent}を使用しています。無料キューの実機とブラウザ上のシミュレーションは引き続き利用できます。`,
+        `見積もりは${estimate}です。プランの実機実行枠は週${limit}で、すでに${spent}を使用しています。無料キューとブラウザシミュレーションは引き続き利用できます。`,
       hardwareSpendFreeTier: (estimate) =>
-        `この実行の見積もりは${estimate}です。有料の実機実行は無料プランには含まれていません。無料キューの実機とブラウザ上のシミュレーションは引き続き利用できます。`,
+        `見積もりは${estimate}です。有料の実機実行は無料プラン対象外です。無料キューとブラウザシミュレーションは引き続き利用できます。`,
       verifySave: "検証して保存",
       starting: "開始中…",
       bringYourOwn: "実行せずに保存",
@@ -1903,15 +1878,12 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       collapsePanel: "このパネルを元に戻す",
       computeLanes: "実行環境",
       cpuUnavailableShort: "この回路では利用できません",
-      gpuLane: "GPU",
-      gpuPending: "接続前",
-      gpuExplainer: "GPUシミュレーションの提供元を準備中です。まだ接続していないため、この環境では回路を実行できず、操作ボタンもありません。接続が完了した時点で、実行ボタンと料金・上限の情報がここに表示されます。",
       aboutConversions: "変換について",
-      conversionExplainer: "各フレームワークのコードは、この回路に保存されているソースから、対応するゲートの範囲内で生成しています。標準ゲートに分解して変換した場合はその旨を上に表示します。元から保存されているコードは書き換えないため、注記は付きません。8種類のうち4種類は書き出し専用です。Leona Quantum が実行できるのは Qiskit、PennyLane、Cirq のみです。",
+      conversionExplainer: "Studioは10種類のフレームワークに対応しています。実行できるのはQiskit、PennyLane、Cirqの3つで、残り7つは書き出し専用です。",
       conversionUnavailable: (target, source) => `この回路から${target}への変換は生成できなかったため、${source}のソースを表示しています。ここからの書き出しと実行は${source}として扱われます。`,
-      exportOnlyFramework: "この形式はコピーと書き出し用です。サンドボックスでの実行は Qiskit、PennyLane、Cirq に限定されています。",
+      exportOnlyFramework: "コピーと書き出し専用です。実行にはQiskit、PennyLane、Cirqが必要です。",
       uncommittedEdits: "保存済みバージョンから編集されています",
-      uncommittedEditsNote: "この編集はブラウザ内にのみ存在します。検証を実行すると次のバージョンとして保存されます。",
+      uncommittedEditsNote: "検証を実行して次のバージョンとして保存するまで、このブラウザ内のみに存在します。",
       footer: "編集内容はこのブラウザ内にのみ保持されます。検証を実行すると次のバージョンとして保存されます。",
       openRun: "実行を開く",
       countCircuits: (count) => `${count} 件の回路`,
@@ -1924,12 +1896,11 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       evidenceStructural: "出力構造のみ検証 — 回答の形式を確認、物理は未検証",
       evidenceCaveats: "公開情報による検証 — 注意事項あり",
       evidenceFailed: "検証に失敗しました",
-      evidenceNotLoaded: "このバージョンの検証内容は、詳細な検証記録で確認できます。",
+      evidenceNotLoaded: "検証記録でこのバージョンの内容を確認できます。",
       openFullRecord: "検証記録の全体を開く",
       shots: "ショット数",
       seed: "シード",
       seedAuto: "自動",
-      samplingNote: "CPUシミュレーションはこれらの値を使用します。正式な検証実行にも同じ値を使用します。シードを空欄にすると、ブラウザで選ばれた値を記録します。",
       mode: "モード",
       source: "ソース",
       evidence: "検証結果",
@@ -1957,13 +1928,12 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       sourceEditorInput: "ソースエディタ",
       implementation: (framework) => `${framework}の実装`,
       sourceReferenceHeading: (source, target) => `${source}ソース · ${target}への変換なし`,
-      editorNote: "下書きを直接編集できます。新しいバージョンとして保存するには、シミュレーションまたは検証を実行してください。",
       versionHistory: "バージョン履歴",
       repositoryView: "Atlasで見る",
       currentVersion: (id) => `現在 · ${id}`,
       draftNotSaved: "下書き · 未保存",
       currentVersionNote: "検証に合格した実行を新しいバージョンとして保存するまで、現在の保存済みバージョンは変更されません。",
-      draftVersionNote: "検証を実行すると、最初の保存バージョンが作成されます。",
+      draftVersionNote: "検証を実行すると最初の保存バージョンが作成されます。",
       verificationQueued: "検証実行をキューに追加しました",
       verificationAttach: (id) => `実行 ${id} の完了後に検証結果が保存されます。`,
       versionLabel: (seq) => `バージョン ${seq}`,
@@ -1989,7 +1959,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       restoring: "戻しています…",
       restoreConfirmTitle: "このバージョンに戻しますか？",
       restoreConfirmBody: (seq) =>
-        `バージョン ${seq} が現在のバージョンになります。削除は行われず、どのバージョンも一覧に残ります。`,
+        `バージョン ${seq} が現在のバージョンになります。削除はされず、一覧には残ります。`,
       restoreLossIntro: "この回路からは次が失われます：",
       restoreCancel: "キャンセル",
       restoreConfirmAnyway: "承知のうえで戻す",
@@ -2012,7 +1982,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
         M: "測定は計算基底での最終結果を記録します。",
       },
       palette: "ゲートパレット",
-      builderHint: "ゲートを選び、ワイヤをクリックして配置します。配置済みのゲートをクリックして選択し、Shiftクリックで複数選択できます。",
+      builderHint: "ゲートを選び、ワイヤをクリックして配置します。",
       pickTarget: "残りの量子ビットを選択してください。",
       addQubit: "量子ビットを追加",
       removeQubit: "量子ビットを削除",
@@ -2021,15 +1991,9 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       applyToCode: "コードに反映",
       appliedToCode: "生成したコードを各フレームワークの下書きに反映しました。",
       compression: "量子回路を圧縮",
-      compressionIntro: "方式を選び、圧縮前後を比較して、採用したい結果だけをStudioへ反映できます。",
-      optimizationWorkflowLabel: "量子回路最適化の流れ",
-      optimizationStepChoose: "方式を選ぶ",
-      optimizationStepCompare: "結果を比較",
-      optimizationStepApply: "Studioへ反映",
+      compressionIntro: "圧縮前後を比較して、採用したい結果をStudioへ反映します。",
       optimizationLocal: "かんたん圧縮",
-      optimizationLocalDescription: "ブラウザですぐ実行。明らかな相殺や回転ゲートの統合に向いています。",
-      optimizationExternal: "コンパイラで最適化",
-      optimizationExternalDescription: "6種類の実コンパイラをWorkerで動かし、編集可能なStudio回路として結果を返します。",
+      optimizationExternal: "コンパイラ最適化",
       compressionStrategy: "圧縮方式",
       compressionInverse: "逆ゲートを相殺",
       compressionInverseDescription: "同じ量子ビット上に別の操作が挟まっていない自己逆ゲートの組を削除します。",
@@ -2046,7 +2010,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       compressionApply: "回路を圧縮",
       compressionConfirmApply: "コードを置き換えて圧縮",
       compressionUndo: "圧縮を元に戻す",
-      compressionBoundary: "測定とカスタムゲートは、その量子ビット上の変換境界として保持します。実機向けルーティングやデバイス固有最適化を行ったとは扱いません。",
+      compressionBoundary: "測定とカスタムゲートは変換境界として保持します。実機向けルーティングではありません。",
       compressionOverwrite: "コードタブは現在の図と一致していません。圧縮すると、圧縮後の図から生成したコードに置き換わります。続行しますか？",
       compressionApplied: (removed, beforeDepth, afterDepth) => `${removed}個の操作を削減しました。論理深さ: ${beforeDepth} → ${afterDepth}。各フレームワークのコードも再生成しました。`,
       compressionUndone: "圧縮を元に戻し、各フレームワークのコードを再生成しました。",
@@ -2055,21 +2019,15 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       externalLevel: "最適化レベル",
       externalCompiler: "コンパイラ",
       externalQiskit: "Qiskit",
-      externalQiskitDescription: "決定的なシードとStudio対応ゲート集合を使うIBMのプリセット・パスマネージャです。",
       externalCirq: "Cirq",
-      externalCirqDescription: "Google Quantum AIのゲート統合・ターゲット分解・クリーンアップ変換を実行します。",
       externalPytket: "pytket",
-      externalPytketDescription: "暗黙の配線入れ替えを禁止し、Studioゲートへ戻すQuantinuumのピープホールコンパイラです。",
       externalPennyLane: "PennyLane",
-      externalPennyLaneDescription: "可換移動、逆ゲート相殺、回転統合を反復するXanaduのcompile変換です。",
       externalPyZX: "PyZX",
-      externalPyZXDescription: "小規模なClifford+T回路向けのZX計算・位相多項式最適化です。",
       externalBqskit: "BQSKit",
-      externalBqskitDescription: "小規模回路をより深く最適化するBerkeleyの合成ベースコンパイラです。",
       externalRecommended: "おすすめ",
       externalLevelHelp: "1は高速、2は標準、3は時間をかけてより深く探索します。",
       externalLevelOption: (level) => level === 1 ? "1・高速" : level === 2 ? "2・標準" : "3・念入り",
-      externalBoundary: "送信するのは値が確定した組み込みゲートだけで、ソースコードは送りません。通常上限は64量子ビット・1,024操作です。PyZXは16量子ビット・512操作・Clifford+T角、BQSKitは8量子ビット・128操作に限定されます。",
+      externalBoundary: "送信するのは組み込みゲートのみで、ソースコードは送りません。上限は64量子ビット/1,024操作（PyZXは16/512・Clifford+T角のみ、BQSKitは8/128）。",
       externalRun: "コンパイラを実行",
       externalRunSelected: (compiler) => `${compiler}で圧縮を実行`,
       externalRunning: "コンパイル中…",
@@ -2077,7 +2035,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       externalFailed: "外部コンパイラからStudioで扱える回路を取得できませんでした。",
       externalConnectionLost: "結果が届く前にコンパイラのイベント接続が切れました。",
       externalPreview: (compiler, version) => `${compiler} ${version} の結果`,
-      externalUnverified: "これはコンパイラ出力であり、検証証拠ではありません。同値性は大域位相を除いて扱われます。利用前に編集後の回路を再検証してください。",
+      externalUnverified: "コンパイラ出力であり、検証証拠ではありません。利用前に編集後の回路を再検証してください。",
       externalApply: "コンパイル結果を反映",
       externalConfirmApply: "コードをコンパイル結果で置換",
       externalApplied: (compiler, before, after) => `${compiler}の結果を反映しました（${before} → ${after}ゲート）。各フレームワークのコードを再生成し、検証状態を古いものとして扱います。`,
@@ -2100,15 +2058,15 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       hideInspector: "詳細を隠す",
       showInspector: "回路の詳細",
       circuitRestored: "保存済み回路を読み込みました。検証して保存するまで、編集はこの下書きにのみ反映されます。",
-      circuitReadOnly: "実行されたフレームワーク固有の回路を表示しています。未対応の演算も名前付きの箱として保持するため、この図は読み取り専用で、元コードは変更されません。",
-      circuitReadOnlyTruncated: (shown, total) => `読み取り専用プレビュー：${total}個のフレームワーク演算のうち${shown}個を表示しています。元コードは完全な状態で変更されません。`,
+      circuitReadOnly: "実行されたフレームワーク固有の回路です。読み取り専用で、元コードは変更されません。",
+      circuitReadOnlyTruncated: (shown, total) => `読み取り専用プレビュー：${total}個中${shown}個を表示。元コードは変更されません。`,
       readOnly: "読み取り専用",
       readOnlyHint: "実行後の回路を確認できます。高水準プログラムの編集はコードタブで行ってください。",
       circuitNotRebuildable: "この回路のコードは回路エディタの対応範囲を超えています。コードタブで編集してください。",
       sourceFallbackNote: (target, source) => `この回路を${target}へ安全に変換できないため、保存済みの${source}ソースを表示しています。変換後のコードではありません。書き出しと実行には${source}を使用します。`,
       circuitTooLargeToDraw: "この回路は図として描画するには大きすぎます — 量子ビット数またはゲート数が多く、キャンバスが判読不能になります。全ソースはコードタブで確認・実行できます。",
-      canvasOutOfDate: "この図を描いたあとにコードタブが変更されました。図は実行される内容と一致していません。",
-      canvasBeyondBuilder: "コードタブのコードはこのエディタで描ける範囲を超えているため、下の図はその内容を表していません。実行されるのはコードです。",
+      canvasOutOfDate: "この図のあとにコードタブが変更され、実行内容と一致していません。",
+      canvasBeyondBuilder: "このコードは描画範囲を超えています。実行されるのはコードです。",
       rebuildFromCode: "コードから再構築",
       rebuiltFromCode: "コードタブのコードから図を再構築しました。",
       applyOverwritesEditedCode: "この図を描いたあとにコードタブが変更されています。適用するとそのコードは図の内容で置き換えられます。続行しますか？",

@@ -6156,58 +6156,11 @@ div.mj-rail-row:hover {
   flex-direction: column;
   background: var(--bg-0);
 }
-.mj-studio-header,
-.mj-studio-brand,
-.mj-studio-header-meta,
-.mj-studio-sidebar-head,
 .mj-studio-surface-head,
 .mj-studio-canvas-footer,
-.mj-studio-footer,
-.mj-studio-inspector-head,
-.mj-studio-framework-note {
+.mj-studio-footer {
   display: flex;
   align-items: center;
-}
-.mj-studio-header {
-  flex: 0 0 auto;
-  justify-content: space-between;
-  gap: var(--sp-4);
-  min-height: 56px;
-  padding: 0 var(--sp-6);
-  border-bottom: 1px solid var(--border-0);
-  background: var(--bg-1);
-}
-.mj-studio-brand {
-  gap: var(--sp-3);
-  color: var(--accent);
-}
-.mj-studio-brand > div {
-  display: grid;
-  gap: var(--sp-1);
-}
-.mj-studio-brand .mj-section-label {
-  margin: 0;
-  font-size: var(--fs-12);
-}
-.mj-studio-brand strong {
-  color: var(--text-0);
-  font-size: var(--fs-14);
-  font-weight: 600;
-}
-.mj-studio-header-meta {
-  justify-content: flex-end;
-  gap: var(--sp-4);
-}
-.mj-studio-status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  color: var(--text-1);
-  font-size: var(--fs-12);
-}
-.mj-studio-status .mj-status-dot {
-  width: 6px;
-  height: 6px;
 }
 .mj-studio-workspace {
   min-height: 0;
@@ -6302,7 +6255,7 @@ div.mj-rail-row:hover {
   display: inline-flex;
   align-items: baseline;
   gap: var(--sp-1);
-  padding: 6px var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
   border: 1px solid var(--border-0);
   border-radius: var(--radius-control);
   background: transparent;
@@ -6392,122 +6345,15 @@ div.mj-rail-row:hover {
   font-size: var(--fs-12);
   text-decoration: none;
 }
-.mj-studio-sidebar,
-.mj-studio-inspector {
-  min-width: 0;
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--sp-5);
-  background: var(--bg-1);
-}
-.mj-studio-sidebar {
-  border-right: 1px solid var(--border-0);
-}
-.mj-studio-inspector {
-  border-left: 1px solid var(--border-0);
-}
-.mj-studio-sidebar-head,
-.mj-studio-inspector-head {
-  justify-content: space-between;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-4);
-}
-.mj-studio-sidebar-head .mj-section-label,
-.mj-studio-inspector-head .mj-section-label {
-  margin: 0;
-}
-.mj-studio-sidebar-head .mj-secondary-button {
-  min-height: 28px;
-  padding-inline: var(--sp-2);
-  font-size: var(--fs-12);
-}
-.mj-studio-inspector-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
-  color: var(--text-2);
-  background: transparent;
-  font-size: var(--fs-14);
-  line-height: 1;
-  cursor: pointer;
-}
-.mj-studio-inspector-close:hover {
-  border-color: var(--border-0);
-  color: var(--text-0);
-}
-.mj-studio-artifact-list {
-  display: grid;
-  gap: var(--sp-1);
-}
-.mj-studio-artifact {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-2);
-  width: 100%;
-  padding: var(--sp-2);
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
-  color: var(--text-1);
-  background: transparent;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-}
-.mj-studio-artifact:hover,
-.mj-studio-artifact.is-active {
-  border-color: var(--border-0);
-  color: var(--text-0);
-  background: var(--bg-2);
-}
-.mj-studio-artifact.is-active {
-  border-left-color: var(--accent);
-}
-.mj-studio-artifact > span:last-child {
-  display: grid;
-  min-width: 0;
-  gap: var(--sp-1);
-}
-.mj-studio-artifact strong,
-.mj-studio-artifact small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.mj-studio-artifact strong {
-  color: var(--text-0);
-  font-size: var(--fs-12);
-  font-weight: 500;
-}
-.mj-studio-artifact small {
-  color: var(--text-2);
-  font-size: var(--fs-12);
-}
-.mj-studio-artifact-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 16px;
-  width: 16px;
-  height: 16px;
-  border: 1px solid var(--border-0);
-  border-radius: 50%;
-  color: var(--ok);
-  font-size: var(--fs-12);
-}
-.mj-studio-empty,
-.mj-studio-sidebar-note {
+/* Empty states get room and centering rather than hugging the left edge of an
+   otherwise-empty pane — the discovery list, the simulation-records list and
+   the artifact-loading placeholder all share this one class. */
+.mj-studio-empty {
+  padding: var(--sp-8) var(--sp-4);
   color: var(--text-2);
   font-size: var(--fs-12);
   line-height: 1.45;
-}
-.mj-studio-sidebar-note {
-  margin: var(--sp-6) 0 0;
-  padding-top: var(--sp-4);
-  border-top: 1px solid var(--border-0);
+  text-align: center;
 }
 .mj-studio-main {
   min-width: 0;
@@ -6753,9 +6599,6 @@ div.mj-rail-row:hover {
   border-radius: var(--radius-card);
   background: var(--bg-0);
 }
-.mj-studio-lane[data-state="pending"] {
-  border-style: dashed;
-}
 .mj-studio-lane-head {
   display: flex;
   align-items: baseline;
@@ -6889,6 +6732,12 @@ div.mj-rail-row:hover {
   display: flex;
   flex-direction: column;
 }
+/* The Code tab's own interior inset comes from its editor's padding; the
+   canvas has no such child, so it needs the same inset on the panel itself
+   or its content sits flush against the card border. */
+.mj-studio-canvas {
+  padding: var(--sp-5);
+}
 /* Colored code editor: the highlight <pre> and the <textarea> are stacked and
    MUST share identical box metrics (font, size, line-height, padding, tab-size,
    wrapping) so the caret lands on the glyph it appears to. Change one, change
@@ -6933,13 +6782,6 @@ div.mj-rail-row:hover {
 .mj-studio-code-editor::selection {
   /* Selection must show against the highlight layer behind the transparent text. */
   background: color-mix(in srgb, var(--accent) 28%, transparent);
-}
-.mj-studio-editor-note {
-  margin: 0;
-  padding: var(--sp-3) var(--sp-4);
-  border-top: 1px solid var(--border-0);
-  color: var(--text-1);
-  font-size: var(--fs-12);
 }
 .mj-studio-simulation-panel {
   padding-bottom: var(--sp-5);
@@ -6990,29 +6832,14 @@ div.mj-rail-row:hover {
   flex-wrap: wrap;
   gap: var(--sp-2);
 }
-.mj-studio-hardware-lanes,
 .mj-studio-simulation-records {
   display: grid;
   gap: var(--sp-3);
   padding-top: var(--sp-4);
   border-top: 1px solid var(--border-0);
 }
-.mj-studio-hardware-lanes > .mj-section-label,
 .mj-studio-simulation-records-head .mj-section-label {
   margin: 0;
-}
-.mj-studio-hardware-lanes > div {
-  display: grid;
-  gap: var(--sp-2);
-}
-.mj-studio-hardware-lanes button {
-  justify-self: start;
-}
-.mj-studio-hardware-lanes p {
-  margin: 0;
-  color: var(--text-1);
-  font-size: var(--fs-12);
-  line-height: 1.5;
 }
 .mj-studio-simulation-records-head,
 .mj-studio-simulation-record-head {
@@ -7214,16 +7041,30 @@ div.mj-rail-row:hover {
   cursor: not-allowed;
   opacity: 0.55;
 }
+/* Matches .mj-qpu-flow's card treatment: the one card-shaped thing in the QPU
+   lane with no rule of its own. */
+.mj-qpu-record {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--border-0);
+  border-radius: var(--radius-card);
+  background: var(--bg-2);
+}
 .mj-studio-version-panel {
   padding-bottom: var(--sp-5);
 }
+/* A bordered card like .mj-studio-simulation-record, not margin-plus-a-single-
+   border — the version list and the simulation-records list read as one
+   family of rows now instead of two different conventions. */
 .mj-studio-version-row {
   display: flex;
   align-items: flex-start;
   gap: var(--sp-3);
-  margin: var(--sp-5) var(--sp-5) 0;
-  padding-bottom: var(--sp-5);
-  border-bottom: 1px solid var(--border-0);
+  padding: var(--sp-4);
+  border: 1px solid var(--border-0);
+  border-radius: var(--radius-card);
+  background: var(--bg-2);
 }
 .mj-studio-version-row > div {
   display: grid;
@@ -7288,9 +7129,6 @@ div.mj-rail-row:hover {
   color: var(--text-1);
   font-size: var(--fs-12);
 }
-.mj-studio-inspector-head .mj-mono-muted {
-  font-size: var(--fs-12);
-}
 .mj-studio-field {
   display: grid;
   gap: var(--sp-2);
@@ -7305,65 +7143,6 @@ div.mj-rail-row:hover {
   color: var(--text-0);
   background: var(--bg-2);
   font: inherit;
-}
-.mj-studio-inspector-card {
-  display: grid;
-  gap: var(--sp-2);
-  margin-top: var(--sp-6);
-  padding-top: var(--sp-4);
-  border-top: 1px solid var(--border-0);
-}
-.mj-studio-inspector-card .mj-section-label {
-  margin: 0;
-}
-.mj-studio-inspector-card strong {
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: var(--fs-20);
-  font-weight: 500;
-}
-.mj-studio-inspector-card p {
-  margin: 0;
-  color: var(--text-1);
-  font-size: var(--fs-12);
-  line-height: 1.5;
-}
-.mj-studio-sampling {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--sp-2) var(--sp-3);
-  align-items: center;
-  margin-top: var(--sp-3);
-}
-.mj-studio-sampling label {
-  color: var(--text-1);
-  font-size: var(--fs-12);
-}
-.mj-studio-sampling input {
-  width: 100%;
-  padding: var(--sp-1) var(--sp-2);
-  border: 1px solid var(--border-0);
-  border-radius: var(--radius-control);
-  background: var(--bg-1);
-  color: var(--text-0);
-  font-family: var(--font-mono);
-  font-size: var(--fs-12);
-}
-.mj-studio-sampling-note {
-  margin: var(--sp-2) 0 0;
-  color: var(--text-1);
-  font-size: var(--fs-12);
-}
-.mj-studio-version-evidence {
-  display: grid;
-  gap: var(--sp-2);
-  padding: var(--sp-3) 0 0;
-  border-top: 1px solid var(--border-0);
-}
-.mj-studio-evidence-grade {
-  margin: 0;
-  color: var(--text-0);
-  font-size: var(--fs-13);
 }
 .mj-studio-evidence-summary {
   margin: 0;
@@ -7391,20 +7170,6 @@ div.mj-rail-row:hover {
   color: var(--text-0);
   font-family: var(--font-mono);
   text-align: right;
-}
-.mj-studio-framework-note {
-  align-items: flex-start;
-  gap: var(--sp-2);
-  margin-top: var(--sp-6);
-  padding-top: var(--sp-4);
-  border-top: 1px solid var(--border-0);
-  color: var(--text-1);
-  font-size: var(--fs-12);
-  line-height: 1.45;
-}
-.mj-studio-framework-note svg {
-  flex: 0 0 auto;
-  color: var(--ok);
 }
 
 /* ---------- run page (S3 rail + S4 result panel) ---------- */
@@ -7701,21 +7466,8 @@ div.mj-rail-row:hover {
   .mj-run-home-examples .mj-example-list {
     grid-template-columns: minmax(0, 1fr);
   }
-  .mj-studio-header {
-    align-items: flex-start;
-    flex-direction: column;
-    padding-block: var(--sp-3);
-  }
-  .mj-studio-header-meta {
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
   .mj-studio-workspace--editor {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .mj-studio-inspector {
-    border-top: 1px solid var(--border-0);
-    border-left: 0;
   }
   .mj-studio-discovery {
     padding: var(--sp-8) var(--sp-4);
@@ -7798,58 +7550,12 @@ div.mj-rail-row:hover {
   .mj-studio-actions {
     flex-wrap: wrap;
   }
-  .mj-studio-inspector {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    align-items: start;
-    gap: var(--sp-4);
-    border-top: 1px solid var(--border-0);
-    border-left: 0;
-  }
-  .mj-studio-inspector-head,
-  .mj-studio-framework-note {
-    margin: 0;
-  }
-  .mj-studio-inspector-card {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
-  }
 }
 
 @media (max-width: 900px) {
-  .mj-studio-header {
-    align-items: flex-start;
-    flex-direction: column;
-    padding: var(--sp-4);
-  }
-  .mj-studio-header-meta {
-    justify-content: space-between;
-    width: 100%;
-  }
   .mj-studio-workspace {
     display: block;
     overflow-y: auto;
-  }
-  .mj-studio-sidebar,
-  .mj-studio-inspector {
-    overflow: visible;
-    border: 0;
-    border-bottom: 1px solid var(--border-0);
-  }
-  .mj-studio-sidebar {
-    padding: var(--sp-4);
-  }
-  .mj-studio-artifact-list {
-    display: flex;
-    overflow-x: auto;
-  }
-  .mj-studio-artifact {
-    min-width: 190px;
-  }
-  .mj-studio-sidebar-note {
-    display: none;
   }
   .mj-studio-main {
     overflow: visible;
@@ -7888,21 +7594,6 @@ div.mj-rail-row:hover {
   .mj-studio-footer {
     align-items: flex-start;
     flex-direction: column;
-  }
-  .mj-studio-inspector {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--sp-4);
-    padding: var(--sp-4);
-  }
-  .mj-studio-inspector-head,
-  .mj-studio-framework-note {
-    margin: 0;
-  }
-  .mj-studio-inspector-card {
-    margin-top: 0;
-    padding-top: var(--sp-4);
-    border-top: 1px solid var(--border-0);
   }
 }
 
@@ -9767,93 +9458,6 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   font-size: var(--fs-13);
   line-height: 1.55;
 }
-.mj-studio-optimizer-steps {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--sp-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.mj-studio-optimizer-steps li {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  color: var(--text-1);
-  font-size: var(--fs-12);
-}
-.mj-studio-optimizer-steps li > span {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border: 1px solid var(--border-0);
-  border-radius: 999px;
-  color: var(--accent);
-  background: var(--bg-0);
-  font-family: var(--font-mono);
-  font-size: var(--fs-12);
-}
-.mj-studio-optimizer-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sp-2);
-  padding: var(--sp-1);
-  border: 1px solid var(--border-0);
-  border-radius: var(--radius-card);
-  background: var(--bg-0);
-}
-.mj-studio-optimizer-tabs > button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  min-width: 0;
-  padding: var(--sp-3);
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
-  color: var(--text-1);
-  background: transparent;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.mj-studio-optimizer-tabs > button:hover {
-  background: var(--bg-1);
-}
-.mj-studio-optimizer-tabs > button[aria-selected="true"] {
-  border-color: var(--accent);
-  color: var(--text-0);
-  background: var(--bg-2);
-}
-.mj-studio-optimizer-tabs > button > span {
-  display: grid;
-  gap: var(--sp-1);
-  min-width: 0;
-}
-.mj-studio-optimizer-tabs strong {
-  font-size: var(--fs-13);
-  font-weight: 500;
-}
-.mj-studio-optimizer-tabs small {
-  color: var(--text-1);
-  font-size: var(--fs-12);
-  line-height: 1.45;
-}
-.mj-studio-optimizer-tabs b {
-  display: grid;
-  flex: 0 0 auto;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 var(--sp-1);
-  place-items: center;
-  border-radius: 999px;
-  color: var(--bg-0);
-  background: var(--accent);
-  font-family: var(--font-mono);
-  font-size: var(--fs-12);
-  font-weight: 500;
-}
 .mj-studio-optimizer-panel {
   display: grid;
   gap: var(--sp-4);
@@ -10002,7 +9606,7 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   display: grid;
   flex: 0 0 auto;
   gap: var(--sp-1);
-  max-width: 250px;
+  max-width: 32ch;
   color: var(--text-1);
   font-size: var(--fs-12);
 }
@@ -10045,7 +9649,7 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   padding-right: var(--sp-4);
 }
 .mj-studio-compiler-name em {
-  padding: 2px var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
   border-radius: 999px;
   color: var(--accent);
   background: var(--bg-2);
@@ -10121,8 +9725,6 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   }
 }
 @media (max-width: 720px) {
-  .mj-studio-optimizer-steps,
-  .mj-studio-optimizer-tabs,
   .mj-studio-compression-strategies > div,
   .mj-studio-compression-metrics {
     grid-template-columns: minmax(0, 1fr);
