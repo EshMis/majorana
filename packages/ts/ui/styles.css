@@ -14225,15 +14225,24 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   display: grid;
   gap: var(--sp-2);
 }
+.mj-notebooks-starters-label {
+  margin: 0;
+  color: var(--text-1);
+  font-size: var(--fs-13);
+  font-weight: 500;
+}
+.mj-notebooks-show-more {
+  justify-self: start;
+}
 .mj-notebooks-starter-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--sp-2);
 }
 .mj-notebooks-starter-chip {
   display: grid;
   gap: var(--sp-1);
-  padding: var(--sp-3);
+  padding: var(--sp-4);
   border: 1px solid var(--border-0);
   border-radius: var(--radius-control);
   color: var(--text-1);
@@ -14248,17 +14257,19 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   background: var(--bg-2);
 }
 .mj-notebooks-starter-chip strong {
-  overflow: hidden;
   color: var(--text-0);
   font-size: var(--fs-13);
   font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+.mj-notebooks-starter-preview {
+  color: var(--text-2);
+  font-size: var(--fs-12);
+  line-height: 1.5;
 }
 
 .mj-notebooks-fields {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-4);
 }
 .mj-notebooks-field {

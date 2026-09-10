@@ -527,6 +527,7 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
     kindLabel: string;
     kindOption: Record<NotebookKind, string>;
     startersLabel: string;
+    showMoreBriefs: (count: number) => string;
     audienceLevelLabel: string;
     audienceLevelOption: Record<NotebookAudienceLevel, string>;
     analogiesLabel: string;
@@ -1292,7 +1293,8 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       project: "Project",
       scratch: "Scratch",
     },
-    startersLabel: "Or start from a brief",
+    startersLabel: "Start from a brief",
+    showMoreBriefs: (count) => `Show ${count} more brief${count === 1 ? "" : "s"}`,
     audienceLevelLabel: "Level",
     audienceLevelOption: {
       newcomer: "Newcomer",
@@ -2096,7 +2098,8 @@ export const WORKSPACE_COPY: Record<PublicLocale, {
       project: "プロジェクト",
       scratch: "メモ",
     },
-    startersLabel: "またはお題から始める",
+    startersLabel: "ブリーフから始める",
+    showMoreBriefs: (count) => `他の${count}件を見る`,
     audienceLevelLabel: "レベル",
     audienceLevelOption: {
       newcomer: "初心者",
