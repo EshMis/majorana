@@ -48,13 +48,8 @@ function renderCompressionBuilder(steps = REDUNDANT_STEPS, syncState: { kind: "i
   return { ...view, changes, applied };
 }
 
-function openLocalCompression(view: ReturnType<typeof renderCompressionBuilder>) {
-  fireEvent.click(view.getByRole("tab", { name: new RegExp(copy.optimizationLocal) }));
-}
-
 test("Studio compression previews, applies to every framework draft, and can be undone", async () => {
   const view = renderCompressionBuilder();
-  openLocalCompression(view);
 
   assert.ok(view.getByRole("radio", { name: new RegExp(copy.compressionBalanced) }).hasAttribute("checked"));
   fireEvent.click(view.getByRole("button", { name: copy.compressionApply }));
@@ -81,7 +76,6 @@ test("Studio compression disables application when the selected strategy has no 
     { id: "h", gate: "H", qubits: [0] },
     { id: "x", gate: "X", qubits: [0] },
   ]);
-  openLocalCompression(view);
 
   assert.ok(view.getByText(copy.compressionNoChange));
   assert.equal((view.getByRole("button", { name: copy.compressionApply }) as HTMLButtonElement).disabled, true);
@@ -89,7 +83,6 @@ test("Studio compression disables application when the selected strategy has no 
 
 test("Studio compression confirms before replacing code that no longer matches the diagram", () => {
   const view = renderCompressionBuilder(REDUNDANT_STEPS, { kind: "diverged" });
-  openLocalCompression(view);
 
   fireEvent.click(view.getByRole("button", { name: copy.compressionApply }));
   assert.equal(view.applied.length, 0);
@@ -129,8 +122,10 @@ test("Studio queues an external compiler, previews its result, and applies it ex
 
   try {
     const view = renderCompressionBuilder();
-    assert.equal(view.getAllByRole("radio").length, 6);
-    assert.equal(view.getByRole("tab", { name: new RegExp(copy.optimizationExternal) }).getAttribute("aria-selected"), "true");
+    // The compiler panel is folded behind a <details>, closed by default.
+    const details = view.getByText(copy.optimizationExternal).closest("details")!;
+    await act(async () => { details.open = true; fireEvent(details, new Event("toggle")); });
+    assert.equal(view.container.querySelectorAll('input[name="studio-external-compiler"]').length, 6);
     fireEvent.click(view.getByRole("radio", { name: new RegExp(copy.externalBqskit) }));
     fireEvent.click(view.getByRole("button", { name: copy.externalRunSelected("BQSKit") }));
 

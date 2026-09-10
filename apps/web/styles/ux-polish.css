@@ -203,11 +203,8 @@
 .mj-nala-starter { padding: var(--sp-4); transition: border-color var(--dur-hover), background-color var(--dur-hover); }
 .mj-nala-starter:hover { border-color: var(--accent); }
 .mj-run-home .mj-run-home-hero { position: relative; }
-.mj-run-home .mj-nala-orbit { width: 76px; height: 76px; }
-.mj-run-home .mj-nala-orbit ellipse { transform-origin: center; animation: lq-orbit-welcome 2s var(--ease-out-ui) both; }
 .mj-notebooks-composer .mj-notebooks-disclosure { padding-top: var(--sp-4); margin-top: var(--sp-2); }
 .mj-notebooks-fields { gap: var(--sp-4); }
-@keyframes lq-orbit-welcome { from { transform: rotate(-16deg); } to { transform: rotate(0); } }
 
 @media (max-width: 1000px) {
   .lq-flow-panel { gap: var(--sp-8); padding: var(--sp-6); }
@@ -253,7 +250,6 @@
   .lq-workspace-node { padding: var(--sp-3); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mj-run-home .mj-nala-orbit ellipse { animation: none; }
   .mj-public-site :is(.lq-site-product, .lq-workspace-node, .lq-flow-node, .mj-primary-button, .mj-secondary-button) { transition: none; }
   .mj-public-site :is(.lq-site-product, .lq-workspace-node, .lq-flow-node):hover { transform: none; }
   .lq-flow-marker { transition: none; }

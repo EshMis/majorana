@@ -17,6 +17,7 @@ import {
 } from "../../../lib/framework-selection";
 import { isComposerMode, type ComposerMode } from "../../../lib/run-mode";
 import { RunComposer, type ComposerFramework } from "../../../components/run-composer";
+import { LionessField } from "../../../components/lioness-field";
 import { usePromptAttachments } from "../../../lib/use-prompt-attachments";
 
 export function RunWorkspace({ demoMode = false, locale = "en" }: { demoMode?: boolean; locale?: PublicLocale } = {}) {
@@ -30,6 +31,7 @@ export function RunWorkspace({ demoMode = false, locale = "en" }: { demoMode?: b
   const frameworkCurrent = useRef<ComposerFramework>("qiskit");
   const frameworkTouched = useRef(false);
   const [pending, setPending] = useState(false);
+  const [composerEngaged, setComposerEngaged] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [contextArtifact, setContextArtifact] = useState<LibraryArtifact | null>(null);
   const { attachments, reading, isReading, addFiles, removeAttachment } = usePromptAttachments(locale, setError);
@@ -212,7 +214,11 @@ export function RunWorkspace({ demoMode = false, locale = "en" }: { demoMode?: b
       <div className="mj-run-home-scroll">
         <div className="mj-run-home-content mj-run-home-content--centered">
           <header className="mj-run-home-heading mj-run-home-hero">
-            <NalaOrbit />
+            {/* The lioness, assembled from pieces; brighter while the composer
+                below has focus. Back by owner request (2026-09-10). */}
+            <span className={`mj-run-hero-lioness${composerEngaged ? " is-engaged" : ""}`} aria-hidden="true">
+              <LionessField engaged={composerEngaged} />
+            </span>
             <h1>{locale === "ja" ? "何を作りたいですか？" : "What would you like to build?"}</h1>
             {demoMode ? (
               <div className="mj-run-home-status" aria-label={locale === "ja" ? "モデルの状態" : "Model status"}>
@@ -222,10 +228,20 @@ export function RunWorkspace({ demoMode = false, locale = "en" }: { demoMode?: b
             ) : null}
           </header>
 
-          <div className="mj-run-composer-stage">
+          <div
+            className="mj-run-composer-stage"
+            onFocusCapture={() => setComposerEngaged(true)}
+            onBlurCapture={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setComposerEngaged(false);
+            }}
+          >
             <RunComposer
               value={prompt}
               inputRef={composerInputRef}
+              // The same prompts the example strip offers, typed into the box
+              // itself: a blank composer with a generic placeholder is the
+              // hardest version of this product to start using.
+              suggestions={copy.examples.map((example) => example.prompt)}
               disabled={!canSubmitAfterArtifactHydration(artifactHydration)}
               readingAttachments={reading}
               pending={pending}
@@ -288,16 +304,6 @@ export function RunWorkspace({ demoMode = false, locale = "en" }: { demoMode?: b
   );
 }
 
-function NalaOrbit() {
-  return (
-    <svg className="mj-nala-orbit" viewBox="0 0 80 80" aria-hidden="true" fill="none">
-      <ellipse cx="40" cy="40" rx="35" ry="14" transform="rotate(45 40 40)" />
-      <ellipse cx="40" cy="40" rx="35" ry="14" transform="rotate(-45 40 40)" />
-      <path d="M40 32c1 5 3 7 8 8-5 1-7 3-8 8-1-5-3-7-8-8 5-1 7-3 8-8Z" fill="currentColor" stroke="none" />
-      <circle cx="18" cy="18" r="3" /><circle cx="62" cy="28" r="3" /><circle cx="28" cy="62" r="3" />
-    </svg>
-  );
-}
 
 function ExampleStrip({ copy, locale, onPick }: { copy: (typeof WORKSPACE_COPY)[PublicLocale]["run"]; locale: PublicLocale; onPick: (prompt: string) => void }) {
   const [expanded, setExpanded] = useState(false);
