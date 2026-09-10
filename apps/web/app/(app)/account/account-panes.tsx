@@ -71,8 +71,13 @@ export function AccountPanes({
   // viewport the server cannot see, which is a hydration mismatch rather than a
   // layout choice. Runs once — reacting to later resizes would fight a reader who
   // had deliberately opened the rail.
+  // `hydrated` lets the stylesheet hide the open rail's list on a narrow
+  // viewport until this effect has had its say, so the reader never sees the
+  // seven-item rail flash open and then snap shut.
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     if (window.matchMedia("(max-width: 720px)").matches) setNavOpen(false);
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
@@ -128,6 +133,7 @@ export function AccountPanes({
     <div className="mj-account-layout">
       <details
         className="mj-account-nav"
+        data-hydrated={hydrated ? "" : undefined}
         open={navOpen}
         onToggle={(event) => setNavOpen(event.currentTarget.open)}
       >

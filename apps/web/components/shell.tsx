@@ -16,10 +16,11 @@ import {
   PlusIcon,
   QappsIcon,
   SearchIcon,
-  SettingsIcon,
+  GaugeIcon, SettingsIcon, SignOutIcon,
   StudioIcon,
   TrashIcon,
 } from "./icons";
+import { Meter } from "./meter";
 import { LeonaWordmark } from "./leona-wordmark";
 import {
   CHAT_FOLDERS_EVENT,
@@ -67,7 +68,7 @@ import { verificationFromResource } from "../lib/verification-record";
 import { WORKSPACE_PINS_EVENT, isPinned, setPinned, togglePinned } from "../lib/workspace-pins";
 import { ThemeToggle } from "./theme-toggle";
 import type { PublicLocale } from "../lib/public-locale";
-import { PROJECT_SHARE_COPY, WORKSPACE_COPY } from "../lib/workspace-locale";
+import { PROJECT_SHARE_COPY, WORKSPACE_COPY, ACCOUNT_COPY } from "../lib/workspace-locale";
 
 // A viewport preference, not content: stays device-global rather than
 // per-account (see DEVICE_STORAGE_KEYS in lib/user-storage.ts).
@@ -853,6 +854,29 @@ function WorkspaceSidebar({
       ? copy.usageNextSlotWhen(nextSlot.text)
       : copy.usageNextSlotOn(nextSlot.text)
     : null;
+  // The bar in the drawer: tokens when the plan meters them (the allowance a
+  // submission is refused on), otherwise runs when those are capped. An
+  // unmetered plan gets no bar; the sentence above already says "Unlimited".
+  const accountCopy = ACCOUNT_COPY[locale];
+  const railMeter = usage && usage.tokens && usage.tokens.limit !== null
+    ? {
+        label: accountCopy.meterTokens,
+        used: usage.tokens.used,
+        limit: usage.tokens.limit,
+        figure: accountCopy.meterPercentUsed(Math.min(Math.round((usage.tokens.used / usage.tokens.limit) * 100), 100)),
+        pressure: usage.tokens.pressure,
+        exhausted: usage.tokens.exhausted,
+      }
+    : usage && usage.runs.limit !== null && usage.runs.limit > 0
+      ? {
+          label: copy.usageLimits,
+          used: usage.runs.used,
+          limit: usage.runs.limit,
+          figure: `${usage.runs.used} / ${usage.runs.limit}`,
+          pressure: usage.runs.pressure,
+          exhausted: usage.runs.exhausted,
+        }
+      : null;
 
   function toggleFolder(id: string) {
     setOpenFolders((current) => {
@@ -1271,9 +1295,18 @@ function WorkspaceSidebar({
                       stays open, and not inert, behind the dialog — which is
                       what lets the modal hand focus back to the exact item that
                       opened it. */}
-                  <Link role="menuitem" href="/account"><SettingsIcon size={15} />{copy.settings}</Link>
+                  {/* Usage first, with its bar, so the thing that fills up is the
+                      thing the eye lands on when the drawer opens (owner,
+                      2026-09-10). The bar draws the metered allowance the plan is
+                      actually refused on — tokens where the plan meters them,
+                      otherwise runs. */}
                   <Link role="menuitem" className="mj-sidebar-usage" href="/account#usage">
-                    <span>{copy.usageLimits}</span>
+                    <span className="mj-sidebar-menu-line"><GaugeIcon size={16} />{copy.usageLimits}</span>
+                    {railMeter ? (
+                      <span className="mj-sidebar-usage-meter">
+                        <Meter compact label={railMeter.label} used={railMeter.used} limit={railMeter.limit} figure={railMeter.figure} pressure={railMeter.pressure} exhausted={railMeter.exhausted} />
+                      </span>
+                    ) : null}
                     {usageLine ? (
                       <span className="mj-sidebar-usage-detail" data-spent={usage?.runs.exhausted ? "" : undefined}>
                         {usageLine}
@@ -1281,10 +1314,11 @@ function WorkspaceSidebar({
                       </span>
                     ) : null}
                   </Link>
+                  <Link role="menuitem" href="/account"><span className="mj-sidebar-menu-line"><SettingsIcon size={16} />{copy.settings}</span></Link>
                   {/* Stays an anchor. /auth/sign-out is a route handler that
                       clears the session and redirects; there is no page for a
                       client-side navigation to render. */}
-                  <a role="menuitem" className="is-danger" href="/auth/sign-out">{copy.signOut}</a>
+                  <a role="menuitem" className="is-danger" href="/auth/sign-out"><span className="mj-sidebar-menu-line"><SignOutIcon size={16} />{copy.signOut}</span></a>
                 </div>
               </div>
             </div>

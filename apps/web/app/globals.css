@@ -270,16 +270,16 @@ body {
   }
 }
 
-/* Run/LLM home hero: the electrons converge into the lioness silhouette here
- * (Owner Inbox 2026-07-19), replacing the small Leo constellation mark. Compact
- * and centered; brightens and lifts slightly while the composer is engaged. */
+/* Run home hero: the lioness assembles from pieces here (components/lioness-field.tsx,
+ * back by owner request 2026-09-10 after the orbit mark). Centred; brightens and
+ * lifts slightly while the composer is engaged. */
 .mj-run-hero-lioness {
   position: relative;
   display: block;
-  width: 152px;
-  height: 100px;
+  width: min(100%, calc(var(--sp-16) * 5));
+  height: calc(var(--sp-16) * 2.5);
   margin: 0 auto var(--sp-2);
-  opacity: 0.88;
+  opacity: 0.92;
   transition: opacity 320ms ease, transform 320ms ease;
 }
 .mj-run-hero-lioness.is-engaged {

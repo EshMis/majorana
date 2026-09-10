@@ -2907,6 +2907,10 @@ a.mj-facet-option:hover {
      Settings is long — preferences, identity, archive, usage, billing — so on
      a short viewport this is a hard ceiling and the body below scrolls, rather
      than the dialog growing off the screen. */
+  /* A fixed height, not one that follows the pane: switching sections used to resize
+     the whole dialog by however much the new pane differed (owner, 2026-09-10). The
+     body scrolls inside it. */
+  height: min(680px, 100%);
   max-height: 100%;
   border: 1px solid var(--border-0);
   border-radius: var(--radius-card);
@@ -3019,6 +3023,67 @@ a.mj-facet-option:hover {
   font-weight: 500;
   box-shadow: inset 2px 0 0 var(--accent);
 }
+/* Skeleton panes: the size of the loaded panel, before its numbers arrive. */
+.mj-account-skeleton {
+  display: grid;
+  gap: var(--sp-5);
+  min-height: calc(var(--sp-16) * 4);
+  padding: var(--sp-4);
+  border: 1px solid var(--border-0);
+  border-radius: var(--radius-card);
+  background: var(--bg-1);
+}
+.mj-account-skeleton-row {
+  display: grid;
+  gap: var(--sp-2);
+}
+.mj-account-skeleton-row > .mj-skeleton:first-child { width: 32%; height: var(--sp-3); }
+.mj-account-skeleton-row > .mj-skeleton:last-child { height: var(--sp-8); }
+/* On a narrow viewport the rail is stacked over the detail pane and starts
+   closed; until the client has said so, the open server markup keeps its list
+   hidden so nothing flashes open and shut. */
+@media (max-width: 720px) {
+  .mj-account-nav[open]:not([data-hydrated]) > nav { display: none; }
+}
+/* Profile: the initial beside the two facts. */
+.mj-account-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  margin-bottom: var(--sp-4);
+}
+.mj-account-profile .mj-resource-list { flex: 1 1 auto; min-width: 0; }
+.mj-avatar--large {
+  width: var(--sp-12);
+  height: var(--sp-12);
+  font-size: var(--fs-20);
+}
+.mj-resource-list--row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-4);
+}
+/* Usage: the two ceilings under the meters, side by side. */
+.mj-usage-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-4);
+  margin: var(--sp-5) 0 0;
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-0);
+}
+.mj-usage-facts dt { color: var(--text-2); font-size: var(--fs-12); }
+.mj-usage-facts dd { margin: var(--sp-1) 0 0; font-size: var(--fs-14); font-variant-numeric: tabular-nums; }
+.mj-meter--unmetered { align-items: baseline; }
+.mj-usage-spend { margin-top: var(--sp-5); }
+.mj-usage-spend > summary { cursor: pointer; color: var(--text-1); font-size: var(--fs-13); }
+.mj-usage-spend-table { width: 100%; margin-top: var(--sp-3); border-collapse: collapse; font-size: var(--fs-13); }
+.mj-usage-spend-table th { padding: var(--sp-1) 0; color: var(--text-1); font-weight: 400; text-align: left; }
+.mj-usage-spend-table td { padding: var(--sp-1) 0; font-family: var(--font-mono); text-align: right; }
+.mj-usage-spend-note { margin: var(--sp-3) 0 0; color: var(--text-2); font-size: var(--fs-12); }
+/* A link inside running text is told apart by more than its colour. */
+.mj-meter-sub a, .mj-account-detail p a { text-decoration: underline; text-underline-offset: var(--sp-1); }
+
 .mj-account-detail {
   flex: 1 1 auto;
   min-width: 0;
@@ -9300,15 +9365,24 @@ div.mj-rail-row:hover {
   background: var(--bg-1);
 }
 .mj-sidebar-user-drawer a {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  min-height: 30px;
+  display: block;
   padding: 0 var(--sp-2);
   border-radius: var(--radius-control);
   color: var(--text-1);
   font-size: var(--fs-12);
   text-decoration: none;
+}
+/* Every item starts with one line built the same way: a 16px icon, then the
+   label, centred on a row of the shared menu height. The usage item adds its
+   bar and its sentence under that line, indented to the label. */
+.mj-sidebar-menu-line {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--sidebar-menu-item-height);
+}
+.mj-sidebar-menu-line > svg {
+  flex: 0 0 var(--sp-4);
 }
 .mj-sidebar-user-drawer a:hover,
 .mj-sidebar-user-drawer a:focus-visible {
@@ -9330,17 +9404,32 @@ div.mj-rail-row:hover {
    competing for 220px is not a layout, and the Japanese strings are longer
    still. This was visible only on the rendered page — the markup was fine. */
 .mj-sidebar-user-drawer a.mj-sidebar-usage {
-  display: grid;
-  align-items: start;
-  gap: 1px;
-  padding-block: var(--sp-1);
+  padding-bottom: var(--sp-2);
 }
+.mj-sidebar-usage-meter,
 .mj-sidebar-usage-detail {
   display: grid;
   gap: 1px;
+  padding-left: calc(var(--sp-4) + var(--sp-2));
+}
+.mj-sidebar-usage-meter {
+  padding-bottom: var(--sp-1);
+}
+.mj-sidebar-usage-detail {
   color: var(--text-1);
   font-variant-numeric: tabular-nums;
 }
+/* The compact meter stacks: label and figure on one line, the bar under them. */
+.mj-meter--compact {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-12);
+}
+.mj-meter--compact > :first-child { grid-row: 1; grid-column: 1; }
+.mj-meter--compact .mj-meter-pct { grid-row: 1; grid-column: 2; font-size: var(--fs-12); }
+.mj-meter--compact .mj-meter-track { grid-row: 2; grid-column: 1 / -1; height: 4px; }
+.mj-meter--compact .mj-meter-name { font-size: var(--fs-12); }
 .mj-sidebar-usage-detail small {
   font-size: var(--fs-12);
   color: var(--text-2);

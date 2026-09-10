@@ -6,9 +6,10 @@ import { ArchivedChats } from "./archived-chats";
 import { BillingPanel } from "./billing-panel";
 import { QpuCredentials } from "./qpu-credentials";
 import { UsageNow } from "./usage-now";
+import { WorkspacesPane } from "./workspaces-pane";
 import { LanguageToggle } from "../../../components/language-toggle";
 import { getPublicLocale } from "../../../lib/public-locale-server";
-import { ACCOUNT_COPY, WORKSPACE_COPY } from "../../../lib/workspace-locale";
+import { ACCOUNT_COPY, SHARING_COPY, WORKSPACE_COPY } from "../../../lib/workspace-locale";
 import { ACCOUNT_TITLE_ID } from "./account-title-id";
 import { AccountPanes } from "./account-panes";
 
@@ -37,21 +38,10 @@ export async function AccountContent() {
   // The archive panel is the sidebar's, not this page's — it is the same list
   // the rail links to, so its label comes from the same string.
   const archiveLabel = WORKSPACE_COPY[locale].sidebar.archive;
-  // null means unlimited in TierLimits; the tier table is the single source for
-  // both the words and the numbers, so this panel cannot drift from what the
-  // product actually enforces.
-  const runs = limits.agentRunsPerWeek === null
-    ? copy.usageUnlimited
-    : copy.usageRunsPerWeek(limits.agentRunsPerWeek);
-  const storage = limits.privateArtifacts === null
-    ? copy.usageUnlimited
-    : copy.usageArtifacts(limits.privateArtifacts);
-  // The rail's order is the order the old single stack had, top to bottom, so
-  // nothing moved for anyone who knew where a control was — it only stopped
-  // requiring a scroll to reach. The ids are the fragments `/account#usage` and
-  // `/account#archived` already pointed at; `account-panes.tsx` selects a pane
-  // from them rather than scrolling to one, which is the only behaviour change
-  // those two entry points see.
+  // Preferences, then who you are, then what you have used, then the rest.
+  // The ids are the fragments `/account#usage` and `/account#archived` already
+  // pointed at; `account-panes.tsx` selects a pane from them. Usage sits high
+  // because the rail's first item links to it (owner, 2026-09-10).
   const panes = [
     {
       id: "preferences",
@@ -71,38 +61,38 @@ export async function AccountContent() {
     },
     {
       id: "identity",
-      label: copy.identity,
+      label: copy.profile,
       panel: <AccountSettings initialEmail={user.email} locale={locale} />,
-    },
-    {
-      id: "archived",
-      label: archiveLabel,
-      panel: <ArchivedChats locale={locale} />,
     },
     {
       id: "usage",
       label: copy.usageTitle,
       panel: (
         <section className="mj-artifact-panel" id="usage" aria-labelledby="usage-heading">
-          <div className="mj-panel-heading"><h2 id="usage-heading">{copy.usageTitle}</h2></div>
-          <p className="mj-panel-help">{copy.usageEnforcement}</p>
-          <dl className="mj-usage-list">
-            <div><dt>{copy.usagePlan}</dt><dd>{copy.tierNames[tier]}</dd></div>
-            <div><dt>{copy.usageRuns}</dt><dd>{runs}</dd></div>
-            <div><dt>{copy.usageStorage}</dt><dd>{storage}</dd></div>
-            {/* Beside the two allowances rather than in a panel of its own, and
-                not read from `limits`: this one is the same on every tier and
-                belongs to the project, not to the plan (ai-ops#82 moved it here
-                off /pricing, where a per-project figure printed under a per-
-                account cap was the misreading that got the whole line struck). */}
-            <div><dt>{copy.usageProjectArtifacts}</dt><dd>{copy.usageProjectArtifactsValue(DEFAULT_PROJECT_ARTIFACT_LIMIT)}</dd></div>
-            <div><dt>{copy.usageSimulation}</dt><dd>{copy.usageQubits(limits.cpuSimQubits)}</dd></div>
-          </dl>
-          {/* The ceilings above are the plan; this is what is left of it.
-              Client-side and additive — see usage-now.tsx for why the split. */}
+          <div className="mj-panel-heading"><h2 id="usage-heading">{copy.usageTitle}</h2><span className="mj-mono-muted">{copy.tierNames[tier]}</span></div>
+          {/* The bars: what is used of each allowance, from the service that
+              enforces them (usage-now.tsx). */}
           <UsageNow locale={locale} renderedTier={tier} />
+          {/* Two facts that are ceilings, not meters. The per-project figure is
+              the same on every tier and belongs to the project, not the plan
+              (ai-ops 82 moved it here off /pricing); the qubit ceiling is the
+              tier table's, so this cannot drift from what runs. */}
+          <dl className="mj-usage-facts">
+            <div><dt>{copy.usageSimulation}</dt><dd>{copy.usageQubits(limits.cpuSimQubits)}</dd></div>
+            <div><dt>{copy.usageProjectArtifacts}</dt><dd>{copy.usageProjectArtifactsValue(DEFAULT_PROJECT_ARTIFACT_LIMIT)}</dd></div>
+          </dl>
         </section>
       ),
+    },
+    {
+      id: "workspaces",
+      label: SHARING_COPY[locale].workspacesTitle,
+      panel: <WorkspacesPane locale={locale} />,
+    },
+    {
+      id: "archived",
+      label: archiveLabel,
+      panel: <ArchivedChats locale={locale} />,
     },
     {
       // Immediately after the allowances, and before billing, because it is the

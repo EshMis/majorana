@@ -3,6 +3,7 @@
 import { type FormEvent, useEffect, useState } from "react";
 import type { PublicLocale } from "../../../lib/public-locale";
 import { ACCOUNT_COPY } from "../../../lib/workspace-locale";
+import { PaneSkeleton } from "./pane-skeleton";
 
 /**
  * Connect your own IBM Quantum key.
@@ -302,7 +303,7 @@ export function QpuCredentials({ locale }: { locale: PublicLocale }) {
       <p className="mj-panel-help">{copy.qpuHelp}</p>
 
       {loading ? (
-        <p className="mj-panel-help" role="status">{copy.qpuLoading}</p>
+        <PaneSkeleton rows={2} label={copy.qpuLoading} />
       ) : loadFailed ? (
         <p className="mj-qpu-message mj-qpu-message--error" role="alert">{copy.qpuLoadFailed}</p>
       ) : status?.connected ? (

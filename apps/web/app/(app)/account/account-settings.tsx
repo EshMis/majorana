@@ -1,64 +1,32 @@
 "use client";
 
-import type { components } from "@majorana/contracts-gen";
 import { type FormEvent, useEffect, useState } from "react";
 import type { PublicLocale } from "../../../lib/public-locale";
 import { ACCOUNT_COPY, SHARING_COPY } from "../../../lib/workspace-locale";
-import { WorkspaceSharing } from "./workspace-sharing";
+import { AccountRequestError, errorDetail, type Me, useAccountOverview } from "./account-overview";
+import { PaneSkeleton } from "./pane-skeleton";
 
-type WorkspaceOverview = components["schemas"]["WorkspaceOverview"];
-
-type Me = {
-  user_id: string;
-  email: string;
-  display_name: string | null;
-  workspace_id: string;
-  workspace_name: string;
-  role: components["schemas"]["Role"];
-  /** Optional so an older control plane, which had no shared workspaces at all,
-   *  still reads as personal rather than as somebody else's. */
-  is_personal_workspace?: boolean;
-};
-
+/**
+ * The Profile pane: who you are, and the workspace you have open. Workspaces
+ * and members moved to a pane of their own (owner, 2026-09-10: the old
+ * "Identity" pane stacked five panels under one label).
+ */
 export function AccountSettings({ initialEmail, locale }: { initialEmail: string; locale: PublicLocale }) {
   const copy = ACCOUNT_COPY[locale];
-  const [me, setMe] = useState<Me | null>(null);
-  const [workspace, setWorkspace] = useState<WorkspaceOverview | null>(null);
+  const { me, setMe, workspace, loading, loadError, reload } = useAccountOverview(copy);
   const [displayName, setDisplayName] = useState("");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [autoKeep, setAutoKeep] = useState(false);
   const [savingAutoKeep, setSavingAutoKeep] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [profileFeedback, setProfileFeedback] = useState<{ message: string; error?: boolean } | null>(null);
   const [workspaceFeedback, setWorkspaceFeedback] = useState<{ message: string; error?: boolean } | null>(null);
-  const [reload, setReload] = useState(0);
 
   useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setLoadError(null);
-    Promise.all([
-      fetch("/api/me", { cache: "no-store" }).then((response) => parseJson<Me>(response, copy.requestFailed)),
-      fetch("/api/workspace", { cache: "no-store" }).then((response) => parseJson<WorkspaceOverview>(response, copy.requestFailed)),
-    ])
-      .then(([identity, overview]) => {
-        if (!active) return;
-        setMe(identity);
-        setDisplayName(identity.display_name ?? "");
-        setWorkspace(overview);
-        setAutoKeep(Boolean(overview.workspace.auto_keep_artifacts));
-        setLoading(false);
-      })
-      .catch((cause) => {
-        if (!active) return;
-        setLoadError(cause instanceof AccountRequestError ? cause.message : copy.unavailable);
-        setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [copy, reload]);
+    if (me) setDisplayName(me.display_name ?? "");
+  }, [me]);
+  useEffect(() => {
+    if (workspace) setAutoKeep(Boolean(workspace.workspace.auto_keep_artifacts));
+  }, [workspace]);
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -111,23 +79,34 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
     }
   }
 
-  if (loading) return <p className="mj-page-lede" role="status">{copy.loading}</p>;
-  if (!workspace || !me) return <div className="leona-workspace-state"><p className="mj-page-lede" role="alert">{loadError ?? copy.unavailable}</p><button className="mj-secondary-button" type="button" onClick={() => setReload((value) => value + 1)}>{locale === "ja" ? "再試行" : "Try again"}</button></div>;
+  if (loading) return <PaneSkeleton rows={3} label={copy.loading} />;
+  if (!workspace || !me) {
+    return (
+      <div className="leona-workspace-state">
+        <p className="mj-page-lede" role="alert">{loadError ?? copy.unavailable}</p>
+        <button className="mj-secondary-button" type="button" onClick={reload}>{copy.retry}</button>
+      </div>
+    );
+  }
 
   const sharing = SHARING_COPY[locale];
   // `kind === "personal"` is NOT the test: a guest in someone else's personal
   // workspace reads kind=personal for a tenant that is not theirs.
   const isPersonal = me.is_personal_workspace !== false;
   const memberCount = workspace.members.length;
+  const initial = (me.display_name || me.email || initialEmail).trim().charAt(0).toUpperCase();
 
   return (
     <div className="mj-artifact-grid">
       <section className="mj-artifact-panel">
-        <div className="mj-panel-heading"><h2>{copy.identity}</h2><span className="mj-mono-muted">{me.role}</span></div>
-        <dl className="mj-resource-list">
-          <div><dt>{copy.email}</dt><dd>{me.email}</dd></div>
-          <div><dt>{copy.workspace}</dt><dd>{me.workspace_name}</dd></div>
-        </dl>
+        <div className="mj-panel-heading"><h2>{copy.profile}</h2><span className="mj-mono-muted">{me.role}</span></div>
+        <div className="mj-account-profile">
+          <span className="mj-avatar mj-avatar--large" aria-hidden="true">{initial}</span>
+          <dl className="mj-resource-list">
+            <div><dt>{copy.email}</dt><dd>{me.email}</dd></div>
+            <div><dt>{copy.workspace}</dt><dd>{me.workspace_name}</dd></div>
+          </dl>
+        </div>
         <form className="mj-account-profile-form" onSubmit={saveProfile}>
           <label>
             <span>{copy.displayName}</span>
@@ -143,8 +122,7 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
           artifacts to you. */}
       <section className="mj-artifact-panel">
         <div className="mj-panel-heading"><h2>{isPersonal ? copy.personalWorkspace : me.workspace_name}</h2><span className="mj-mono-muted">{workspace.workspace.plan}</span></div>
-        <p className="mj-artifact-copy">{isPersonal ? copy.personalWorkspaceHelp : sharing.membersHelp}</p>
-        <dl className="mj-resource-list">
+        <dl className="mj-resource-list mj-resource-list--row">
           <div><dt>{copy.artifacts}</dt><dd>{workspace.artifact_count}</dd></div>
           <div><dt>{copy.runs}</dt><dd>{workspace.run_count}</dd></div>
           <div><dt>{copy.access}</dt><dd>{memberCount > 1 ? sharing.sharedWith(memberCount) : copy.privateAccess}</dd></div>
@@ -166,45 +144,6 @@ export function AccountSettings({ initialEmail, locale }: { initialEmail: string
         </label>
         {workspaceFeedback ? <p className="leona-workspace-feedback" role={workspaceFeedback.error ? "alert" : "status"}>{workspaceFeedback.message}</p> : null}
       </section>
-      <WorkspaceSharing
-        locale={locale}
-        members={workspace.members}
-        viewerUserId={me.user_id}
-        viewerRole={me.role}
-        onMembersChanged={(members) =>
-          setWorkspace((current) => (current ? { ...current, members } : current))
-        }
-      />
-      <details className="mj-artifact-panel mj-artifact-panel--wide leona-workspace-disclosure">
-        <summary>{copy.workspaceBoundaries}</summary>
-        <div className="mj-account-boundary-grid">
-          <div><strong>{copy.library}</strong><p>{copy.libraryHelp}</p></div>
-          <div><strong>{copy.repositoryExport}</strong><p>{copy.repositoryExportHelp}</p></div>
-          <div><strong>{copy.collaboration}</strong><p>{copy.collaborationHelp}</p></div>
-        </div>
-      </details>
     </div>
   );
-}
-
-async function parseJson<T>(response: Response, fallback: string): Promise<T> {
-  let payload: unknown;
-  try {
-    payload = await response.json();
-  } catch {
-    throw new AccountRequestError(fallback);
-  }
-  if (!response.ok) {
-    throw new AccountRequestError(errorDetail(payload, fallback));
-  }
-  return payload as T;
-}
-
-class AccountRequestError extends Error {}
-
-function errorDetail(payload: unknown, fallback: string): string {
-  if (!payload || typeof payload !== "object") return fallback;
-  if ("title" in payload && typeof payload.title === "string") return payload.title;
-  if ("error" in payload && typeof payload.error === "string") return payload.error;
-  return fallback;
 }

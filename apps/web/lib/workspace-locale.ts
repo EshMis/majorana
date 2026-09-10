@@ -2412,6 +2412,10 @@ export const ACCOUNT_COPY: Record<PublicLocale, {
   language: string;
   languageHelp: string;
   identity: string;
+  /** The Profile pane's label and heading. */
+  profile: string;
+  retry: string;
+  usageUnavailable: string;
   email: string;
   workspace: string;
   displayName: string;
@@ -2622,6 +2626,9 @@ export const ACCOUNT_COPY: Record<PublicLocale, {
     language: "Language",
     languageHelp: "Choose the language used for shared navigation and account settings.",
     identity: "Identity",
+    profile: "Profile",
+    retry: "Try again",
+    usageUnavailable: "Usage is not available right now.",
     email: "Email",
     workspace: "Workspace",
     displayName: "Display name",
@@ -2637,8 +2644,7 @@ export const ACCOUNT_COPY: Record<PublicLocale, {
     access: "Access",
     privateAccess: "Private",
     autoKeep: "Automatically save results",
-    autoKeepHelp:
-      "Off by default. When off, a finished run asks before it saves — the result is still there to open, convert and build on, it just does not join your saved artifacts unless you keep it.",
+    autoKeepHelp: "Off by default: a finished run asks before it is saved.",
     autoKeepOn: "New results will be saved automatically.",
     autoKeepOff: "New results will ask before saving.",
     autoKeepFailed: "Could not change that setting.",
@@ -2689,15 +2695,13 @@ export const ACCOUNT_COPY: Record<PublicLocale, {
     // "Rolling" rather than "weekly": each run returns seven days after it was
     // spent, so there is no reset day, and saying there is one would send
     // people back on the wrong morning.
-    usageWindow: (days) => `Rolling ${days} days — each run returns ${days} days after you use it`,
+    usageWindow: (days) => `Rolling ${days}-day window`,
     usageArtifactsScope: "In this workspace",
-    usageEnforcedAs: (tier) =>
-      `Your runs are being enforced as ${tier}. The limits above are what this page resolved; these are what the control plane applies.`,
+    usageEnforcedAs: (tier) => `Enforced as ${tier}: these figures are the control plane's.`,
     usageNextSlotOn: (date) => `1 more frees up on ${date}`,
     usageNextSlotWhen: (word) => `1 more frees up ${word}`,
     usageSharedProjects: "Shared projects",
-    usageSharedProjectsScope:
-      "Counted across your whole account — projects you share plus projects shared with you. Projects you keep to yourself are unlimited on every plan and are not counted here.",
+    usageSharedProjectsScope: "Shared ones only; private projects are unlimited.",
     usageSharedProjectsNone:
       "Sharing is not part of your plan. Projects you keep to yourself stay unlimited.",
     usageHardware: "Hardware spend",
@@ -2725,7 +2729,7 @@ export const ACCOUNT_COPY: Record<PublicLocale, {
     spendUnattributed: "Unattributed",
     // Said because a page that suddenly reports six-figure numbers reads like
     // a bill arriving. Nothing in this deployment prices a token.
-    spendNotBilled: "Shown for visibility. Tokens are not charged for and count against no allowance.",
+    spendNotBilled: "For reference only. Nothing here is billed or counted against an allowance.",
     tierNames: {
       preview: "Preview",
       free: "Free",
@@ -2820,6 +2824,9 @@ export const ACCOUNT_COPY: Record<PublicLocale, {
     language: "言語",
     languageHelp: "共通ナビゲーションとアカウント設定で使用する言語を選択します。",
     identity: "本人情報",
+    profile: "プロフィール",
+    retry: "再試行",
+    usageUnavailable: "使用状況を取得できません。",
     email: "メールアドレス",
     workspace: "ワークスペース",
     displayName: "表示名",
@@ -2835,8 +2842,7 @@ export const ACCOUNT_COPY: Record<PublicLocale, {
     access: "アクセス",
     privateAccess: "非公開",
     autoKeep: "結果を自動的に保存する",
-    autoKeepHelp:
-      "既定ではオフです。オフのときは、実行後に保存するか確認します。結果は開いて変換・編集できますが、保存を選ぶまで保存済みの一覧には追加されません。",
+    autoKeepHelp: "既定ではオフです。実行が終わると、保存するか確認します。",
     autoKeepOn: "今後の実行結果は自動的に保存されます。",
     autoKeepOff: "今後の実行結果は保存前に確認します。",
     autoKeepFailed: "設定を変更できませんでした。",
@@ -2889,17 +2895,15 @@ export const ACCOUNT_COPY: Record<PublicLocale, {
     usageSpentUnmetered: (used) => `${used} 使用中 — 現在のプランでは上限なし`,
     // 「毎週リセット」ではない。使った実行が7日後に1回ずつ戻るローリング方式で、
     // リセット曜日があると書くと違う日に戻ってこられてしまう。
-    usageWindow: (days) => `直近${days}日間のローリング — 使った実行は${days}日後に1回ずつ戻ります`,
+    usageWindow: (days) => `直近${days}日間の集計`,
     usageArtifactsScope: "このワークスペース内",
-    usageEnforcedAs: (tier) =>
-      `実行は ${tier} として制限されています。上の上限はこのページが判定した値、以下はコントロールプレーンが実際に適用している値です。`,
+    usageEnforcedAs: (tier) => `上限は ${tier} として適用されています。以下の数値はサーバー側の値です。`,
     usageNextSlotOn: (date) => `${date}に1回分が戻ります`,
     usageNextSlotWhen: (word) => `${word}1回分が戻ります`,
     usageSharedProjects: "共有プロジェクト",
     // 「2 / 4」だけを見ると全プロジェクトの上限に読めてしまう。共有していない
     // プロジェクトはどのプランでも無制限で、この数には入らない。
-    usageSharedProjectsScope:
-      "アカウント全体での数です。自分が共有しているプロジェクトと、共有されたプロジェクトの両方を数えます。共有していないプロジェクトはどのプランでも無制限で、ここには含まれません。",
+    usageSharedProjectsScope: "共有プロジェクトのみ。非公開のプロジェクトは無制限です。",
     usageSharedProjectsNone:
       "現在のプランでは共有をご利用いただけません。共有しないプロジェクトは引き続き無制限です。",
     usageHardware: "ハードウェア費用",
@@ -2922,7 +2926,7 @@ export const ACCOUNT_COPY: Record<PublicLocale, {
     spendTotal: "合計",
     spendTokens: (tokens, calls) => `${tokens} トークン・${calls} 回の呼び出し`,
     spendUnattributed: "モデル不明",
-    spendNotBilled: "参考表示です。トークンは課金対象ではなく、いずれの上限にも数えられません。",
+    spendNotBilled: "参考表示です。課金や上限には数えられません。",
     // Japanese throughout, matching `sidebar.tierLabel` above. These two tables
     // name the same four tiers to the same reader, and they disagreed before —
     // フリー in the sidebar, "Free" in account settings.
@@ -3148,8 +3152,7 @@ export const SHARING_COPY: Record<PublicLocale, {
 }> = {
   en: {
     workspacesTitle: "Workspaces",
-    workspacesHelp:
-      "Everything you run and save belongs to one workspace. Switching changes what Run and Studio show you.",
+    workspacesHelp: "Everything you run and save belongs to one workspace.",
     personalTag: "Personal",
     activeTag: "Active",
     open: "Open",
@@ -3179,14 +3182,12 @@ export const SHARING_COPY: Record<PublicLocale, {
     makeOwnerConfirm: (name) => `Hand it to ${name}`,
     makeOwnerCancel: "Cancel",
     transferring: "Handing over…",
-    transferHelp:
-      "The owner is the only person who can delete this workspace or hand it on. Give it away and you stay as an admin — which the new owner can take back.",
+    transferHelp: "Only the owner can delete or hand over a workspace. After handing over, you stay as an admin.",
     transferFailed: "Could not hand the workspace over.",
     transferred: (name) => `${name} owns this workspace now. You are an admin of it, and you can leave whenever you like.`,
     membersTitle: "Members",
     membersHelp: "People who can act in the workspace you have open.",
-    membersShareWarning:
-      "A member sees every run and every saved artifact in this workspace, including work saved before they arrived. A viewer can read all of it but cannot run or save.",
+    membersShareWarning: "Members see every run and saved artifact here, including earlier ones; viewers can read but not run or save.",
     invitePlaceholder: "colleague@university.edu",
     invite: "Invite",
     inviting: "Inviting…",
@@ -3214,8 +3215,7 @@ export const SHARING_COPY: Record<PublicLocale, {
   },
   ja: {
     workspacesTitle: "ワークスペース",
-    workspacesHelp:
-      "実行と保存はすべて、いずれかのワークスペースに属します。切り替えると、Run と Studio の表示内容が変わります。",
+    workspacesHelp: "実行と保存はすべて、いずれかのワークスペースに属します。",
     personalTag: "個人",
     activeTag: "使用中",
     open: "開く",
@@ -3245,14 +3245,12 @@ export const SHARING_COPY: Record<PublicLocale, {
     makeOwnerConfirm: (name) => `${name} に譲渡する`,
     makeOwnerCancel: "やめる",
     transferring: "譲渡中…",
-    transferHelp:
-      "このワークスペースを削除・譲渡できるのはオーナーだけです。譲渡すると、あなたは管理者として残ります（新しいオーナーはそれを解除できます）。",
+    transferHelp: "削除と譲渡ができるのはオーナーだけです。譲渡後は管理者として残ります。",
     transferFailed: "オーナーを変更できませんでした。",
     transferred: (name) => `${name} がこのワークスペースのオーナーになりました。あなたは管理者で、いつでも退出できます。`,
     membersTitle: "メンバー",
     membersHelp: "現在のワークスペースにアクセスできるメンバーです。",
-    membersShareWarning:
-      "メンバーは、参加前のものを含むすべての実行結果と保存済み回路を閲覧できます。閲覧者は内容を確認できますが、実行や保存はできません。",
+    membersShareWarning: "メンバーは過去のものを含むすべての実行結果と保存済み回路を見られます。閲覧者は見るだけで、実行や保存はできません。",
     invitePlaceholder: "colleague@university.edu",
     invite: "招待",
     inviting: "招待中…",
