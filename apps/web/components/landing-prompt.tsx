@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeftIcon } from "./icons";
+import { ComposerGhostOverlay } from "./composer-ghost-overlay";
+import { DELETE_MS_PER_CHARACTER, TYPE_MS_PER_CHARACTER, composerGhost } from "../lib/composer-ghost";
 import { writeLandingPromptHandoff } from "../lib/landing-prompt-handoff";
 
 type LandingPromptCopy = {
@@ -12,14 +14,70 @@ type LandingPromptCopy = {
   prompts: string[];
 };
 
-/** Carries a draft into Nala. Opening the workspace never starts a run. */
+/**
+ * The cover's box. Carries a draft into Nala; opening the workspace never starts
+ * a run.
+ *
+ * While the box is empty a suggestion types itself out, holds, erases and moves
+ * on — the same rotation the workspace composer draws, from the same engine
+ * (`lib/composer-ghost.ts`), so Tab accepts exactly the sentence on screen. The
+ * clock stops while the tab is hidden and restarts from the first prompt when
+ * it comes back, and under reduced motion the first prompt sits still with no
+ * caret.
+ */
 export function LandingPrompt({ copy }: { copy: LandingPromptCopy }) {
   const [value, setValue] = useState("");
   const [opening, setOpening] = useState(false);
   const [retry, setRetry] = useState(false);
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const input = useRef<HTMLTextAreaElement>(null);
   const leaving = useRef(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduceMotion(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion || value) return;
+    // Restart from the first character rather than resuming wherever the clock
+    // was left, so clearing the box never shows a frame of a half-typed sentence.
+    setElapsedMs(0);
+    // Bare `setInterval`, like the retry `setTimeout` below: the test harness mocks the
+    // global clock, and jsdom's `window.setInterval` would run on a clock of its own.
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const start = () => {
+      const started = Date.now();
+      // Sampled at the faster of the two per-character durations so deletion
+      // reads as one character at a time rather than several at once.
+      timer = setInterval(
+        () => setElapsedMs(Date.now() - started),
+        Math.min(TYPE_MS_PER_CHARACTER, DELETE_MS_PER_CHARACTER),
+      );
+    };
+    const stop = () => {
+      if (timer !== undefined) clearInterval(timer);
+      timer = undefined;
+    };
+    const onVisibility = () => {
+      stop();
+      if (document.visibilityState !== "hidden") {
+        setElapsedMs(0);
+        start();
+      }
+    };
+    if (document.visibilityState !== "hidden") start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [reduceMotion, value]);
 
   useEffect(() => {
     if (!opening) return;
@@ -30,6 +88,8 @@ export function LandingPrompt({ copy }: { copy: LandingPromptCopy }) {
     }, 8000);
     return () => clearTimeout(timeout);
   }, [opening]);
+
+  const ghost = composerGhost({ elapsedMs, suggestions: copy.prompts, typedValue: value, reduceMotion });
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -51,32 +111,39 @@ export function LandingPrompt({ copy }: { copy: LandingPromptCopy }) {
     <div className="lq-landing-prompt-section">
       <form className="mj-landing-prompt" onSubmit={submit} aria-busy={opening}>
         <label className="sr-only" htmlFor="mj-landing-prompt-input">{copy.label}</label>
-        <textarea
-          ref={input}
-          id="mj-landing-prompt-input"
-          rows={1}
-          value={value}
-          maxLength={4000}
-          placeholder={copy.label}
-          disabled={opening}
-          onChange={(event) => setValue(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-              event.preventDefault();
-              event.currentTarget.form?.requestSubmit();
-            }
-          }}
-        />
+        <div className="mj-composer-ghost-wrap">
+          {ghost ? <ComposerGhostOverlay frame={ghost} /> : null}
+          <textarea
+            ref={input}
+            id="mj-landing-prompt-input"
+            rows={1}
+            value={value}
+            maxLength={4000}
+            // Empty while the ghost draws, so the two never overprint; the
+            // first prompt stands in only when there is no rotation at all.
+            placeholder={ghost ? "" : copy.prompts[0] ?? copy.label}
+            disabled={opening}
+            onChange={(event) => setValue(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+                return;
+              }
+              // Tab only steals focus movement while there is a suggestion to
+              // accept and the box is empty, so the box never becomes a trap.
+              if (event.key === "Tab" && !event.shiftKey && !event.nativeEvent.isComposing && !value && ghost) {
+                event.preventDefault();
+                setValue(ghost.suggestion);
+              }
+            }}
+          />
+        </div>
         <button className="mj-landing-prompt-submit" type="submit" aria-label={copy.submit} title={copy.submit} disabled={!value.trim() || opening}>
           <ArrowLeftIcon className="lq-arrow-forward" size={20} />
         </button>
       </form>
       {retry ? <p className="mj-page-lede" role="status">{copy.retry}</p> : null}
-      {copy.prompts[0] ? (
-        <button className="lq-prompt-example" type="button" disabled={opening} onClick={() => { setValue(copy.prompts[0]!); input.current?.focus(); }}>
-          {copy.prompts[0]}
-        </button>
-      ) : null}
     </div>
   );
 }
