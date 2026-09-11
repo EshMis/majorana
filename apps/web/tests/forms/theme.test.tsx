@@ -65,3 +65,15 @@ test("public navigation stays dark without overwriting the workspace preference"
     assert.equal(document.documentElement.dataset.theme, "light", path);
   }
 });
+
+
+test("a fixed light event document ignores saved dark mode without overwriting it", () => {
+  installMedia();
+  window.history.replaceState(null, "", "/events/qiskit-fall-fest-2026");
+  window.localStorage.setItem(THEME_STORAGE_KEY, "dark");
+  render(<ThemeController locale="ja" forcedTheme="light" />);
+  assert.equal(document.documentElement.dataset.theme, "light");
+  act(() => { window.dispatchEvent(new window.Event("pageshow")); });
+  assert.equal(document.documentElement.dataset.theme, "light");
+  assert.equal(window.localStorage.getItem(THEME_STORAGE_KEY), "dark");
+});

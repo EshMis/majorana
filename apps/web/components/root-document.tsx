@@ -58,7 +58,7 @@ import "../styles/ux-workspace.css";
 import "../styles/ux-atlas.css";
 import "../styles/ux-polish.css";
 
-const themeScript = `(() => {
+const themeScript = (forcedTheme?: "light" | "dark") => `(() => {
   try {
     const saved = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
     const theme = saved === "light" || saved === "dark"
@@ -66,7 +66,7 @@ const themeScript = `(() => {
       : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     const path = location.pathname.replace(/^\\/(en|ja)(?=\\/|$)/, "").replace(/\\/$/, "") || "/";
     const publicSite = ${JSON.stringify(DARK_PUBLIC_PATHS)}.includes(path) || path.startsWith("/repository/");
-    document.documentElement.dataset.theme = publicSite ? "dark" : theme;
+    document.documentElement.dataset.theme = ${JSON.stringify(forcedTheme) ?? "undefined"} ?? (publicSite ? "dark" : theme);
     document.documentElement.dataset.sidebarCollapsed = localStorage.getItem(${JSON.stringify(SIDEBAR_STORAGE_KEY)}) === "true" ? "true" : "false";
   } catch {}
 })();`;
@@ -197,10 +197,11 @@ function structuredData(origin: string) {
 }
 
 
-export function RootDocument({ lang, children }: { lang: string; children: ReactNode }) {
+export function RootDocument({ lang, children, forcedTheme }: { lang: string; children: ReactNode; forcedTheme?: "light" | "dark" }) {
   return (
     <html
       lang={lang}
+      data-theme={forcedTheme}
       suppressHydrationWarning
       className={`${instrumentSans.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`}
       style={
@@ -215,7 +216,7 @@ export function RootDocument({ lang, children }: { lang: string; children: React
         <Script
           id="leona-theme"
           strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: themeScript }}
+          dangerouslySetInnerHTML={{ __html: themeScript(forcedTheme) }}
         />
         <Script
           id="leona-locale"
@@ -243,7 +244,7 @@ export function RootDocument({ lang, children }: { lang: string; children: React
         </script>
       </head>
       <body>
-        <ThemeController locale={lang} />
+        <ThemeController locale={lang} forcedTheme={forcedTheme} />
         {children}
         {/* Vercel Web Analytics: cookie-free pageview beacon (ai-ops#92). The
             script no-ops when the project's Analytics feature is off, so this
