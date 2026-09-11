@@ -48,7 +48,6 @@ import { useRouter } from "next/navigation";
 import { PUBLIC_SHELL_COPY, type PublicLocale } from "../lib/public-locale";
 import { MAP_ABOUT_SECTIONS, type MapAboutSection } from "../lib/repository/map-about";
 import { LanguageToggle } from "./language-toggle";
-import { ThemeToggle } from "./theme-toggle";
 
 /**
  * The marks §2 draws, named by what the canvas calls them rather than by what
@@ -564,7 +563,6 @@ export function MapInfoPopup({
           <div className="mj-map-info-settings">
             <span className="mj-map-info-footer-label">{copy.display}</span>
             <LanguageToggle locale={locale} />
-            <ThemeToggle locale={locale} />
           </div>
           <nav className="mj-map-info-elsewhere" aria-label={copy.elsewhere}>
             <span className="mj-map-info-footer-label">{copy.elsewhere}</span>

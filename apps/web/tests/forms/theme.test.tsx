@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
-import { afterEach, test } from "node:test";
+import { afterEach, beforeEach, test } from "node:test";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { ThemeController } from "../../components/theme-controller";
 import { ThemeToggle } from "../../components/theme-toggle";
 import { THEME_STORAGE_KEY } from "../../lib/theme";
+
+beforeEach(() => { window.history.replaceState(null, "", "/run"); });
 
 afterEach(() => { cleanup(); window.localStorage.clear(); delete document.documentElement.dataset.theme; });
 
@@ -43,4 +45,23 @@ test("a theme change from another tab updates the page and controls", () => {
   });
   assert.equal(document.documentElement.dataset.theme, "dark");
   assert.equal(view.getByRole("button", { name: "Use dark theme" }).getAttribute("aria-pressed"), "true");
+});
+
+
+test("public navigation stays dark without overwriting the workspace preference", () => {
+  installMedia();
+  window.localStorage.setItem(THEME_STORAGE_KEY, "light");
+  const view = render(<ThemeController locale="en" />);
+  assert.equal(document.documentElement.dataset.theme, "light");
+  for (const path of ["/", "/workspace", "/repository", "/repository/layers", "/about", "/pricing", "/contact", "/ja/about"]) {
+    window.history.replaceState(null, "", path);
+    view.rerender(<ThemeController locale="en" />);
+    assert.equal(document.documentElement.dataset.theme, "dark", path);
+    assert.equal(window.localStorage.getItem(THEME_STORAGE_KEY), "light");
+  }
+  for (const path of ["/run", "/events/qiskit-fall-fest-2026"]) {
+    window.history.replaceState(null, "", path);
+    view.rerender(<ThemeController locale="en" />);
+    assert.equal(document.documentElement.dataset.theme, "light", path);
+  }
 });

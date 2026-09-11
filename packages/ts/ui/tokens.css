@@ -117,7 +117,9 @@
   --shadow-popover: 0 8px 24px rgb(0 0 0 / 0.28);
 }
 
-:root[data-theme="dark"] {
+/* Public website pages keep their dark palette even before hydration. */
+:root[data-theme="dark"],
+:root:has(.mj-public-site) {
   color-scheme: dark;
 
   /* color — warm-gray neutrals (low chroma), one earthy-green accent, verdict signals */

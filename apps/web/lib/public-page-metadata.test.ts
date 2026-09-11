@@ -67,7 +67,8 @@ test("home: english inherits the root layout's title, japanese states its own", 
   const ja = homeMetadataCopy("ja");
   assert.equal(en.title, undefined, "english home title should stay absent so it inherits the root layout's default");
   assert.equal(en.description, "Generate, run, and use quantum circuits with AI in one platform.");
-  assert.equal(ja.title, HOME_COPY.ja.hero.title.replace("\n", ""));
+  assert.equal(ja.title, HOME_COPY.ja.hero.title.replaceAll("\n", ""));
+  assert.ok(!String(ja.title).includes("\n"), "visual line breaks must not reach the page title");
   assert.ok(JAPANESE_CHARACTER.test(ja.title ?? ""), "japanese home title does not look Japanese");
   assert.equal(ja.description, HOME_COPY.ja.hero.lede);
   assert.notEqual(ja.description, en.description);

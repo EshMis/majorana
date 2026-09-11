@@ -2,6 +2,13 @@ export const THEME_STORAGE_KEY = "majorana.theme.v1";
 
 export type Theme = "light" | "dark";
 
+export const DARK_PUBLIC_PATHS = ["/", "/workspace", "/repository", "/about", "/pricing", "/contact", "/privacy", "/terms"];
+
+export function isDarkPublicPath(pathname: string): boolean {
+  const path = pathname.replace(/^\/(en|ja)(?=\/|$)/, "").replace(/\/$/, "") || "/";
+  return DARK_PUBLIC_PATHS.includes(path) || path.startsWith("/repository/");
+}
+
 const THEME_CHANGE_EVENT = "leona:theme-change";
 let sessionTheme: Theme | null = null;
 let transitionFrame = 0;

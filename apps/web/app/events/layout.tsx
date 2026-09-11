@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 import { RootDocument, rootMetadata } from "../../components/root-document";
+import { getPublicLocale } from "../../lib/public-locale-server";
 
 export const metadata = rootMetadata;
 
-export default function EventsLayout({ children }: { children: ReactNode }) {
-  return <RootDocument lang="ja">{children}</RootDocument>;
+export default async function EventsLayout({ children }: { children: ReactNode }) {
+  const locale = await getPublicLocale();
+  return <RootDocument lang={locale}>{children}</RootDocument>;
 }

@@ -59,7 +59,7 @@ export const HOME_COPY: Record<PublicLocale, {
    * to type out, at least half free of quantum vocabulary, same count in both
    * languages.
    */
-  promptDemo: { label: string; submit: string; retry: string; prompts: string[] };
+  promptDemo: { label: string; attach: string; mode: string; submit: string; retry: string; prompts: string[] };
   /** `demoLabel` names the walkthrough video; `demoDescription` is read to screen readers only. */
   visual: { demoLabel: string; demoDescription: string; demoFallback: string };
   /** The connected diagram of the five surfaces; `stages[i]` pairs with `product.items[i]`. */
@@ -78,7 +78,9 @@ export const HOME_COPY: Record<PublicLocale, {
     },
     promptDemo: {
       "label": "Describe a quantum task",
-      "submit": "Continue in Nala",
+      "attach": "Add context in the workspace",
+      "mode": "Plan",
+      "submit": "Generate",
       "retry": "Try opening the workspace again.",
       "prompts": [
         "Build a Bell state and verify the measured distribution.",
@@ -259,61 +261,63 @@ export const HOME_COPY: Record<PublicLocale, {
   },
   ja: {
     hero: {
-      title: "次世代\n量子コンピューティングプラットフォーム",
+      title: "次世代\n量子コンピューティング\nプラットフォーム",
       lede: "量子回路の開発から活用まで、ひとつのプラットフォームで",
     },
     promptDemo: {
-      "label": "取り組みたい量子の課題を入力",
-      "submit": "Nalaで続ける",
+      "label": "量子コンピュータで取り組みたい課題を入力",
+      "attach": "ワークスペースで参考資料を添付",
+      "mode": "プラン",
+      "submit": "生成する",
       "retry": "もう一度ワークスペースを開いてください。",
       "prompts": [
         "ベル状態を作り、測定分布を検証してください。",
-        "6社の取引先を2組に分け、切る取引を最少にしてください。",
-        "リスク一定で、8銘柄の最適な組み合わせを選んでください。",
-        "16件のデータから該当する1件を探してください。",
+        "6社を2組に分け、組をまたぐ取引を最小限にしてください。",
+        "リスクを一定に保ち、8銘柄の最適な組み合わせを選んでください。",
+        "16件のデータから条件に合う1件を探してください。",
         "H₂分子の基底状態エネルギーを求めてください。",
-        "6件の作業を3台の機械に割り当て、最短で終わらせてください。"
+        "作業6件を機械3台に割り当て、最短で終わる計画を立ててください。"
       ]
     },
     visual: {
       "demoLabel": "Leonaの操作を見る",
       "demoDescription": "回路の生成と検証から、Studioでの編集、Atlasを使った再利用までを紹介します。",
-      "demoFallback": "プロダクトデモ動画を開く"
+      "demoFallback": "操作デモの動画を開く"
     },
     how: {
-      label: "全体のつながり",
-      title: "問いから、確かめられる結果まで。",
-      lede: "Leonaは、5つの部品がひとつの流れでつながっています。尋ねて、組み立てて、調べて、学んで、共有する。それぞれが次の作業へ受け渡します。",
-      flowLabel: "Leonaを構成する5つの部品",
+      label: "Leonaでできること",
+      title: "課題の相談から、結果の検証まで。",
+      lede: "Leonaでは、AIへの相談、回路の編集、文献調査、学習、アプリの共有をひとつの場所で進められます。5つの機能を行き来しながら、量子計算に取り組めます。",
+      flowLabel: "Leonaの5つの機能",
       stages: [
         {
           figure: "nala",
-          title: "言葉で頼む",
-          body: "作りたいものを説明すると、Nalaが回路を書いて実行し、通った検証を示します。白紙からではなく、動く答えから始められます。",
+          title: "やりたいことを言葉で伝える",
+          body: "作りたいものを説明すると、Nalaが量子回路のコードを生成・実行し、検証結果を示します。そのコードをもとに、編集や実験を進められます。",
           link: "Nalaを開く",
         },
         {
           figure: "studio",
-          title: "編集して、実行して、版を残す",
-          body: "回路はすべてStudioで開けます。ゲートを変え、シミュレーションと検証を行い、版として保存します。公開すると決めるまでは非公開のままです。",
+          title: "回路を編集・実行し、変更を記録する",
+          body: "回路をStudioで開き、ゲートの変更、シミュレーション、検証を行えます。変更内容はバージョンごとに保存でき、自分で公開するまでは非公開です。",
           link: "Studioを開く",
         },
         {
           figure: "atlas",
-          title: "出典にあたって調べる",
-          body: "アルゴリズム、論文、回路の公開リファレンスです。それぞれが元の論文と結びついています。Studioに取り込むことも、引用することもできます。",
+          title: "論文や実装例を調べる",
+          body: "アルゴリズムや回路を、出典の論文とあわせて調べられます。見つけた回路をStudioに取り込んだり、資料を引用したりできます。",
           link: "Atlasを見る",
         },
         {
           figure: "notebooks",
           title: "動かしながら学ぶ",
-          body: "問いをJupyterの教材に変えます。セルは実際に実行でき、演習は自動で採点されます。",
+          body: "学びたいテーマに合わせて、Jupyter形式の教材を作成します。コードを実行しながら学べるほか、演習の自動採点にも対応しています。",
           link: "ノートブックを開く",
         },
         {
           figure: "qapps",
           title: "小さなアプリとして共有する",
-          body: "回路にいくつかの入力欄とグラフを付けて、リンクを送るだけ。コードに触れずに誰でも試せます。",
+          body: "回路に入力フォームやグラフを付けて、アプリとして共有できます。受け取った人は、コードを書かずにブラウザーで試せます。",
           link: "Qappsを開く",
         },
       ],
@@ -329,7 +333,7 @@ export const HOME_COPY: Record<PublicLocale, {
         },
         {
           "title": "Studio",
-          "body": "回路を編集してシミュレーションを実行し、保存した研究を整理できます。",
+          "body": "回路を編集してシミュレーションを実行し、保存した回路や実験結果を整理できます。",
           "href": "/studio"
         },
         {
@@ -344,7 +348,7 @@ export const HOME_COPY: Record<PublicLocale, {
         },
         {
           "title": "Qapps",
-          "body": "入力項目に沿って、量子アプリケーションを試せます。",
+          "body": "フォームに値を入力して、量子計算を使ったアプリを試せます。",
           "href": "/qapps"
         }
       ]
@@ -376,24 +380,24 @@ export const HOME_COPY: Record<PublicLocale, {
       ]
     },
     cta: {
-      "title": "問いや回路から、開発を始める。",
-      "body": "Nalaに課題を伝えるか、Atlasで出発点となる実装を探せます。",
+      "title": "アイデアを、量子回路に。",
+      "body": "Nalaにやりたいことを伝えるか、Atlasで参考になる実装を探してみましょう。",
       "primary": "ワークスペースを開く",
       "secondary": "Atlasを見る"
     },
     benchmark: {
       label: "ベンチマーク",
       title: "動くコードで、モデルの実力を測る。",
-      body: "実行テストに基づく2つのベンチマークでのLeonaQのpass@1を、各論文が公表する他モデルの結果と並べています。",
+      body: "2つのベンチマークで、最初に生成したコードが実行テストに合格する割合（pass@1）を評価しました。LeonaQの評価結果と、他モデルの公表値を掲載しています。",
       axisLabel: "pass@1（%）",
       leonaLabel: "LeonaQ（社内評価）",
       reportedLabel: "出典の公表値",
-      tableLabel: "同じ数値を表で見る",
+      tableLabel: "評価結果を表で見る",
       tableHeaders: { benchmark: "ベンチマーク", model: "モデル", score: "pass@1", source: "出典" },
       rows: [
         {
           name: "Qiskit HumanEval",
-          detail: "Qiskitコード生成・実行ベース",
+          detail: "生成したQiskitコードを実行して評価",
           scores: [
             { model: "LeonaQ", detail: "Leona Quantum", score: 55.0, badge: "社内評価", featured: true },
             { model: "Qiskit Code Assistant", detail: "mistral-small-3.2-24b-qiskit", score: 47.0, badge: "公式モデルカード" },
@@ -433,7 +437,7 @@ export const HOME_COPY: Record<PublicLocale, {
           ],
         },
       ],
-      note: "LeonaQの数値は社内評価です。比較値はQiskit HumanEval論文、Qiskit公式モデルカード、QuanBench+論文の公表値で、Gemini 3 Pro、GPT-5.1、Claude 3.7 Sonnetはファミリー名で表記しています。データセットやプロンプト、実行環境が異なるため、同一条件での直接比較ではなく目安としてご覧ください。",
+      note: "LeonaQの数値は社内評価です。比較値はQiskit HumanEval論文、Qiskit公式モデルカード、QuanBench+論文の公表値で、Gemini 3 Pro、GPT-5.1、Claude 3.7 Sonnetはモデル系列名で表記しています。データセットやプロンプト、実行環境が異なるため、同一条件での直接比較ではなく目安としてご覧ください。",
       sourcesLabel: "出典",
       sources: [
         { label: "Qiskit HumanEval論文 · Table II", href: "https://arxiv.org/abs/2406.14712" },

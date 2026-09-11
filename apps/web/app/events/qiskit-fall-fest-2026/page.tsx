@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+import { LanguageToggle } from "../../../components/language-toggle";
+import { getPublicLocale } from "../../../lib/public-locale-server";
+import { eventText } from "./copy";
+import { Speakers } from "./speakers";
 import Image from "next/image";
 import { LeonaWordmark } from "../../../components/leona-wordmark";
 import { canonicalMetadata } from "../../../lib/public-metadata";
@@ -6,14 +10,16 @@ import { event } from "./event";
 import { Program } from "./program";
 import s from "./page.module.css";
 
-export const revalidate = 300;
-export const metadata: Metadata = {
-  title: event.title,
-  description:
-    "2026年10月17日・18日、慶應義塾大学AICで開催。講演、Qiskitハンズオン、チームで取り組むミニハッカソン。初心者歓迎。",
-  ...canonicalMetadata("/events/qiskit-fall-fest-2026"),
-  robots: { index: true, follow: true },
-};
+// Cookie-based locale follows the shared site switcher; render per request.
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getPublicLocale();
+  return {
+    title: event.title,
+    description: eventText(locale, "2026年10月17日・18日、慶應義塾大学AICで開催。講演、Qiskitハンズオン、チームで取り組むミニハッカソン。初心者歓迎。"),
+    ...canonicalMetadata("/events/qiskit-fall-fest-2026"),
+    robots: { index: true, follow: true },
+  };
+}
 
 const experiences = [
   [
@@ -29,7 +35,7 @@ const experiences = [
     "ガイド付き演習のあとはミニハッカソンへ。仲間とアイデアを持ち寄り、コードにします。",
   ],
   ["成果を共有する", "取り組んだテーマや実装、そこから得た発見を発表します。"],
-];
+] as const;
 const faqs = [
   [
     "量子コンピュータを初めて学びます。参加できますか？",
@@ -37,46 +43,52 @@ const faqs = [
   ],
   [
     "慶應義塾大学以外の学生や、社会人も参加できますか？",
-    "参加対象の詳細は調整中です。確定した条件を、参加登録の開始前に掲載します。",
+    "参加対象は調整中です。確定次第、このページでお知らせします。",
   ],
   [
     "どちらか1日だけでも参加できますか？",
-    "1日のみの参加可否は調整中です。登録フォームでは希望する参加日を確認する予定です。",
+    "1日だけの参加が可能かどうかは調整中です。登録フォームでは、参加を希望する日をお伺いする予定です。",
   ],
   ["参加費はいくらですか？", "参加費は無料です。"],
   [
     "チームを組んでから申し込む必要がありますか？",
-    "チーム形式のミニハッカソンを予定しています。チームの人数や組み方は、確定次第ご案内します。",
+    "ミニハッカソンはチームでの参加を予定しています。事前にチームを組む必要があるかなど、詳しい参加方法は確定次第ご案内します。",
   ],
   [
     "会場で写真や動画の撮影はありますか？",
-    "登録時に撮影への同意を確認する予定です。撮影の範囲、利用目的、同意しない場合の対応は、登録フォームでご案内します。",
+    "参加登録時に、写真・動画の撮影に同意するかをお伺いする予定です。撮影の範囲や利用目的、撮影を希望しない方への対応は、登録フォームでご案内します。",
   ],
-];
+] as const;
 
-export default function FallFestPage() {
+export default async function FallFestPage() {
+  const locale = await getPublicLocale();
+  const t = (text: Parameters<typeof eventText>[1]) => eventText(locale, text);
   const registrationOpen =
     event.registrationEnabled && Boolean(event.registrationUrl);
   return (
-    <div className={s.page} data-surface="qff-keio">
+    <div className={s.page} data-surface="qff-keio" lang={locale}>
       <a className={s.skip} href="#main">
-        本文へ移動
+        {t("本文へ移動")}
       </a>
       <header className={s.header}>
         <a
           className={s.ibmBrand}
           href="#event-title"
-          aria-label="IBM Quantum — イベントの先頭へ"
+          aria-label={t("IBM Quantum — イベントの先頭へ")}
         >
           <span aria-hidden="true" />
         </a>
-        <nav aria-label="イベント内ナビゲーション">
-          <a href="#about">イベント概要</a>
-          <a href="#program">プログラム</a>
-          <a href="#access">会場</a>
+        <nav aria-label={t("イベント内ナビゲーション")}>
+          <a href="#about">{t("イベント概要")}</a>
+          <a href="#speakers">{t("講演者")}</a>
+          <a href="#program">{t("プログラム")}</a>
+          <a href="#access">{t("会場")}</a>
         </nav>
+        <div className={s.languageToggle}>
+          <LanguageToggle locale={locale} label={t("言語")} />
+        </div>
         <a className={s.headerCta} href="#register">
-          参加登録<span aria-hidden="true">↗</span>
+          {t("参加登録")}<span aria-hidden="true">↗</span>
         </a>
       </header>
       <main id="main">
@@ -90,29 +102,29 @@ export default function FallFestPage() {
               </span>
             </h1>
             <p className={s.heroMessage}>
-              量子コンピュータを、
+              {t("量子コンピュータを、")}
               <br />
-              自分の手で動かす週末。
+              {t("自分の手で動かす週末。")}
             </p>
             <div className={s.heroDate}>
               <time dateTime="2026-10-17">
-                10.17<small>土</small>
+                10.17<small>{t("土")}</small>
               </time>
               <span className={s.dateSeparator}>/</span>
               <time dateTime="2026-10-18">
-                18<small>日</small>
+                18<small>{t("日")}</small>
               </time>
             </div>
             <p className={s.heroVenue}>
-              慶應義塾大学 AIC<span>対面開催</span>
+              {t("慶應義塾大学 AIC")}<span>{t("対面開催")}</span>
             </p>
             <a className={s.button} href="#register">
-              参加登録<span aria-hidden="true">↗</span>
+              {t("参加登録")}<span aria-hidden="true">↗</span>
             </a>
             <p className={s.registrationHint}>
               {registrationOpen
-                ? "参加条件をご確認のうえ、お申し込みください。"
-                : "参加登録は準備中です。"}
+                ? t("参加条件をご確認のうえ、お申し込みください。")
+                : t("参加登録は準備中です。")}
             </p>
           </div>
           <div className={s.heroArt} aria-hidden="true">
@@ -135,43 +147,44 @@ export default function FallFestPage() {
                 17 & 18
               </span>
               <span>
-                つくる。試す。
+                {t("つくる。試す。")}
                 <br />
-                量子で考える。
+                {t("量子で考える。")}
               </span>
             </div>
           </div>
         </section>
+        <Speakers locale={locale} />
         <section id="about" className={s.about} aria-labelledby="about-title">
           <div>
             <h2 id="about-title">
-              はじめの一歩から、
+              {t("はじめの一歩から、")}
               <br />
-              ひとつのアイデアへ。
+              {t("ひとつのアイデアへ。")}
             </h2>
             <p>
-              量子コンピューティングに興味がある。
+              {t("量子コンピューティングに興味がある。")}
               <br />
-              その気持ちから参加できる、2日間です。
+              {t("そんな方に向けた、2日間のイベントです。")}
             </p>
           </div>
           <div className={s.aboutBody}>
             <p>
-              講演で研究や実践に触れ、Qiskitのハンズオンでコードを書く。ミニハッカソンではチームで考え、試したことを発表する。慶應義塾大学AICで、一緒に量子計算を体験しましょう。
+              {t("講演で量子計算の研究や活用事例を知り、Qiskitの実習でコードを書きます。ミニハッカソンではチームで課題に取り組み、成果を発表します。慶應義塾大学AICで、一緒に量子計算を体験しましょう。")}
             </p>
             <dl className={s.facts}>
               <div>
-                <dt>開催形式</dt>
-                <dd>対面</dd>
+                <dt>{t("開催形式")}</dt>
+                <dd>{t("対面")}</dd>
               </div>
               <div>
-                <dt>対象レベル</dt>
-                <dd>初心者歓迎</dd>
+                <dt>{t("必要な経験")}</dt>
+                <dd>{t("初心者歓迎")}</dd>
               </div>
               <div>
-                <dt>定員</dt>
+                <dt>{t("定員")}</dt>
                 <dd>
-                  40〜50名<small>予定</small>
+                  {t("40〜50名")}<small>{t("予定")}</small>
                 </dd>
               </div>
             </dl>
@@ -183,37 +196,37 @@ export default function FallFestPage() {
           aria-labelledby="program-title"
         >
           <div className={s.sectionHeading}>
-            <h2 id="program-title">2日間のプログラム</h2>
-            <p>基礎講義からハンズオン、チームでの制作と成果発表まで。</p>
+            <h2 id="program-title">{t("2日間のプログラム")}</h2>
+            <p>{t("基礎講義からハンズオン、チームでの制作と成果発表まで。")}</p>
           </div>
-          <Program />
+          <Program locale={locale} />
           <div className={s.hackathonBrief}>
             <div>
-              <h3>ガイド付きミニハッカソン</h3>
+              <h3>{t("ガイド付きミニハッカソン")}</h3>
               <p>
-                4〜5名で1チーム、最大10チームを予定しています。講義や実習で学んだことを使い、メンターと相談しながら、動くNotebookと自分たちの考察をまとめます。
+                {t("1チーム4〜5名、最大10チームでの実施を予定しています。講義や実習で学んだことを生かし、メンターに相談しながらコードを動かして、結果と考察をノートブックにまとめます。")}
               </p>
             </div>
             <div>
               <p className={s.challengeLabel}>
-                課題候補 · いずれか1コースを選択
+                {t("課題候補 · どちらか1つを選択")}
               </p>
               <dl className={s.challengeCourses}>
                 <div>
-                  <dt>SQD実験</dt>
+                  <dt>{t("SQD実験")}</dt>
                   <dd>
-                    サンプル数などの条件を変え、推定結果や計算量の違いを比較。Notebook・比較グラフ・考察をまとめます。
+                    {t("サンプル数などの条件を変え、推定結果や計算量の違いを比較します。結果をグラフで示し、考察とあわせてノートブックにまとめます。")}
                   </dd>
                 </div>
                 <div>
-                  <dt>最適化への応用</dt>
+                  <dt>{t("最適化への応用")}</dt>
                   <dd>
-                    小規模な配送・割り当てなどの架空の問題を定式化し、解法を比較。目的関数・制約と比較結果をNotebookに整理します。
+                    {t("小規模な配送や割り当てを題材に、仮想の問題を数式で表し、解法を比較します。目的関数、制約条件、比較結果をノートブックに整理します。")}
                   </dd>
                 </div>
               </dl>
               <p className={s.programNote}>
-                課題の詳細と提出方法は当日ご案内します。内容は変更になる場合があります。
+                {t("課題の詳細と提出方法は当日ご案内します。内容は変更になる場合があります。")}
               </p>
             </div>
           </div>
@@ -221,17 +234,17 @@ export default function FallFestPage() {
         <section className={s.experience} aria-labelledby="experience-title">
           <div className={s.experienceHeading}>
             <h2 id="experience-title">
-              学ぶだけで、
+              {t("学ぶだけで、")}
               <br />
-              終わらない。
+              {t("終わらない。")}
             </h2>
             <p>
-              Qiskitで回路をつくり、
+              {t("Qiskitで回路をつくり、")}
               <br />
-              実行結果から次のアイデアへ。
+              {t("実行結果から次のアイデアへ。")}
             </p>
             <div className={s.technology}>
-              <span>演習で使用予定</span>
+              <span>{t("演習で使用予定")}</span>
               <Image
                 src="/events/qiskit-fall-fest-2026/ibm-quantum.png"
                 width={200}
@@ -249,8 +262,8 @@ export default function FallFestPage() {
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <div>
-                  <h3>{title}</h3>
-                  <p>{body}</p>
+                  <h3>{t(title)}</h3>
+                  <p>{t(body)}</p>
                 </div>
               </li>
             ))}
@@ -262,33 +275,33 @@ export default function FallFestPage() {
           aria-labelledby="access-title"
         >
           <div className={s.sectionHeading}>
-            <h2 id="access-title">会場と参加の準備</h2>
+            <h2 id="access-title">{t("会場と参加の準備")}</h2>
           </div>
           <div className={s.accessGrid}>
             <div className={s.venue}>
               <span className={s.venueMonogram} aria-hidden="true">
                 AIC
               </span>
-              <h3>慶應義塾大学 AIC</h3>
+              <h3>{t("慶應義塾大学 AIC")}</h3>
               <p>
                 {event.venueDetails ??
-                  "キャンパス・建物・部屋番号、会場までの経路は、確定次第ご案内します。"}
+                  t("キャンパス・建物・部屋番号、会場までの経路は、確定次第ご案内します。")}
               </p>
               {event.venueMapUrl && (
                 <a href={event.venueMapUrl} className={s.textLink}>
-                  アクセスを見る
+                  {t("アクセスを見る")}
                 </a>
               )}
             </div>
             <div className={s.preparation}>
-              <h3>持ち物・PC要件</h3>
+              <h3>{t("持ち物・パソコンの準備")}</h3>
               <ul>
-                <li>ノートパソコンと充電器</li>
-                <li>ブラウザーで演習に参加できる環境</li>
-                <li>必要に応じて筆記用具</li>
+                <li>{t("ノートパソコンと充電器")}</li>
+                <li>{t("演習に使うブラウザー")}</li>
+                <li>{t("必要に応じて筆記用具")}</li>
               </ul>
               <p>
-                対応OS、ソフトウェア、必要なアカウントなど、詳しい環境要件は事前にご案内します。
+                {t("対応OSや必要なソフトウェア、アカウントなど、事前に準備していただく内容は後日ご案内します。")}
               </p>
             </div>
           </div>
@@ -300,67 +313,67 @@ export default function FallFestPage() {
         >
           <div>
             <h2 id="register-title">
-              この秋は、
+              {t("この秋は、")}
               <br />
-              量子をつくる側に。
+              {t("量子計算に挑戦。")}
             </h2>
             <p>
-              2026年10月17日（土）・18日（日）
+              {t("2026年10月17日（土）・18日（日）")}
               <br />
-              慶應義塾大学 AIC / 定員40〜50名（予定）
+              {t("慶應義塾大学 AIC / 定員40〜50名（予定）")}
             </p>
           </div>
           <div className={s.registrationBody}>
-            <h3>参加登録</h3>
+            <h3>{t("参加登録")}</h3>
             {registrationOpen ? (
               <>
-                <p>参加条件をご確認のうえ、登録フォームへお進みください。</p>
+                <p>{t("参加条件をご確認のうえ、登録フォームへお進みください。")}</p>
                 <a className={s.button} href={event.registrationUrl!}>
-                  参加登録フォームへ<span aria-hidden="true">↗</span>
+                  {t("参加登録フォームへ")}<span aria-hidden="true">↗</span>
                 </a>
               </>
             ) : (
               <>
-                <p className={s.registrationStatus}>登録受付は準備中です</p>
-                <p>受付開始まで、もうしばらくお待ちください。</p>
+                <p className={s.registrationStatus}>{t("登録受付は準備中です")}</p>
+                <p>{t("受付開始まで、もうしばらくお待ちください。")}</p>
                 <button className={s.button} disabled>
-                  受付開始をお待ちください
+                  {t("受付開始をお待ちください")}
                 </button>
               </>
             )}
             <p className={s.formNote}>
-              登録フォームで、氏名・所属・メールアドレス・経験・参加希望日・撮影への同意をご回答ください。
+              {t("登録フォームでは、氏名、所属、メールアドレス、経験、参加希望日をご記入のうえ、撮影に同意するかどうかをお選びください。")}
             </p>
           </div>
         </section>
         <section id="faq" className={s.faq} aria-labelledby="faq-title">
-          <h2 id="faq-title">よくある質問</h2>
+          <h2 id="faq-title">{t("よくある質問")}</h2>
           <div>
             {faqs.map(([question, answer]) => (
               <details key={question}>
                 <summary>
-                  {question}
+                  {t(question)}
                   <span aria-hidden="true">＋</span>
                 </summary>
-                <p>{answer}</p>
+                <p>{t(answer)}</p>
               </details>
             ))}
           </div>
         </section>
-        <section className={s.closing} aria-label="行動指針とお問い合わせ">
+        <section className={s.closing} aria-label={t("行動指針とお問い合わせ")}>
           <div>
             <h2>Code of Conduct</h2>
-            <p>行動指針</p>
+            <p>{t("行動指針")}</p>
             <p>
-              背景や経験の違いを尊重し、互いの学びを支える場を目指します。ハラスメント、差別的な言動、同意のない撮影や情報公開は認めません。困ったことがあれば、当日の運営スタッフにご相談ください。
+              {t("背景や経験の違いを尊重し、互いの学びを支える場を目指します。ハラスメント、差別的な言動、同意のない撮影や情報公開は認めません。困ったことがあれば、当日の運営スタッフにご相談ください。")}
             </p>
             <details>
-              <summary>行動指針の詳細</summary>
+              <summary>{t("行動指針の詳細")}</summary>
               <p>
-                参加者・登壇者・運営スタッフを含む、本イベントに関わるすべての方に、この行動指針を守っていただきます。相手の発言や作業を尊重してください。
+                {t("参加者・登壇者・運営スタッフを含む、本イベントに関わるすべての方に、この行動指針を守っていただきます。相手の発言や作業を尊重してください。")}
               </p>
               <p>
-                不適切な行為を見聞きした際や、対応に困った際は、当日の運営スタッフ、または以下のメールアドレスへご相談ください。
+                {t("不適切な行為を見聞きした際や、対応に困った際は、当日の運営スタッフ、または以下のメールアドレスへご相談ください。")}
                 <br />
                 <a className={s.textLink} href={`mailto:${event.contactEmail}`}>
                   {event.contactEmail}
@@ -369,28 +382,28 @@ export default function FallFestPage() {
             </details>
           </div>
           <div>
-            <h2>お問い合わせ</h2>
+            <h2>{t("お問い合わせ")}</h2>
             {event.contactEmail ? (
               <a className={s.textLink} href={`mailto:${event.contactEmail}`}>
                 {event.contactEmail}
               </a>
             ) : (
               <p>
-                イベント専用の問い合わせ先は準備中です。
+                {t("イベント専用の問い合わせ先は準備中です。")}
                 <br />
-                確定次第、こちらに掲載します。
+                {t("確定次第、こちらに掲載します。")}
               </p>
             )}
           </div>
         </section>
-        <section className={s.organizations} aria-label="主催・協力">
+        <section className={s.organizations} aria-label={t("主催・協力")}>
           <div className={s.host}>
-            <h2>主催</h2>
+            <h2>{t("主催")}</h2>
             <ul className={s.hostLogos}>
               <li>
                 <Image
                   src="/events/qiskit-fall-fest-2026/keio.svg"
-                  alt={event.organizers[0]}
+                  alt={t("慶應義塾大学")}
                   width={204}
                   height={48}
                   unoptimized
@@ -408,7 +421,7 @@ export default function FallFestPage() {
             </ul>
           </div>
           <div className={s.supporters}>
-            <h2>協力</h2>
+            <h2>{t("協力")}</h2>
             <ul className={s.partnerLogos}>
               <li>
                 <span role="img" aria-label={event.supporters[0]}>
@@ -438,11 +451,11 @@ export default function FallFestPage() {
         </section>
       </main>
       <footer className={s.footer}>
-        <a href="/" className={s.brand} aria-label="Leona Quantum ホーム">
+        <a href="/" className={s.brand} aria-label={t("Leona Quantum ホーム")}>
           <LeonaWordmark className={s.footerLeona} />
         </a>
         <p>Qiskit Fall Fest 2026 @ Keio</p>
-        <a href="#event-title">ページの先頭へ ↑</a>
+        <a href="#event-title">{t("ページの先頭へ ↑")}</a>
       </footer>
     </div>
   );

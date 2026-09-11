@@ -7,9 +7,9 @@ import { ABOUT_COPY } from "../../../lib/about-copy";
 import { parsePublicLocale, PUBLIC_LOCALES } from "../../../lib/public-locale";
 import { canonicalMetadata } from "../../../lib/public-metadata";
 import { aboutMetadataCopy } from "../../../lib/public-page-metadata";
-import eshaanPortrait from "./images/eshaan.webp";
+import eshaanPortrait from "./images/eshaan.jpeg";
 import ruiSuzukiPortrait from "./images/rui-suzuki.webp";
-import watanabePortrait from "./images/watanabe.webp";
+import watanabePortrait from "./images/watanabe.png";
 
 export const revalidate = 300;
 export const dynamicParams = false;
