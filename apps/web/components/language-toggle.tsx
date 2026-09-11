@@ -1,15 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { PUBLIC_LOCALE_COOKIE, type PublicLocale } from "../lib/public-locale";
 
 export function LanguageToggle({ locale, label = "Language" }: { locale: PublicLocale; label?: string }) {
-  const router = useRouter();
-
   function selectLocale(nextLocale: PublicLocale) {
+    if (nextLocale === locale) return;
     document.cookie = `${PUBLIC_LOCALE_COOKIE}=${nextLocale}; Path=/; Max-Age=31536000; SameSite=Lax`;
-    document.documentElement.lang = nextLocale;
-    router.refresh();
+    // Middleware can select a different [locale] root document. A full load
+    // runs its beforeInteractive scripts instead of inserting inert scripts
+    // during a client-side root replacement via router.refresh().
+    window.location.reload();
   }
 
   return (

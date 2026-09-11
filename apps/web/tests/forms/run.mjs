@@ -42,7 +42,7 @@ const stubNextModules = {
     }));
     build.onLoad({ filter: /.*/, namespace: "stub-next-navigation" }, () => ({
       contents:
-        "export function useRouter() { return { push(value) { const spy = globalThis.__formTestRouterPush; if (typeof spy !== 'function') throw new Error('next/navigation push called without __formTestRouterPush'); spy(value); }, replace(value) { const spy = globalThis.__formTestRouterReplace; if (typeof spy !== 'function') throw new Error('next/navigation replace called without __formTestRouterReplace'); spy(value); } }; }",
+        "export function usePathname() { return window.location.pathname; } export function useRouter() { return { push(value) { const spy = globalThis.__formTestRouterPush; if (typeof spy !== 'function') throw new Error('next/navigation push called without __formTestRouterPush'); spy(value); }, replace(value) { const spy = globalThis.__formTestRouterReplace; if (typeof spy !== 'function') throw new Error('next/navigation replace called without __formTestRouterReplace'); spy(value); } }; }",
       loader: "js",
     }));
     build.onResolve({ filter: /^next\/link$/ }, (args) => ({

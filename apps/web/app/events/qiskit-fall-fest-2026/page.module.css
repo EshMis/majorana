@@ -108,6 +108,55 @@
   display: flex;
   align-items: center;
   gap: var(--sp-6);
+  white-space: nowrap;
+}
+.languageToggle {
+  flex: 0 0 auto;
+}
+.languageToggle :global(.mj-language-toggle) {
+  border: 1px solid var(--qff-line);
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+.languageToggle button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: var(--sp-2) var(--sp-3);
+  color: var(--qff-muted);
+  border-radius: 0;
+}
+.languageToggle button[aria-pressed="true"] {
+  background: var(--qff-ink);
+  color: var(--qff-paper);
+  box-shadow: none;
+}
+.speakers {
+  margin-inline: var(--qff-gutter);
+  padding-block: var(--qff-section);
+  border-top: 1px solid var(--qff-line);
+  border-bottom: 1px solid var(--qff-line);
+}
+.speakerDays {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-16);
+}
+.speakerDate {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-4);
+  padding-bottom: var(--sp-5);
+  border-bottom: 1px solid var(--qff-ink);
+}
+.speakerDate time {
+  font-size: var(--qff-heading);
+  font-variant-numeric: tabular-nums;
+}
+.speakerDate span {
+  font-size: var(--qff-small);
+  font-weight: 400;
+  color: var(--qff-muted);
 }
 .hero {
   display: grid;
@@ -344,14 +393,15 @@
 }
 .speaker {
   display: grid;
-  grid-template-columns: 1fr 1.3fr;
-  gap: var(--sp-8);
+  grid-template-columns: 1fr;
+  gap: var(--sp-3);
   padding: var(--sp-8) 0;
   border-bottom: 1px solid var(--qff-line);
 }
 .affiliation {
-  color: var(--qff-muted);
-  font-size: var(--qff-small);
+  color: var(--qff-accent);
+  font-size: var(--qff-lead);
+  font-weight: 500;
 }
 .speaker h4 {
   font-size: var(--fs-28);
@@ -594,6 +644,10 @@
   }
 }
 @media (max-width: 1000px) {
+  .header { flex-wrap: wrap; }
+  .header nav { order: 3; width: 100%; justify-content: center; }
+  .languageToggle { margin-left: auto; }
+  .speakerDays { gap: var(--sp-8); }
   .hero {
     gap: var(--sp-6);
   }
@@ -619,6 +673,7 @@
   }
 }
 @media (max-width: 767px) {
+  .speakerDays { grid-template-columns: 1fr; }
   .header {
     gap: var(--sp-3);
     padding-block: var(--sp-3);
@@ -872,9 +927,6 @@
   margin-top: var(--sp-2);
   color: var(--qff-muted);
   font-size: var(--qff-small);
-}
-.dayPanel .speakersHeading {
-  margin-top: var(--sp-10);
 }
 .hackathonBrief {
   display: grid;

@@ -1,3 +1,6 @@
+import type { PublicLocale } from "../../../lib/public-locale";
+import { eventText } from "./copy";
+
 /** Owner-supplied event facts. Unconfirmed operational details stay explicit. */
 export const event = {
   title: "Qiskit Fall Fest 2026 @ Keio",
@@ -29,19 +32,19 @@ export const days = [
       },
       {
         period: "午前・午後",
-        title: "講演・質疑",
+        title: "講演・質疑応答",
         description:
-          "研究や産業応用の現場に触れる講演。登壇者への質疑の時間も設けます。",
+          "研究や産業での活用事例を紹介する講演です。講演後には、登壇者に質問できる時間を設けます。",
       },
       {
         period: "午後",
         title: "SQD入門・ハンズオン",
         description:
-          "導入講義のあと、原則2人1組でNotebookを使った実習に取り組みます。",
+          "入門講義のあと、原則2人1組でノートブックを使った実習に取り組みます。",
       },
       {
         period: "午後",
-        title: "チャレンジ説明・チーム形成",
+        title: "課題の説明・チーム分け",
         description:
           "課題、提出形式、審査基準を確認。4〜5名のチームを組み、役割を分担します。",
       },
@@ -49,7 +52,7 @@ export const days = [
         period: "夕方",
         title: "ミニハッカソン — 制作スタート",
         description:
-          "課題を選び、まずは基本のコードを実行。実験計画を立て、進捗や疑問点を翌日へ引き継ぎます。",
+          "課題を選び、基本となるコードを実行します。実験の計画を立て、進んだところや疑問点を整理して翌日に備えます。",
       },
     ],
     speakers: [
@@ -73,11 +76,11 @@ export const days = [
     weekday: "日",
     english: "Sunday",
     description:
-      "講演で視野を広げながら制作を進め、試したことと得られた結果を発表します。",
+      "講演で知識を深め、チームでの実験・実装を進めます。最後に、取り組んだ内容と結果を発表します。",
     schedule: [
       {
         period: "午前",
-        title: "講演・質疑",
+        title: "講演・質疑応答",
         description:
           "量子計算の研究や応用をテーマにした講演を通して、学びを深めます。",
       },
@@ -85,25 +88,25 @@ export const days = [
         period: "午前・午後",
         title: "ミニハッカソン — 実験・実装",
         description:
-          "メンターの支援を受けながらチーム制作。条件を変えて結果を比較し、グラフなどで可視化します。",
+          "メンターに相談しながら、チームで実験や実装を進めます。条件による結果の違いを比較し、グラフなどにまとめます。",
       },
       {
         period: "午後",
-        title: "Notebook提出・発表準備",
+        title: "ノートブックの提出・発表準備",
         description:
-          "実行結果と考察をNotebookにまとめて提出。3枚以内の発表資料を準備します。",
+          "実行結果と考察をノートブックにまとめて提出します。発表資料はスライド3枚以内で準備します。",
       },
       {
         period: "夕方",
         title: "成果発表",
         description:
-          "各チームが3分間で取り組みを発表し、2分間の質疑で学びを共有します。",
+          "各チームが3分間で取り組みを発表し、その後2分間の質疑応答を行います。",
       },
       {
         period: "夕方",
         title: "講評・表彰・閉会",
         description:
-          "成果への講評と表彰を行い、2日間を振り返ります。閉会後は交流の時間を予定しています。",
+          "各チームの成果に対する講評と表彰を行い、2日間を振り返ります。閉会後には交流の時間を設ける予定です。",
       },
     ],
     speakers: [
@@ -122,3 +125,25 @@ export const days = [
     ],
   },
 ] as const;
+
+export function getEventDays(locale: PublicLocale) {
+  const t = (text: Parameters<typeof eventText>[1]) => eventText(locale, text);
+  return days.map((day) => ({
+    ...day,
+    weekday: t(day.weekday),
+    description: t(day.description),
+    schedule: day.schedule.map((session) => ({
+      period: t(session.period),
+      title: t(session.title),
+      description: t(session.description),
+    })),
+    speakers: day.speakers.map((speaker) => ({
+      ...speaker,
+      affiliation: speaker.affiliation === "教授" || speaker.affiliation === "先生"
+        ? t(speaker.affiliation)
+        : speaker.affiliation,
+      title: t(speaker.title),
+      note: t(speaker.note),
+    })),
+  }));
+}

@@ -2,13 +2,15 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeftIcon } from "./icons";
+import { ChevronIcon, PlusIcon } from "./icons";
 import { ComposerGhostOverlay } from "./composer-ghost-overlay";
 import { DELETE_MS_PER_CHARACTER, TYPE_MS_PER_CHARACTER, composerGhost } from "../lib/composer-ghost";
 import { writeLandingPromptHandoff } from "../lib/landing-prompt-handoff";
 
 type LandingPromptCopy = {
   label: string;
+  attach: string;
+  mode: string;
   submit: string;
   retry: string;
   prompts: string[];
@@ -94,6 +96,11 @@ export function LandingPrompt({ copy }: { copy: LandingPromptCopy }) {
   function submit(event: FormEvent) {
     event.preventDefault();
     if (leaving.current || !value.trim()) return;
+    openWorkspace();
+  }
+
+  function openWorkspace() {
+    if (leaving.current) return;
     leaving.current = true;
     setOpening(true);
     setRetry(false);
@@ -108,7 +115,7 @@ export function LandingPrompt({ copy }: { copy: LandingPromptCopy }) {
   }
 
   return (
-    <div className="lq-landing-prompt-section">
+    <div className="lq-landing-prompt-restored">
       <form className="mj-landing-prompt" onSubmit={submit} aria-busy={opening}>
         <label className="sr-only" htmlFor="mj-landing-prompt-input">{copy.label}</label>
         <div className="mj-composer-ghost-wrap">
@@ -139,9 +146,19 @@ export function LandingPrompt({ copy }: { copy: LandingPromptCopy }) {
             }}
           />
         </div>
-        <button className="mj-landing-prompt-submit" type="submit" aria-label={copy.submit} title={copy.submit} disabled={!value.trim() || opening}>
-          <ArrowLeftIcon className="lq-arrow-forward" size={20} />
-        </button>
+        <div className="mj-landing-prompt-controls">
+          <button className="mj-landing-prompt-icon" type="button" aria-label={copy.attach} title={copy.attach} onClick={openWorkspace} disabled={opening}>
+            <PlusIcon size={20} />
+          </button>
+          <div className="mj-landing-prompt-actions">
+            <button className="mj-landing-prompt-mode" type="button" onClick={openWorkspace} disabled={opening}>
+              {copy.mode}
+            </button>
+            <button className="mj-landing-prompt-submit" type="submit" aria-label={copy.submit} title={copy.submit} disabled={!value.trim() || opening}>
+              {copy.submit}<ChevronIcon size={18} />
+            </button>
+          </div>
+        </div>
       </form>
       {retry ? <p className="mj-page-lede" role="status">{copy.retry}</p> : null}
     </div>

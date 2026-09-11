@@ -6,7 +6,6 @@ import { PUBLIC_SHELL_COPY, type PublicLocale } from "../lib/public-locale";
 import { getPublicLocale } from "../lib/public-locale-server";
 import { LanguageToggle } from "./language-toggle";
 import { LeonaWordmark } from "./leona-wordmark";
-import { ThemeToggle } from "./theme-toggle";
 import { AuthStatus } from "./auth-status";
 import { PublicNavigation } from "./public-navigation";
 import { PublicHeader } from "./public-header";
@@ -46,9 +45,9 @@ export async function PublicSite({
    * What a chrome-less surface loses is the *controls*, not the settings:
    * `data-theme` is stamped on `<html>` by `app/layout.tsx` and the locale
    * comes from a cookie read on the server, so both still apply. A surface
-   * asking for `"none"` therefore owes its reader a theme and a language
-   * control somewhere of its own — `/repository/layers` puts both in the
-   * information box's footer.
+   * asking for `"none"` supplies its own language control —
+   * `/repository/layers` puts it in the information box's footer.
+   * The public website uses a fixed dark theme throughout.
    *
    * `"static"` is the full chrome with no per-visitor part IN THE SERVER
    * RENDER: it never calls `getMajoranaAuth()`, which reaches a Dynamic API and
@@ -145,7 +144,6 @@ export async function PublicSite({
           </Link>
           <PublicNavigation items={publicNav} activePath={activePath} locale={resolvedLocale}>
             {showLanguageToggle ? <LanguageToggle locale={resolvedLocale} label={resolvedLocale === "ja" ? "言語" : "Language"} /> : null}
-            <ThemeToggle locale={resolvedLocale} />
           </PublicNavigation>
           <div className="lq-public-auth">
           {chrome === "static" ? (

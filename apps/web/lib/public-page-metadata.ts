@@ -79,7 +79,7 @@ export function homeMetadataCopy(locale: PublicLocale): Pick<Metadata, "title" |
       // draws each half on its own line), not a word boundary, and a
       // `<title>` should not carry it. Removed here rather than adding a
       // second, un-wrapped copy of the heading to `public-copy.ts`.
-      title: HOME_COPY.ja.hero.title.replace("\n", ""),
+      title: HOME_COPY.ja.hero.title.replaceAll("\n", ""),
       description: HOME_COPY.ja.hero.lede,
     };
   }

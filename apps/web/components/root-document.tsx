@@ -43,7 +43,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Instrument_Sans, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
-import { THEME_STORAGE_KEY } from "../lib/theme";
+import { DARK_PUBLIC_PATHS, THEME_STORAGE_KEY } from "../lib/theme";
 import { ThemeController } from "./theme-controller";
 import { SIDEBAR_STORAGE_KEY } from "../lib/sidebar-layout";
 import { AUTH_HINT_COOKIE, AUTH_HINT_SIGNED_IN } from "../lib/auth-hint";
@@ -64,7 +64,9 @@ const themeScript = `(() => {
     const theme = saved === "light" || saved === "dark"
       ? saved
       : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    document.documentElement.dataset.theme = theme;
+    const path = location.pathname.replace(/^\\/(en|ja)(?=\\/|$)/, "").replace(/\\/$/, "") || "/";
+    const publicSite = ${JSON.stringify(DARK_PUBLIC_PATHS)}.includes(path) || path.startsWith("/repository/");
+    document.documentElement.dataset.theme = publicSite ? "dark" : theme;
     document.documentElement.dataset.sidebarCollapsed = localStorage.getItem(${JSON.stringify(SIDEBAR_STORAGE_KEY)}) === "true" ? "true" : "false";
   } catch {}
 })();`;
@@ -83,9 +85,9 @@ const themeScript = `(() => {
  * screen reader, a crawler and a no-JS load all get the right answer from the
  * bytes, which is what ai-ops issue 151 was about.
  *
- * The script stays for the segments that still ship a fixed `lang="en"` and for
- * the language toggle's own `router.refresh()`, where the re-render produces
- * the same literal it produced before. It is cheap, it runs pre-paint, and it
+ * The script stays for the segments that still ship a fixed `lang="en"`.
+ * The language toggle reloads the document so these bootstrap scripts run
+ * with the selected locale. It is cheap, it runs pre-paint, and it
  * can only ever agree with the server on the two surfaces that now decide for
  * themselves — on `[locale]` the cookie is what chose the path in the first
  * place, and on `/repository` it is the same cookie the layout just read.
