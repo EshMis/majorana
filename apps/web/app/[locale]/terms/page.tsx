@@ -36,10 +36,14 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
         <p>{copy.lede}</p>
         <span>{copy.updated}</span>
       </section>
+      <nav className="lq-legal-contents" aria-label={locale === "ja" ? "目次" : "On this page"}>
+        <h2>{locale === "ja" ? "目次" : "On this page"}</h2>
+        <ol>{copy.sections.map((section, index) => <li key={section.title}><a href={`#policy-section-${index + 1}`}>{section.title}</a></li>)}</ol>
+      </nav>
       <article className="mj-legal-document">
         <p className="mj-legal-note"><strong>{copy.noteLabel}</strong> {copy.noteBody}</p>
-        {copy.sections.map((section) => (
-          <section key={section.title}>
+        {copy.sections.map((section, index) => (
+          <section key={section.title} id={`policy-section-${index + 1}`}>
             <h2>{section.title}</h2>
             {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
           </section>

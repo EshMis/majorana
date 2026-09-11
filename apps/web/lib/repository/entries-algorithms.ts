@@ -1720,12 +1720,11 @@ FINAL_CIRCUIT = circuit`,
     descriptionJa:
       "組合せ最適化問題の近似解を与える量子アルゴリズムで、正の整数pによって精度を調整します。",
     introduction:
-      "QAOA is the algorithm the whole applied-optimisation half of the Classiq library runs on. Its"
-      + " paper introduces a quantum algorithm that produces approximate solutions for combinatorial"
+      "The QAOA paper introduces a quantum algorithm that produces approximate solutions for combinatorial"
       + " optimization problems, depending on a positive integer p, with the quality of the"
       + " approximation improving as p is increased.",
     introductionJa:
-      "QAOAは、Classiqライブラリの応用最適化側がこぞって用いているアルゴリズムです。原論文は、組合せ最適化問題の近似解を与える量子アルゴリズムを導入しており、正の整数pに依存し、pを大きくするほど近似の質が向上するとしています。",
+      "QAOAの原論文は、組合せ最適化問題の近似解を与える量子アルゴリズムを導入しており、正の整数pに依存し、pを大きくするほど近似の質が向上するとしています。",
     explanation:
       "The quantum circuit that implements the algorithm consists of unitary gates whose locality is"
       + " at most the locality of the objective function whose optimum is sought, and the depth of"

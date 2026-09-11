@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { LeonaWordmark } from "../../../components/leona-wordmark";
-import { LiquidGridBackground } from "../../../components/liquid-grid-background";
+import Link from "next/link";
 import { PublicSite } from "../../../components/public-site";
 import { Reveal } from "../../../components/reveal";
 import { ABOUT_COPY } from "../../../lib/about-copy";
@@ -49,47 +48,10 @@ export default async function AboutPage({
       locale={locale}
       chrome="static"
     >
-      <LiquidGridBackground />
-
-      <section className="mj-about-hero" aria-labelledby="about-hero-heading">
-        <div className="mj-about-hero-copy">
-          <p className="mj-section-label">{copy.hero.label}</p>
-          <h1 id="about-hero-heading">
-            {copy.hero.title.split("\n").map((line) => (
-              <span className="mj-about-hero-line" key={line}>{line}</span>
-            ))}
-          </h1>
-          <p className="mj-about-hero-lede">{copy.hero.body}</p>
-        </div>
-
-        <div className="mj-about-signal" aria-hidden="true">
-          <span className="mj-about-signal-ring mj-about-signal-ring--outer" />
-          <span className="mj-about-signal-ring mj-about-signal-ring--inner" />
-          <span className="mj-about-signal-axis mj-about-signal-axis--horizontal" />
-          <span className="mj-about-signal-axis mj-about-signal-axis--vertical" />
-          <LeonaWordmark className="lq-wordmark--about-signal" />
-          {copy.hero.signal.map((label, index) => (
-            <span className={`mj-about-signal-label mj-about-signal-label--${index + 1}`} key={label}>
-              {label}
-            </span>
-          ))}
-          <span className="mj-about-signal-pulse" />
-        </div>
-
-        <div className="mj-about-hero-foot" aria-hidden="true">
-          <span>LEONA / QUANTUM SYSTEMS</span>
-          <span>ABOUT / 2026</span>
-        </div>
-      </section>
-
       <section className="mj-about-section mj-about-team" aria-labelledby="about-team-heading">
-        <Reveal>
-          <div className="mj-about-team-heading">
-            <p className="mj-section-label">{copy.team.label}</p>
-            <h2 id="about-team-heading">{copy.team.title}</h2>
-            <p>{copy.team.body}</p>
-          </div>
-        </Reveal>
+        <div className="mj-about-team-heading">
+          <h1 id="about-team-heading">{copy.team.title}</h1>
+        </div>
         <div className="mj-about-team-grid">
           {copy.team.members.map((member, index) => (
             <Reveal delay={index * 90} key={member.name}>
@@ -98,7 +60,7 @@ export default async function AboutPage({
                   <Image
                     alt={copy.team.portraitAlt.replace("{name}", member.name)}
                     placeholder="blur"
-                    sizes="(max-width: 980px) calc(100vw - 48px), 368px"
+                    sizes="(max-width: 720px) 90vw, (max-width: 1000px) 45vw, 350px"
                     src={TEAM_PORTRAITS[member.number]}
                   />
                 </div>
@@ -113,9 +75,6 @@ export default async function AboutPage({
                   </div>
                   <p className="mj-about-person-affiliation">{member.affiliation}</p>
                   <p className="mj-about-person-bio">{member.bio}</p>
-                  <ul className="mj-about-person-focus" aria-label={`${member.name} — ${copy.team.focusLabel}`}>
-                    {member.focus.map((focus) => <li key={focus}>{focus}</li>)}
-                  </ul>
                 </div>
               </article>
             </Reveal>
@@ -124,60 +83,9 @@ export default async function AboutPage({
       </section>
 
       <Reveal>
-        <section className="mj-about-section mj-about-manifesto" aria-labelledby="about-why-heading">
-          <div className="mj-about-section-marker">
-            <p className="mj-section-label">{copy.why.label}</p>
-          </div>
-          <div className="mj-about-section-copy">
-            <h2 id="about-why-heading">{copy.why.title}</h2>
-            <div className="mj-about-prose">
-              {copy.why.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-            </div>
-          </div>
-        </section>
-      </Reveal>
-
-      <section className="mj-about-section mj-about-build" aria-labelledby="about-build-heading">
-        <Reveal>
-          <div className="mj-about-build-heading">
-            <p className="mj-section-label">{copy.build.label}</p>
-            <h2 id="about-build-heading">{copy.build.title}</h2>
-            <p>{copy.build.body}</p>
-          </div>
-        </Reveal>
-        <div className="mj-about-flow">
-          {copy.build.steps.map((step, index) => (
-            <Reveal delay={index * 80} key={step.number}>
-              <article className="mj-about-flow-step">
-                <div className="mj-about-flow-step-head">
-                  <span>{step.number}</span>
-                  <span className="mj-about-flow-dot" aria-hidden="true" />
-                </div>
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
-              </article>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      <Reveal>
-        <section className="mj-about-section mj-about-direction" aria-labelledby="about-direction-heading">
-          <div className="mj-about-direction-copy">
-            <p className="mj-section-label">{copy.direction.label}</p>
-            <h2 id="about-direction-heading">{copy.direction.title}</h2>
-            <div className="mj-about-prose">
-              {copy.direction.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-            </div>
-          </div>
-          <ul className="mj-about-audiences" aria-label={copy.direction.title}>
-            {copy.direction.audiences.map((audience, index) => (
-              <li key={audience}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                {audience}
-              </li>
-            ))}
-          </ul>
+        <section className="lq-about-vision" aria-labelledby="about-vision-heading">
+          <p className="mj-section-label" id="about-vision-heading">{copy.vision.label}</p>
+          {copy.vision.paragraphs.map((paragraph) => <p key={paragraph.slice(0, 24)}>{paragraph}</p>)}
         </section>
       </Reveal>
 
@@ -189,8 +97,8 @@ export default async function AboutPage({
             <p>{copy.cta.body}</p>
           </div>
           <div className="mj-public-actions">
-            <a className="mj-primary-button" href="/contact">{copy.cta.primary}</a>
-            <a className="mj-secondary-button" href="/workspace">{copy.cta.secondary}</a>
+            <Link className="mj-primary-button" href="/contact">{copy.cta.primary}</Link>
+            <a className="mj-secondary-button" href="/run">{copy.cta.secondary}</a>
           </div>
         </section>
       </Reveal>

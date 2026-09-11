@@ -3,7 +3,8 @@
 import type { DragEvent, FormEvent, ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { SIDEBAR_STORAGE_KEY } from "../lib/sidebar-layout";
 import { AppShell, BRAND_NAME, NAV_SURFACES, navSurfaceLabel } from "@majorana/ui";
 import {
   ArchiveIcon,
@@ -15,10 +16,11 @@ import {
   PlusIcon,
   QappsIcon,
   SearchIcon,
-  SettingsIcon,
+  GaugeIcon, SettingsIcon, SignOutIcon,
   StudioIcon,
   TrashIcon,
 } from "./icons";
+import { Meter } from "./meter";
 import { LeonaWordmark } from "./leona-wordmark";
 import {
   CHAT_FOLDERS_EVENT,
@@ -66,11 +68,10 @@ import { verificationFromResource } from "../lib/verification-record";
 import { WORKSPACE_PINS_EVENT, isPinned, setPinned, togglePinned } from "../lib/workspace-pins";
 import { ThemeToggle } from "./theme-toggle";
 import type { PublicLocale } from "../lib/public-locale";
-import { PROJECT_SHARE_COPY, WORKSPACE_COPY } from "../lib/workspace-locale";
+import { PROJECT_SHARE_COPY, WORKSPACE_COPY, ACCOUNT_COPY } from "../lib/workspace-locale";
 
 // A viewport preference, not content: stays device-global rather than
 // per-account (see DEVICE_STORAGE_KEYS in lib/user-storage.ts).
-const SIDEBAR_STORAGE_KEY = "majorana.sidebar-collapsed.v1";
 // Same reasoning as SIDEBAR_STORAGE_KEY: where a rail section sits is a property
 // of this screen, not of the person. Someone who puts recents on top of their
 // laptop's narrow rail has not asked for that on their desktop.
@@ -112,6 +113,8 @@ export function Shell({
 }) {
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarReady, setSidebarReady] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [archivedChats, setArchivedChats] = useState<ChatSummary[]>([]);
   const [chatFolders, setChatFolders] = useState<ChatFolder[]>([]);
@@ -133,10 +136,53 @@ export function Shell({
   // locale string, and because it must not be undoable: the move did not happen.
   const [assignRefusal, setAssignRefusal] = useState<string | null>(null);
 
-  useEffect(() => {
-    const saved = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
-    setSidebarCollapsed(saved === "true" || (saved === null && window.innerWidth < 720));
+  useLayoutEffect(() => {
+    const media = window.matchMedia("(max-width: 720px)");
+    function updateLayout() {
+      setIsMobile(media.matches);
+      let saved = false;
+      try { saved = window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true"; } catch { /* Use the default layout. */ }
+      setSidebarCollapsed(media.matches || saved);
+      setSidebarReady(true);
+    }
+    updateLayout();
+    media.addEventListener("change", updateLayout);
+    return () => media.removeEventListener("change", updateLayout);
   }, []);
+
+  useEffect(() => {
+    if (window.innerWidth <= 720) setSidebarCollapsed(true);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (sidebarCollapsed || !isMobile || !sidebarReady) return;
+    const navigation = document.getElementById("workspace-navigation");
+    if (!navigation) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusable = () => Array.from(navigation.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input, select, [tabindex="0"]')).filter((node) => node.getClientRects().length && !node.closest('[inert]'));
+    focusable()[0]?.focus();
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.defaultPrevented) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSidebarCollapsed(true);
+      }
+      if (event.key !== "Tab") return;
+      const items = focusable();
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault(); last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault(); first?.focus();
+      }
+    }
+    navigation.addEventListener("keydown", onKeyDown);
+    return () => {
+      navigation.removeEventListener("keydown", onKeyDown);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [sidebarCollapsed, isMobile, sidebarReady]);
 
   useEffect(() => {
     let active = true;
@@ -156,30 +202,30 @@ export function Shell({
 
       if (demoMode) return;
 
-      try {
-        const synced = await hydrateChatFolders(localActiveChats);
+      // Independent workspace lists load concurrently. A slow folder request
+      // must not hold back recent chats or Studio projects.
+      void hydrateChatFolders(localActiveChats).then((synced) => {
         if (active) {
           setChatFolders(synced.folders);
           setFolderSyncState("synced");
         }
-      } catch {
+      }).catch(() => {
         if (active) setFolderSyncState("error");
-      }
+      });
 
       // Separate try from the folders above: Run's Folders and Studio's
       // Projects are two independent workspace lists, and a control plane that
       // answers one and not the other must not blank the rail that worked.
-      try {
-        const synced = await hydrateArtifactProjects();
+      void hydrateArtifactProjects().then((synced) => {
         if (active) {
           setArtifactProjects(synced.projects);
           setProjectSyncState("synced");
         }
-      } catch {
+      }).catch(() => {
         // The mirror set above is what the rail keeps showing, and the header
         // says so rather than presenting one browser's list as the workspace's.
         if (active) setProjectSyncState("error");
-      }
+      });
 
       try {
         // Artifacts are paged rather than fetched once: an un-paged read returns
@@ -259,23 +305,33 @@ export function Shell({
     // the same reason. Artifact rows move between sections through the
     // `onAssignArtifactProject`/`onProjectDeleted` callbacks, which update the
     // list the parent holds — not through this listener.
-    window.addEventListener(CHAT_HISTORY_EVENT, refreshWorkspace);
+    const refreshLocal = () => {
+      const history = collapseConversationChats(loadChatHistory({ includeDemo: demoMode, includeArchived: true }));
+      setChats(history.filter((chat) => !chat.archivedAt));
+      setArchivedChats(history.filter((chat) => Boolean(chat.archivedAt)));
+      const rows = loadLibraryArtifacts({ includeDemo: demoMode, includeArchived: true });
+      setArtifacts(rows.filter((artifact) => !artifact.archivedAt));
+      setArchivedArtifacts(rows.filter((artifact) => Boolean(artifact.archivedAt)));
+    };
+    window.addEventListener(CHAT_HISTORY_EVENT, refreshLocal);
     window.addEventListener(CHAT_FOLDERS_EVENT, refreshFolders);
     window.addEventListener(ARTIFACT_PROJECTS_EVENT, refreshFolders);
-    window.addEventListener(WORKSPACE_PINS_EVENT, refreshWorkspace);
+    window.addEventListener(WORKSPACE_PINS_EVENT, refreshLocal);
     return () => {
       active = false;
-      window.removeEventListener(CHAT_HISTORY_EVENT, refreshWorkspace);
+      window.removeEventListener(CHAT_HISTORY_EVENT, refreshLocal);
       window.removeEventListener(CHAT_FOLDERS_EVENT, refreshFolders);
       window.removeEventListener(ARTIFACT_PROJECTS_EVENT, refreshFolders);
-      window.removeEventListener(WORKSPACE_PINS_EVENT, refreshWorkspace);
+      window.removeEventListener(WORKSPACE_PINS_EVENT, refreshLocal);
     };
   }, [demoMode, refreshTick]);
 
   function toggleSidebar() {
     setSidebarCollapsed((current) => {
       const next = !current;
-      window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+      if (!isMobile) {
+        try { window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next)); } catch { /* The layout remains usable without storage. */ }
+      }
       return next;
     });
   }
@@ -407,6 +463,8 @@ export function Shell({
         />
       }
       sidebarCollapsed={sidebarCollapsed}
+      sidebarReady={sidebarReady}
+      sidebarIsModal={sidebarReady && isMobile && !sidebarCollapsed}
       onToggleSidebar={toggleSidebar}
       surfaceLabel={surfaceLabel}
       locale={locale}
@@ -555,6 +613,7 @@ function WorkspaceSidebar({
   const [openFolders, setOpenFolders] = useState<Set<string>>(new Set());
   const [dragTarget, setDragTarget] = useState<string | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const [usage, setUsage] = useState<UsageSummary | null>(null);
   const usageReadAt = useRef(0);
@@ -795,6 +854,29 @@ function WorkspaceSidebar({
       ? copy.usageNextSlotWhen(nextSlot.text)
       : copy.usageNextSlotOn(nextSlot.text)
     : null;
+  // The bar in the drawer: tokens when the plan meters them (the allowance a
+  // submission is refused on), otherwise runs when those are capped. An
+  // unmetered plan gets no bar; the sentence above already says "Unlimited".
+  const accountCopy = ACCOUNT_COPY[locale];
+  const railMeter = usage && usage.tokens && usage.tokens.limit !== null
+    ? {
+        label: accountCopy.meterTokens,
+        used: usage.tokens.used,
+        limit: usage.tokens.limit,
+        figure: accountCopy.meterPercentUsed(Math.min(Math.round((usage.tokens.used / usage.tokens.limit) * 100), 100)),
+        pressure: usage.tokens.pressure,
+        exhausted: usage.tokens.exhausted,
+      }
+    : usage && usage.runs.limit !== null && usage.runs.limit > 0
+      ? {
+          label: copy.usageLimits,
+          used: usage.runs.used,
+          limit: usage.runs.limit,
+          figure: `${usage.runs.used} / ${usage.runs.limit}`,
+          pressure: usage.runs.pressure,
+          exhausted: usage.runs.exhausted,
+        }
+      : null;
 
   function toggleFolder(id: string) {
     setOpenFolders((current) => {
@@ -909,35 +991,50 @@ function WorkspaceSidebar({
         <a href="/" className="mj-sidebar-brand" aria-label={BRAND_NAME}>
           <LeonaWordmark className="lq-wordmark--sidebar" />
         </a>
-        <button className="mj-sidebar-more" type="button" aria-label={copy.workspaceOptions} title={copy.workspaceOptions}>
-          <MoreIcon size={16} />
-        </button>
       </div>
 
       <nav className="mj-sidebar-surface-switch" aria-label={copy.surfaceSwitch} data-two={demoMode ? "true" : undefined}>
-        <a className={surface === "run" ? "is-active" : ""} href={runHref} aria-current={surface === "run" ? "page" : undefined} aria-label={copy.run} title={copy.run}>
+        <Link prefetch={false} className={surface === "run" ? "is-active" : ""} href={runHref} aria-current={surface === "run" ? "page" : undefined} aria-label={copy.run} title={copy.run}>
           <PlayIcon size={15} />
           <span className="mj-sidebar-copy">{copy.run}</span>
-        </a>
-        <a className={surface === "studio" ? "is-active" : ""} href={studioHref} aria-current={surface === "studio" ? "page" : undefined} aria-label={copy.studio} title={copy.studio}>
+        </Link>
+        <Link prefetch={false} className={surface === "studio" ? "is-active" : ""} href={studioHref} aria-current={surface === "studio" ? "page" : undefined} aria-label={copy.studio} title={copy.studio}>
           <StudioIcon size={15} />
           <span className="mj-sidebar-copy">{copy.studio}</span>
-        </a>
+        </Link>
         {!demoMode ? (
-          <a className={surface === "qapps" ? "is-active" : ""} href="/qapps" aria-current={surface === "qapps" ? "page" : undefined} aria-label={copy.qapps} title={copy.qapps}>
+          <Link prefetch={false} className={surface === "qapps" ? "is-active" : ""} href="/qapps" aria-current={surface === "qapps" ? "page" : undefined} aria-label={copy.qapps} title={copy.qapps}>
             <QappsIcon size={15} />
             <span className="mj-sidebar-copy">{copy.qapps}</span>
-          </a>
+          </Link>
         ) : null}
         {!demoMode ? (
-          <a className={surface === "notebooks" ? "is-active" : ""} href="/notebooks" aria-current={surface === "notebooks" ? "page" : undefined} aria-label={copy.notebooks} title={copy.notebooks}>
+          <Link prefetch={false} className={surface === "notebooks" ? "is-active" : ""} href="/notebooks" aria-current={surface === "notebooks" ? "page" : undefined} aria-label={copy.notebooks} title={copy.notebooks}>
             <LibraryIcon size={15} />
             <span className="mj-sidebar-copy">{copy.notebooks}</span>
-          </a>
+          </Link>
         ) : null}
       </nav>
 
-      {surface === "run" ? (
+      <Link className="mj-sidebar-atlas" href="/repository" prefetch={false} title={copy.openAtlas}>
+        <LibraryIcon size={16} />
+        <span className="mj-sidebar-copy">{copy.atlas}</span>
+      </Link>
+
+      {!collapsed && (surface === "run" || surface === "studio") ? (
+        <label className="mj-sidebar-search">
+          <SearchIcon size={16} />
+          <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={locale === "ja" ? "ワークスペースを検索" : "Search workspace"} aria-label={locale === "ja" ? "チャットと保存した回路を検索" : "Search chats and saved circuits"} />
+        </label>
+      ) : null}
+
+      {search.trim() && !collapsed && (surface === "run" || surface === "studio") ? (
+        <div className="mj-sidebar-scroll" role="region" aria-label={locale === "ja" ? "検索結果" : "Search results"}>
+          {chats.filter((chat) => chat.title.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())).map((chat) => <ChatRow key={chat.id} chat={chat} currentPath={currentPath} demoMode={demoMode} locale={locale} onArchive={onArchive} onDelete={(item) => setDeleteTarget({ kind: "chat", item })} onAssignFolder={assignFolder} onRename={onRenameChat} folders={folders} />)}
+          {artifacts.filter((artifact) => artifact.title.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())).map((artifact) => <ArtifactRow key={artifact.id} artifact={artifact} currentPath={currentPath} folders={artifactProjects} onAssignFolder={assignArtifact} onArchive={onArchiveArtifact} onDelete={(item) => setDeleteTarget({ kind: "artifact", item })} onRename={onRenameArtifact} locale={locale} />)}
+          {![...chats, ...artifacts].some((item) => item.title.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())) ? <p className="mj-sidebar-empty" role="status">{locale === "ja" ? "一致する項目がありません" : "No matching work"}</p> : null}
+        </div>
+      ) : surface === "run" ? (
         <div className="mj-sidebar-scroll">
           <a className="mj-sidebar-new" href={runHref} aria-label={copy.newChat} title={copy.newChat}>
             <PlusIcon size={16} />
@@ -1048,18 +1145,23 @@ function WorkspaceSidebar({
             <PlusIcon size={16} />
             <span className="mj-sidebar-copy">{copy.createQapp}</span>
           </a>
-          <a className="mj-sidebar-library-link" href="/qapps?view=mine" aria-label={copy.myQapps} title={copy.myQapps}>
+          <Link prefetch={false} className="mj-sidebar-library-link" href="/qapps?view=mine" aria-label={copy.myQapps} title={copy.myQapps}>
             <QappsIcon size={16} />
             <span className="mj-sidebar-copy">{copy.myQapps}</span>
-          </a>
-          <a className="mj-sidebar-library-link" href="/qapps?view=public" aria-label={copy.exploreQapps} title={copy.exploreQapps}>
+          </Link>
+          <Link prefetch={false} className="mj-sidebar-library-link" href="/qapps?view=public" aria-label={copy.exploreQapps} title={copy.exploreQapps}>
             <SearchIcon size={16} />
             <span className="mj-sidebar-copy">{copy.exploreQapps}</span>
-          </a>
-          <a className="mj-sidebar-library-link" href="/studio?new=1" aria-label={copy.createQappStudio} title={copy.createQappStudio}>
+          </Link>
+          <Link prefetch={false} className="mj-sidebar-library-link" href="/studio?new=1" aria-label={copy.createQappStudio} title={copy.createQappStudio}>
             <StudioIcon size={16} />
             <span className="mj-sidebar-copy">{copy.createQappStudio}</span>
-          </a>
+          </Link>
+        </div>
+      ) : surface === "notebooks" ? (
+        <div className="mj-sidebar-scroll">
+          <Link className="mj-sidebar-library-link" href="/notebooks"><LibraryIcon size={16} /><span className="mj-sidebar-copy">{copy.allNotebooks}</span></Link>
+          <Link className="mj-sidebar-library-link" href="/notebooks/courses"><FolderIcon size={16} /><span className="mj-sidebar-copy">{copy.courses}</span></Link>
         </div>
       ) : (
         <div className="mj-sidebar-scroll">
@@ -1067,10 +1169,10 @@ function WorkspaceSidebar({
             <PlusIcon size={16} />
             <span className="mj-sidebar-copy">{copy.newArtifact}</span>
           </a>
-          <a className="mj-sidebar-library-link" href={demoMode ? "/demo?view=library" : "/library"} aria-label={copy.library} title={copy.library}>
+          <Link prefetch={false} className="mj-sidebar-library-link" href={demoMode ? "/demo?view=library" : "/library"} aria-label={copy.library} title={copy.library}>
             <LibraryIcon size={16} />
             <span className="mj-sidebar-copy">{copy.library}</span>
-          </a>
+          </Link>
 
           {pinnedArtifacts.length ? (
             <>
@@ -1134,7 +1236,7 @@ function WorkspaceSidebar({
               <SidebarSectionHeader label={PROJECT_SHARE_COPY[locale].sharedWithMe} />
               <div className="mj-sidebar-folder-list">
                 {sharedProjects.map((shared) => (
-                  <a
+                  <Link prefetch={false}
                     key={shared.id}
                     className="mj-sidebar-shared-project"
                     href={`/shared/${encodeURIComponent(shared.id)}`}
@@ -1145,7 +1247,7 @@ function WorkspaceSidebar({
                       {PROJECT_SHARE_COPY[locale].fromWorkspace(shared.ownerWorkspaceName)}
                     </small>
                     <span className="mj-sidebar-folder-count">{shared.artifactCount}</span>
-                  </a>
+                  </Link>
                 ))}
               </div>
             </>
@@ -1156,21 +1258,21 @@ function WorkspaceSidebar({
             {standaloneArtifacts.length ? standaloneArtifacts.map((artifact) => <ArtifactRow key={artifact.id} artifact={artifact} currentPath={currentPath} folders={artifactProjects} onAssignFolder={assignArtifact} onArchive={onArchiveArtifact} onDelete={(item) => setDeleteTarget({ kind: "artifact", item })} onRename={onRenameArtifact} locale={locale} />) : <span className="mj-sidebar-empty mj-sidebar-copy">{copy.emptyArtifacts}</span>}
           </nav>
           <ArtifactArchiveSection artifacts={archivedArtifacts} locale={locale} onRestore={onRestoreArtifact} onDelete={onDeleteArtifact} />
-          <a className="mj-sidebar-library-link mj-sidebar-library-link--bottom" href={demoMode ? "/demo?view=library" : "/library"} aria-label={copy.viewLibrary} title={copy.viewLibrary}>
+          <Link prefetch={false} className="mj-sidebar-library-link mj-sidebar-library-link--bottom" href={demoMode ? "/demo?view=library" : "/library"} aria-label={copy.viewLibrary} title={copy.viewLibrary}>
             <LibraryIcon size={16} />
             <span className="mj-sidebar-copy">{copy.viewLibrary}</span>
-          </a>
+          </Link>
         </div>
       )}
 
       <div className="mj-sidebar-footer">
         {demoMode ? (
-          <a className="mj-sidebar-user" href={runHref}>
+          <Link prefetch={false} className="mj-sidebar-user" href={runHref}>
             <span className="mj-avatar">{sidebarInitial}</span>
             <span className="mj-sidebar-user-copy mj-sidebar-copy">
               <strong>{sidebarName}</strong>
             </span>
-          </a>
+          </Link>
         ) : (
           <div className="mj-sidebar-user-menu" ref={userMenuRef} data-open={userMenuOpen}>
             {/* The drawer stays mounted so it can animate open AND shut; `inert`
@@ -1193,9 +1295,18 @@ function WorkspaceSidebar({
                       stays open, and not inert, behind the dialog — which is
                       what lets the modal hand focus back to the exact item that
                       opened it. */}
-                  <Link role="menuitem" href="/account"><SettingsIcon size={15} />{copy.settings}</Link>
+                  {/* Usage first, with its bar, so the thing that fills up is the
+                      thing the eye lands on when the drawer opens (owner,
+                      2026-09-10). The bar draws the metered allowance the plan is
+                      actually refused on — tokens where the plan meters them,
+                      otherwise runs. */}
                   <Link role="menuitem" className="mj-sidebar-usage" href="/account#usage">
-                    <span>{copy.usageLimits}</span>
+                    <span className="mj-sidebar-menu-line"><GaugeIcon size={16} />{copy.usageLimits}</span>
+                    {railMeter ? (
+                      <span className="mj-sidebar-usage-meter">
+                        <Meter compact label={railMeter.label} used={railMeter.used} limit={railMeter.limit} figure={railMeter.figure} pressure={railMeter.pressure} exhausted={railMeter.exhausted} />
+                      </span>
+                    ) : null}
                     {usageLine ? (
                       <span className="mj-sidebar-usage-detail" data-spent={usage?.runs.exhausted ? "" : undefined}>
                         {usageLine}
@@ -1203,10 +1314,11 @@ function WorkspaceSidebar({
                       </span>
                     ) : null}
                   </Link>
+                  <Link role="menuitem" href="/account"><span className="mj-sidebar-menu-line"><SettingsIcon size={16} />{copy.settings}</span></Link>
                   {/* Stays an anchor. /auth/sign-out is a route handler that
                       clears the session and redirects; there is no page for a
                       client-side navigation to render. */}
-                  <a role="menuitem" className="is-danger" href="/auth/sign-out">{copy.signOut}</a>
+                  <a role="menuitem" className="is-danger" href="/auth/sign-out"><span className="mj-sidebar-menu-line"><SignOutIcon size={16} />{copy.signOut}</span></a>
                 </div>
               </div>
             </div>
@@ -1508,10 +1620,10 @@ function ChatRow({ chat, currentPath, demoMode, locale, folders, onArchive, onDe
         event.dataTransfer.effectAllowed = "move";
       }}
     >
-      <a className={`mj-sidebar-chat${currentPath === `/run/${chat.id}` ? " is-active" : ""}`} href={demoMode ? "/demo?view=run" : `/run/${chat.id}`} title={collapsedTitle(chat.title)}>
+      <Link prefetch={false} className={`mj-sidebar-chat${currentPath === `/run/${chat.id}` ? " is-active" : ""}`} href={demoMode ? "/demo?view=run" : `/run/${chat.id}`} title={collapsedTitle(chat.title)}>
         <span className="mj-sidebar-chat-title mj-sidebar-copy">{chat.title}</span>
         <span className="mj-sidebar-chat-time mj-sidebar-copy">{formatRelativeDate(chat.createdAt, locale)}</span>
-      </a>
+      </Link>
       {!demoMode ? (
         <div className="mj-sidebar-chat-actions">
           <ItemOverflowMenu
@@ -1721,9 +1833,9 @@ function ArtifactRow({ artifact, currentPath, folders, onAssignFolder, onArchive
         event.dataTransfer.effectAllowed = "move";
       }}
     >
-      <a className={`mj-sidebar-chat${currentPath === href ? " is-active" : ""}`} href={href} title={artifact.title}>
+      <Link prefetch={false} className={`mj-sidebar-chat${currentPath === href ? " is-active" : ""}`} href={href} title={artifact.title}>
         <span className="mj-sidebar-chat-title mj-sidebar-copy">{artifact.title}</span>
-      </a>
+      </Link>
       <div className="mj-sidebar-artifact-actions">
         <ItemOverflowMenu
           kind="artifact"
@@ -1943,10 +2055,10 @@ function ArtifactArchiveSection({ artifacts, locale, onRestore, onDelete }: { ar
         <div className="mj-sidebar-archive-list">
           {artifacts.map((artifact) => (
             <div className="mj-sidebar-archived-row" key={artifact.id}>
-              <a href={`/studio?artifact=${encodeURIComponent(artifact.id)}`} className="mj-sidebar-chat" title={artifact.title}>
+              <Link prefetch={false} href={`/studio?artifact=${encodeURIComponent(artifact.id)}`} className="mj-sidebar-chat" title={artifact.title}>
                 <span className="mj-sidebar-chat-title mj-sidebar-copy">{artifact.title}</span>
                 <small>{copy.daysLeft(daysUntilArtifactDeletion(artifact.archivedAt ?? new Date().toISOString()))}</small>
-              </a>
+              </Link>
               <div className="mj-sidebar-chat-actions">
                 <button className="mj-sidebar-chat-action" type="button" aria-label={`Restore ${artifact.title}`} title={`Restore ${artifact.title}`} onClick={() => onRestore(artifact)}>↶</button>
                 <button className="mj-sidebar-chat-action mj-sidebar-chat-action--danger" type="button" aria-label={`Delete ${artifact.title}`} title={`Delete ${artifact.title}`} onClick={() => onDelete(artifact)}><TrashIcon size={14} /></button>

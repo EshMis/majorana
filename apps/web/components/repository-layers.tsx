@@ -2138,6 +2138,28 @@ function EntryNodeContract({
  * (`W23-record-join.md` §4: the contract is node-authored). A second reader
  * would be a second thing to keep in step.
  */
+/**
+ * Whether the map has anything to say about this record — the condition under
+ * which `EntryLayerLinks` or `EntryStateLinks` below draws something.
+ *
+ * The record page asks this before it draws its *In the Atlas* section, so the
+ * section can be an honest gap when both strips would be null. Kept beside the
+ * two components rather than in the page, because it restates their two early
+ * returns, and a copy that lived elsewhere would drift the first time one of
+ * them changed.
+ */
+export function entryLayerPresence(graph: LayerGraph, vocabulary: StateVocabulary, entry: LayerCorpusEntry): boolean {
+  if (graph.nodes.some((node) => (node.entries ?? []).includes(entry.slug))) return true;
+  const join = ingredientJoin({
+    slug: entry.slug,
+    category: entry.category,
+    algorithmFamily: entry.algorithmFamily ?? "",
+    tags: entry.tags ?? [],
+  });
+  if (join.kind !== "joined") return false;
+  return layerState(vocabulary, join.state) !== null && processesTouching(graph, vocabulary, join.state).length > 0;
+}
+
 export function EntryLayerLinks({
   graph,
   slug,

@@ -127,7 +127,7 @@
   --border-0: #332f2b; /* hairlines */
   --text-0: #eceae6; /* primary text — warm off-white */
   --text-1: #a29c93; /* secondary text — warm gray */
-  --text-2: #6a645b; /* placeholders, disabled */
+  --text-2: #91897d; /* tertiary text and placeholders; AA on all dark surfaces */
   --accent: #7ba05b; /* links, focus, primary buttons, running-stage — moss green */
   --accent-press: #688a4a;
   --ok: #34c077; /* verified / pass — emerald (paired with ✓ glyph) */
@@ -179,7 +179,7 @@
     --border-0: #332f2b;
     --text-0: #eceae6;
     --text-1: #a29c93;
-    --text-2: #6a645b;
+    --text-2: #91897d;
     --accent: #7ba05b;
     --accent-press: #688a4a;
     --ok: #34c077;
@@ -187,4 +187,36 @@
     --err: #e5564f;
     --mono-tint: #bdb4a4;
   }
+}
+
+/* Qiskit Fall Fest: owner-requested event poster surface (2026-09-08).
+ * Scoped to the event page; Qiskit's supplied purple-60 pictogram is unchanged. */
+[data-surface="qff-keio"] {
+  --qff-paper: #fcfcfa;
+  --qff-ink: #202021;
+  --qff-muted: #606066;
+  --qff-line: #d7d7da;
+  --qff-accent: #6929c4;
+  --qff-tint: #eee8f7;
+  --qff-white: #ffffff;
+  --qff-dark: #202021;
+  --qff-dark-muted: #c6c6ce;
+  --qff-title: clamp(3.5rem, 6.6vw, 6rem);
+  --qff-heading: clamp(1.75rem, 3.1vw, 2.75rem);
+  --qff-date: clamp(2.75rem, 4.3vw, 4rem);
+  --qff-gutter: clamp(1.25rem, 4.5vw, 5rem);
+  --qff-section: clamp(3.5rem, 7vw, 6rem);
+  --qff-space: 2rem;
+  --qff-small: 0.875rem;
+  --qff-body: 1rem;
+  --qff-lead: 1.25rem;
+  --qff-subtitle: 1.5rem;
+  --qff-sticky: 1;
+}
+:root[data-theme="dark"] [data-surface="qff-keio"] {
+  --qff-paper: #202021;
+  --qff-ink: #f5f5f7;
+  --qff-muted: #bebec7;
+  --qff-line: #4b4b51;
+  --qff-accent: #c4a1ff;
 }

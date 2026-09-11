@@ -1,0 +1,136 @@
+/* Nala experience. Imported after the shared UI styles by the app document. */
+.mj-run-home-content--centered {
+  width: min(100%, var(--composer-max));
+  padding-block: var(--sp-8);
+}
+.mj-run-home-content--centered .mj-run-home-hero {
+  align-items: center;
+  gap: var(--sp-6);
+  margin-bottom: var(--sp-8);
+}
+.mj-run-home-hero h1 {
+  font-family: var(--font-ui);
+  font-size: var(--fs-28);
+  font-weight: 500;
+  line-height: 1.3;
+}
+.mj-run-home .mj-composer,
+.mj-run-task .mj-composer {
+  box-sizing: border-box;
+  padding: var(--sp-4);
+  background: var(--bg-0);
+}
+/* One line above the controls (owner, 2026-09-10): the box keeps the shared
+   32px minimum and grows with what is typed, up to four lines' worth. The
+   rotating suggestion is drawn behind it at the same size. */
+.mj-run-home .mj-composer-input,
+.mj-run-task .mj-composer-input {
+  font-size: var(--fs-16);
+  max-height: calc(var(--sp-16) * 4);
+}
+.mj-run-home .mj-composer-ghost-overlay,
+.mj-run-task .mj-composer-ghost-overlay { font-family: var(--font-ui); font-size: var(--fs-16); }
+.mj-composer-input::placeholder { font-family: var(--font-ui); color: var(--text-1); }
+.mj-composer:focus-within { border-color: var(--accent); }
+.mj-composer-feedback {
+  margin: var(--sp-3) 0 0;
+  color: var(--text-1);
+  font-size: var(--fs-13);
+  line-height: 1.5;
+}
+.mj-composer-feedback--error { color: var(--err); }
+.mj-run-home-examples { margin-top: var(--sp-6); }
+.mj-nala-starters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+.mj-nala-starter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+  min-height: var(--sp-16);
+  padding: var(--sp-3);
+  border: 1px solid var(--border-0);
+  border-radius: var(--radius-card);
+  background: var(--bg-1);
+  color: var(--text-0);
+  font: inherit;
+  font-size: var(--fs-13);
+  text-align: left;
+  cursor: pointer;
+}
+.mj-nala-starter svg {
+  flex: 0 0 var(--sp-8);
+  width: var(--sp-8);
+  height: var(--sp-8);
+  color: var(--accent);
+  stroke: currentColor;
+  stroke-width: 1.3;
+}
+.mj-nala-starter:hover { background: var(--bg-2); }
+.mj-nala-starter:focus-visible,
+.mj-chart-scroll:focus-visible,
+.mj-chart-table-scroll:focus-visible,
+.mj-run-result-code pre:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.mj-run-home .mj-example-strip { justify-content: center; margin-top: var(--sp-3); }
+.mj-run-home .mj-example-popout { gap: var(--sp-2); }
+.mj-run-home .mj-example-button { min-width: 0; white-space: normal; }
+.mj-run-home .mj-run-confirm blockquote { margin-inline: 0; overflow-wrap: anywhere; }
+.mj-run-context-recovery { margin-top: var(--sp-3); }
+.mj-run-task .mj-chat-content { width: min(100%, var(--composer-max)); }
+.mj-run-task .mj-chat-header { gap: var(--sp-3); margin-bottom: var(--sp-6); }
+.mj-run-task .mj-chat-header h1 { overflow-wrap: anywhere; }
+.mj-run-task .mj-run-task-actions { flex-wrap: wrap; }
+.mj-run-connection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3);
+  border: 1px solid var(--border-0);
+  border-radius: var(--radius-control);
+  background: var(--bg-1);
+  color: var(--text-1);
+  font-size: var(--fs-13);
+}
+.mj-run-latest { position: relative; display: flex; justify-content: center; height: 0; flex: 0 0 0; z-index: 2; }
+.mj-run-latest button { position: absolute; bottom: var(--sp-3); background: var(--bg-0); }
+.mj-run-task .mj-chat-loading-dot,
+.mj-run-task .mj-agent-activity-live-dot { animation: none; }
+.mj-run-task .mj-run-code-head { align-items: baseline; }
+.mj-run-code-note { color: var(--text-1); }
+.mj-run-code-diagram,
+.mj-chart-data { margin-block: var(--sp-3); color: var(--text-1); }
+.mj-run-code-diagram summary,
+.mj-chart-data summary { cursor: pointer; padding-block: var(--sp-2); font-size: var(--fs-13); }
+.mj-chart-scroll,
+.mj-chart-table-scroll { overflow-x: auto; max-width: 100%; }
+.mj-chart-scroll > svg { display: block; width: 100%; min-width: calc(var(--sp-16) * 8); }
+.mj-chart-table-scroll { max-height: calc(var(--sp-16) * 4); }
+.mj-chart-table-scroll table { width: 100%; border-collapse: collapse; font-size: var(--fs-13); }
+.mj-chart-table-scroll th,
+.mj-chart-table-scroll td { padding: var(--sp-2) var(--sp-3); text-align: left; border-bottom: 1px solid var(--border-0); }
+.mj-chart-table-scroll th { font-weight: 500; }
+.mj-run-keep { min-height: var(--sp-8); }
+@media (max-width: 680px) {
+  .mj-run-home-content--centered { padding-block: var(--sp-6); }
+  .mj-run-home .mj-run-home-hero h1 { font-size: var(--fs-28); }
+  .mj-nala-starters { grid-template-columns: 1fr; gap: var(--sp-2); }
+  .mj-nala-starter { min-height: var(--sp-12); }
+  .mj-run-home .mj-example-popout { grid-template-columns: 1fr; }
+  .mj-run-home .mj-composer,
+  .mj-run-task .mj-composer { padding: var(--sp-3); }
+  .mj-run-home .mj-composer-controls,
+  .mj-run-task .mj-composer-controls { gap: var(--sp-2); flex-wrap: wrap; }
+  .mj-run-home .mj-command-hint,
+  .mj-run-task .mj-command-hint { display: none; }
+  .mj-run-task .mj-chat-header { flex-direction: column; }
+  .mj-run-code-actions { justify-content: flex-start; }
+  .mj-run-connection { align-items: flex-start; flex-wrap: wrap; }
+}

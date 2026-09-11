@@ -1,6 +1,9 @@
 import { UpgradeContent } from "./upgrade-content";
+import { UPGRADE_COPY } from "../../../lib/public-copy";
 
-export const metadata = { title: "Move up a plan — Leona Quantum" };
+// Derived from the heading the page renders, so the tab title cannot keep old
+// words after the copy changes (it did, twice, in 2026-09).
+export const metadata = { title: `${UPGRADE_COPY.en.title} — Leona Quantum` };
 
 /**
  * /upgrade — reached from the usage meter, the billing panel, and the refusal a

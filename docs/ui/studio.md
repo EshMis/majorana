@@ -62,14 +62,20 @@ tokens: open layout, hairline dividers, JetBrains Mono for code and numerical
 evidence, moss-green focus, and no gradients, glow, or decorative dashboard
 metrics.
 
+There is no Inspector region and no header `Simulate` button — both were replaced
+(Owner Inbox 2026-07-31) when circuit selection details moved into a folded
+gate-note disclosure on the Visual tab and Simulate/Copy code moved onto the tab
+that owns each action, rather than sitting above a tab bar that already had them.
+
 | Region | Required behavior |
 |---|---|
-| Header | `Studio`, artifact breadcrumb, framework selector, `Simulate`, `Verify & save` |
-| Code pane | Editable source, copy action, framework/version tabs, dirty-state indicator |
-| Circuit pane | Qubit wires, semantic gates, selection, pan/zoom affordances, parameter selection, exact local circuit-compression comparison/apply/undo controls, and queued external-compiler preview/apply controls |
-| Inspector | `Circuit`, `Resources`, `Verification` tabs; selected-gate details and evidence |
-| Simulation pane | CPU eligibility, inputs, artifact-owned local result records, rerun confirmation, and unavailable GPU/QPU lanes. A local CPU result is never styled as verification or hardware evidence. |
-| Responsive fallback | Stack code, circuit, inspector, and output in that order; no horizontal page overflow |
+| Header | Working-circuit title, draft/version status, verdict chip (hidden on the Summary tab, where the panel it summarizes is already visible), Download export, Save without running, `Verify & save`, and the Qapp disclosure |
+| Tabs | `Code`, `Simulation`, `Visual`, `Summary`, in that pinned order |
+| Code tab | Framework selector, copy action, editable source, and an "About these conversions" disclosure |
+| Simulation tab | CPU lane (shots, seed, run control, ineligibility reasons with a sandbox-execution fallback), QPU lane (device selector, cost estimate, submission), and a list of local CPU simulation records |
+| Visual tab | Gate palette, custom gates, circuit-sync banner, the circuit diagram, circuit-compression controls (local strategies shown directly; external-compiler queueing folded behind a closed-by-default disclosure), builder controls, and a folded gate-note disclosure for the selected gate |
+| Summary tab | Circuit fact strip, evidence panel, version history, and a folded verification-contract disclosure |
+| Responsive fallback | Single column at every width; the tab bar and its panel never force horizontal page overflow |
 
 ## Run modes
 

@@ -1,0 +1,259 @@
+/* Public website UX, 2026-09-06. Uses the shared theme and type scale.
+   Imported after the base styles by RootDocument during integration. */
+/* A single row is scrollable at narrow widths; preferences stay in the row. */
+.mj-public-site .mj-public-header {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--sp-5);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-0) transparent;
+  scroll-padding-inline: var(--sp-3);
+  /* A shorter bar with taller controls (owner, 2026-09-10): the same 8px above and below,
+     where the bottom used to carry 20px, and every control in the row at --sp-12 (48px)
+     rather than the 44px marketing CTA height. The variable is scoped to the header so the
+     hero and pricing buttons keep --control-h-cta. */
+  --header-control-h: var(--sp-12);
+  padding: var(--sp-2) var(--sp-1);
+  border-bottom: var(--border-hairline) solid var(--border-0);
+}
+.mj-public-header .mj-public-brand { display: inline-flex; align-items: center; flex: 0 0 auto; min-height: var(--header-control-h); }
+.mj-public-header :is(a, button) { scroll-margin-inline: var(--sp-3); }
+.lq-public-navigation { flex: 1 0 auto; min-width: 0; }
+.lq-public-menu-panel, .lq-public-preferences, .lq-public-auth {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--sp-3);
+  white-space: nowrap;
+}
+.lq-public-menu-panel { justify-content: flex-end; }
+.mj-public-site .mj-public-nav { display: flex; flex: 0 0 auto; order: 0; flex-wrap: nowrap; overflow: visible; width: auto; margin: 0; gap: var(--sp-1); }
+.mj-public-site .mj-public-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--header-control-h);
+  padding: 0 var(--sp-2);
+}
+.lq-public-auth { flex: 0 0 auto; }
+.mj-public-site .mj-public-nav-primary { min-height: var(--header-control-h); }
+.mj-public-site .mj-public-nav-signout { display: inline-flex; align-items: center; min-height: var(--header-control-h); }
+/* The toggle groups carry 2px of padding and a 1px border of their own; the buttons give
+   that back so the group, not the button, is the 48px control. */
+.lq-public-preferences :is(.mj-theme-toggle, .mj-language-toggle) { padding: 0; }
+.lq-public-preferences .mj-theme-toggle button,
+.lq-public-preferences .mj-language-toggle button { min-width: var(--header-control-h); min-height: calc(var(--header-control-h) - 2 * var(--border-hairline)); }
+.lq-public-preferences .mj-theme-toggle span { display: none; }
+.mj-public-site :where(a, button, input, textarea, select, summary):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: var(--sp-1);
+}
+.mj-public-site .mj-reveal { opacity: 1; transform: none; transition: none; }
+.mj-public-site :is(.mj-primary-button, .mj-secondary-button) { transition: transform var(--dur-hover) var(--ease-out-ui); }
+.mj-public-site :is(.mj-primary-button, .mj-secondary-button):active { transform: translateY(1px); }
+.mj-public-site .mj-public-footer { margin-top: var(--sp-16); }
+.mj-public-site .mj-public-footer-links a { padding-block: var(--sp-2); }
+.mj-public-site .mj-public-footer-bottom { gap: var(--sp-4); flex-wrap: wrap; }
+.mj-public-site .mj-public-actions { flex-wrap: wrap; }
+
+.lq-site-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-12);
+  padding-block: var(--sp-12);
+}
+.mj-public-site .lq-site-hero h1 {
+  margin: var(--sp-4) 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-display-1);
+  font-weight: 400;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+.lq-site-hero-copy > p:not(.mj-section-label) {
+  max-width: 46ch;
+  color: var(--text-1);
+  font-size: var(--fs-16);
+  line-height: 1.65;
+}
+.lq-site-hero-copy .mj-public-actions { margin-top: var(--sp-8); gap: var(--sp-6); }
+.lq-site-hero-copy .mj-text-link { display: inline-flex; align-items: center; gap: var(--sp-3); }
+.lq-landing-circuit {
+  min-width: 0;
+  margin: 0;
+  padding-left: var(--sp-8);
+  border-left: var(--border-hairline) solid var(--border-0);
+}
+.lq-landing-circuit h4 { margin: var(--sp-3) 0 0; font-size: var(--fs-16); font-weight: 500; line-height: 1.5; }
+.lq-bell-diagram { width: 100%; height: auto; display: block; margin-block: var(--sp-2); }
+.lq-circuit-wires { fill: var(--bg-0); stroke: var(--text-0); stroke-width: 1.5; }
+.lq-circuit-control { fill: var(--text-0); }
+.lq-circuit-labels { fill: var(--text-0); font-family: var(--font-mono); font-size: var(--fs-16); }
+.lq-landing-circuit pre {
+  overflow-x: auto;
+  margin: 0;
+  padding: var(--sp-4);
+  border-radius: var(--radius-control);
+  background: var(--bg-1);
+  color: var(--text-0);
+  font-family: var(--font-mono);
+  font-size: var(--fs-13);
+  line-height: 1.7;
+}
+.lq-landing-circuit > p { margin: var(--sp-3) 0 0; color: var(--text-1); font-size: var(--fs-13); line-height: 1.6; }
+.lq-landing-prompt-section { padding-bottom: var(--sp-8); }
+.lq-landing-prompt-section .mj-landing-prompt {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-4);
+  width: 100%;
+  max-width: none;
+  min-height: var(--sp-16);
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  box-sizing: border-box;
+  border: var(--border-hairline) solid var(--border-0);
+  border-radius: var(--radius-card);
+  background: var(--bg-0);
+}
+/* The rotating suggestion is drawn in a layer behind the box (`ComposerGhostOverlay`), so the
+   textarea sits inside a positioned wrapper that takes its flex share. */
+.lq-landing-prompt-section .mj-composer-ghost-wrap { position: relative; display: flex; flex: 1; min-width: 0; }
+/* Full opacity: the shared rule draws the ghost at 78%, which takes --text-2 below AA (3.24:1
+   measured on the cover); at 100% it is the placeholder colour, 5.0:1 light and 5.4:1 dark. */
+.lq-landing-prompt-section .mj-landing-prompt .mj-composer-ghost-overlay { padding: var(--sp-1) 0; color: var(--text-2); opacity: 1; font-size: var(--fs-16); line-height: 1.5; }
+.lq-landing-prompt-section .mj-landing-prompt textarea {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--sp-8);
+  max-height: calc(var(--sp-16) * 3);
+  padding: var(--sp-1) 0;
+  field-sizing: content;
+  resize: vertical;
+  border: 0;
+  background: transparent;
+  color: var(--text-0);
+  font: inherit;
+  font-size: var(--fs-16);
+  line-height: 1.5;
+}
+.lq-landing-prompt-section .mj-landing-prompt-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 var(--control-h-cta);
+  width: var(--control-h-cta);
+  height: var(--control-h-cta);
+  padding: 0;
+  border-radius: var(--radius-control);
+  background: var(--accent);
+  color: var(--bg-0);
+}
+.lq-landing-prompt-section .mj-landing-prompt-submit svg { flex-shrink: 0; }
+.lq-landing-prompt-section .mj-landing-prompt::before,
+.lq-landing-prompt-section .mj-landing-prompt::after { content: none; animation: none; }
+.lq-landing-prompt-section .mj-landing-prompt-submit:disabled { opacity: .5; cursor: default; }
+.lq-arrow-forward { transform: rotate(180deg); }
+.lq-site-section-heading { margin-bottom: var(--sp-6); }
+.lq-site-section-heading h2, .lq-site-demo h2 { margin: var(--sp-2) 0; font-family: var(--font-display); font-size: var(--fs-display-3); font-weight: 400; }
+.lq-site-products, .lq-site-evidence { padding-block: var(--sp-8); border-top: var(--border-hairline) solid var(--border-0); }
+.lq-site-product-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--sp-6); }
+.lq-site-product {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  grid-column: span 2;
+  padding: var(--sp-4) 0;
+  color: var(--text-0);
+  text-decoration: none;
+  border-bottom: var(--border-hairline) solid var(--border-0);
+}
+.lq-site-product:nth-child(n + 4) { grid-column: span 3; }
+.lq-site-product h3, .lq-site-principles h3 { margin: 0 0 var(--sp-2); font-size: var(--fs-16); font-weight: 500; }
+.lq-site-product p, .lq-site-principles p { max-width: 48ch; margin: 0; color: var(--text-1); font-size: var(--fs-14); line-height: 1.65; }
+.lq-site-product > span { color: var(--accent); font-size: var(--fs-20); }
+.lq-site-product:hover h3 { color: var(--accent); text-decoration: underline; text-underline-offset: var(--sp-1); }
+/* The walkthrough: the video alone, across the content width. */
+.lq-site-demo { margin-block: var(--sp-8) var(--sp-12); }
+.lq-site-demo .lq-landing-demo-video { display: block; width: 100%; aspect-ratio: 16 / 9; border: var(--border-hairline) solid var(--border-0); border-radius: var(--radius-card); background: var(--bg-1); object-fit: contain; }
+.lq-site-principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-8); }
+.lq-site-frameworks { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin: var(--sp-8) 0 0; color: var(--text-1); font-size: var(--fs-13); }
+.lq-site-frameworks span { color: var(--text-0); }
+.mj-public-site .mj-company-final-cta { margin-top: var(--sp-8); padding: var(--sp-8) 0; border-top: var(--border-hairline) solid var(--border-0); background: transparent; }
+.mj-public-site .mj-public-page-hero { padding-block: var(--sp-12); }
+.mj-public-site .mj-public-page-hero > p { max-width: 62ch; }
+.mj-pricing-site .mj-pricing-grid { align-items: stretch; gap: var(--sp-4); }
+.mj-pricing-site .mj-pricing-card { min-width: 0; }
+.mj-pricing-site .mj-pricing-card > a { margin-top: auto; }
+.mj-contact-site .mj-contact-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--sp-12); }
+.mj-contact-site .mj-contact-form-section { width: auto; }
+.mj-contact-site .mj-contact-form { padding: var(--sp-6); }
+.mj-contact-site .mj-contact-form .mj-contact-note { grid-column: 1 / -1; color: var(--text-1); }
+.lq-contact-help { padding-block: var(--sp-6); }
+.lq-contact-help h2 { margin: 0 0 var(--sp-4); font-family: var(--font-display); font-size: var(--fs-display-3); font-weight: 400; }
+.lq-contact-help ul { padding-left: var(--sp-4); color: var(--text-1); line-height: 1.7; }
+.lq-contact-help li + li { margin-top: var(--sp-3); }
+.mj-about-site .mj-about-hero { display: block; min-height: 0; padding-block: var(--sp-12); }
+.mj-about-site .mj-about-hero h1 { max-width: 24ch; font-size: var(--fs-display-1); font-weight: 400; }
+.mj-about-site .mj-about-hero-lede { max-width: 64ch; }
+.mj-about-site .mj-about-section { padding-block: var(--sp-8); }
+.mj-about-site .mj-about-team-heading { display: block; margin-bottom: var(--sp-6); }
+.mj-about-site .mj-about-team-heading > p:last-child { max-width: 68ch; }
+.mj-about-site .mj-about-team-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); }
+.mj-about-site .mj-about-person-card { display: grid; grid-template-columns: calc(var(--sp-16) * 3) minmax(0, 1fr); gap: var(--sp-8); padding: var(--sp-6) 0; border: 0; border-top: var(--border-hairline) solid var(--border-0); border-radius: 0; background: transparent; transform: none; }
+.mj-about-site .mj-about-person-portrait { width: 100%; height: auto; aspect-ratio: 1; border-radius: var(--radius-card); }
+.mj-about-site .mj-about-person-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.mj-about-site .mj-about-person-content { padding: 0; min-width: 0; }
+.mj-about-site .mj-about-person-topline { justify-content: flex-start; }
+.mj-about-site .mj-about-person-topline span:first-child { display: none; }
+.mj-about-site .mj-about-person-name { gap: var(--sp-2); }
+.mj-about-site .mj-about-person-name h3 { font-family: var(--font-ui); font-size: var(--fs-20); }
+.mj-about-site .mj-about-person-bio { max-width: 72ch; }
+.mj-about-site .mj-about-person-affiliation { min-height: 0; }
+
+
+.lq-legal-contents { max-width: var(--composer-max); margin-top: var(--sp-8); }
+.lq-legal-contents h2 { font-size: var(--fs-16); font-weight: 500; }
+.lq-legal-contents ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-6); list-style: none; padding: 0; }
+.lq-legal-contents a { display: block; padding-block: var(--sp-2); color: var(--accent); }
+.mj-legal-site .mj-legal-document { max-width: var(--composer-max); }
+.mj-legal-document section { scroll-margin-top: var(--sp-8); }
+
+@media (max-width: 1100px) {
+  .mj-public-header .lq-wordmark--public-header { width: 128px; }
+  .mj-public-site .mj-public-header { gap: var(--sp-3); }
+}
+@media (max-width: 760px) {
+  .lq-site-hero { grid-template-columns: minmax(0, 1fr); gap: var(--sp-8); padding-block: var(--sp-8); }
+  .lq-landing-circuit { padding-left: 0; padding-top: var(--sp-6); border-left: 0; border-top: var(--border-hairline) solid var(--border-0); }
+  .lq-bell-diagram { max-width: calc(var(--sp-16) * 7); }
+  .lq-site-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
+  .lq-site-product, .lq-site-product:nth-child(n + 4) { grid-column: span 1; }
+  .lq-site-product:last-child { grid-column: 1 / -1; }
+  .lq-site-principles { grid-template-columns: minmax(0, 1fr); gap: var(--sp-6); }
+  .mj-contact-site .mj-contact-layout { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); }
+  .mj-about-site .mj-about-person-card { grid-template-columns: calc(var(--sp-16) * 2) minmax(0, 1fr); gap: var(--sp-5); }
+}
+@media (max-width: 620px) {
+  .mj-public-site .mj-public-header { gap: var(--sp-2); }
+  .mj-public-header .lq-wordmark--public-header { width: calc(var(--sp-16) * 2); max-width: 100%; height: auto; }
+  .mj-public-site .mj-public-nav-primary { padding-inline: var(--sp-2); font-size: var(--fs-12); }
+  .lq-public-auth,
+  .lq-public-auth .mj-auth-slot[data-auth-slot="in"] { flex-direction: row; gap: var(--sp-3); }
+  .mj-public-site .mj-public-footer-links { flex-wrap: wrap; }
+  .lq-site-product-grid { grid-template-columns: minmax(0, 1fr); gap: var(--sp-2); }
+  .mj-about-site .mj-about-person-card { display: block; }
+  .mj-about-site .mj-about-person-portrait { width: calc(var(--sp-16) * 2); margin-bottom: var(--sp-5); }
+  .lq-legal-contents ol { grid-template-columns: minmax(0, 1fr); }
+  .mj-contact-site .mj-contact-form { padding: var(--sp-4); }
+  .mj-public-site .mj-company-final-cta .mj-public-actions { width: 100%; }
+  .mj-public-site .mj-company-final-cta .mj-public-actions a { flex: 1 1 auto; }
+}

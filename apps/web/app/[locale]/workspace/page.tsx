@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { PublicSite } from "../../../components/public-site";
+import Link from "next/link";
+import { ProductGlyph } from "../../../components/product-glyph";
 import { Reveal } from "../../../components/reveal";
-import { WORKSPACE_LANDING_COPY } from "../../../lib/public-copy";
+import { HOME_COPY, WORKSPACE_LANDING_COPY } from "../../../lib/public-copy";
 import { parsePublicLocale, PUBLIC_LOCALES } from "../../../lib/public-locale";
 import { canonicalMetadata } from "../../../lib/public-metadata";
 import { workspaceMetadataCopy } from "../../../lib/public-page-metadata";
@@ -30,72 +32,36 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function WorkspacePage({ params }: { params: Promise<{ locale: string }> }) {
   const locale = parsePublicLocale((await params).locale);
   const copy = WORKSPACE_LANDING_COPY[locale];
+  const tools = HOME_COPY[locale].product.items;
   return (
-    <PublicSite activePath="/workspace" className="mj-open-source" locale={locale} chrome="static">
-      <div className="mj-open-source-inner">
-        <section className="mj-open-source-hero">
-          <p className="mj-public-overline">{copy.overline}</p>
-          <h1>{copy.title}</h1>
-          <p className="mj-landing-copy">{copy.body}</p>
-          {/*
-            Both calls to action ship, and CSS shows one — the same mechanism the
-            header uses, and for the same reason. This page is `chrome="static"`
-            and held on the CDN, so its HTML is shared by every visitor and
-            cannot name one; asking the server would mean giving up the cache.
-            `<html data-auth>` is stamped from the hint cookie before first
-            paint, so each browser paints the right half of one shared payload.
-
-            Without this the page told a reader who already HAS a workspace to
-            go and request one — the signed-out copy is the default the header
-            fix left behind here, not a deliberate choice. Same bug family as
-            ai-ops issue 114, one page further in.
-
-            `.mj-auth-slot` defaults to the signed-OUT control when the attribute
-            is absent (JavaScript off, cookies refused, script not yet run), which
-            is the safe direction: a stranger is told how to ask for access.
-          */}
-          <div className="mj-landing-actions">
-            <span className="mj-auth-slot" data-auth-slot="out">
-              <a className="mj-primary-button" href="/contact">{copy.primary}</a>
-            </span>
-            <span className="mj-auth-slot" data-auth-slot="in">
-              <a className="mj-primary-button" href="/run">{copy.primarySignedIn}</a>
-            </span>
-            <a className="mj-secondary-button" href="/repository">{copy.secondary}</a>
-          </div>
-        </section>
-
-        <section className="mj-open-source-section" aria-labelledby="workspace-flow-heading">
-          <Reveal>
-            <p className="mj-section-label">{copy.loopLabel}</p>
-            <h2 id="workspace-flow-heading">{copy.loopTitle}</h2>
-          </Reveal>
-          <div className="mj-open-source-grid">
-            {copy.loop.map((item, index) => (
-              <Reveal delay={index * 90} key={item.kicker}>
-                <article className="mj-open-source-card">
-                  <span className="mj-open-source-kicker">{item.kicker}</span>
-                  <h3>{item.title}</h3>
-                  <p>{item.body}</p>
-                </article>
-              </Reveal>
-            ))}
-          </div>
-        </section>
-
-        <section className="mj-open-source-section" aria-labelledby="compute-heading">
-          <Reveal>
-            <p className="mj-section-label">{copy.computeLabel}</p>
-            <h2 id="compute-heading">{copy.computeTitle}</h2>
-          </Reveal>
-          <Reveal delay={90}>
-            <div className="mj-open-source-circuits">
-              {copy.compute.map((item) => <div key={item.title}><strong>{item.title}</strong><span>{item.body}</span></div>)}
-            </div>
-          </Reveal>
-        </section>
-
-      </div>
+    <PublicSite activePath="/workspace" className="mj-open-source lq-site-workspace" locale={locale} chrome="static">
+      <section className="lq-workspace-intro" aria-labelledby="workspace-heading">
+        <div>
+          <p className="mj-section-label">{copy.overline}</p>
+          <h1 id="workspace-heading">{copy.title}</h1>
+          <p>{copy.body}</p>
+          <a className="mj-primary-button" href="/run">{copy.primary}</a>
+        </div>
+        <div className="lq-workspace-map" aria-label={HOME_COPY[locale].product.title}>
+          {tools.map((item, index) => (
+            <a className={`lq-workspace-node lq-workspace-node--${index}`} href={item.href} key={item.href}>
+              <ProductGlyph kind={item.title} /><span>{item.title}</span>
+              <span className="lq-node-arrow" aria-hidden="true">↗</span>
+            </a>
+          ))}
+          <svg className="lq-workspace-connections" viewBox="0 0 600 430" preserveAspectRatio="none" aria-hidden="true"><path d="M150 80H450V215H150V350H450M150 80V350M450 215V350" /></svg>
+        </div>
+      </section>
+      <section className="lq-workspace-tool-list" aria-label={HOME_COPY[locale].product.title}>
+        {tools.map((item, index) => <Reveal key={item.href} delay={index * 35}><a href={item.href}><span className="mj-section-label">{String(index + 1).padStart(2, "0")}</span><h2>{item.title}</h2><p>{item.body}</p><span aria-hidden="true">↗</span></a></Reveal>)}
+      </section>
+      <section className="lq-workspace-loop" aria-labelledby="workspace-flow-heading">
+        <div className="lq-site-section-heading"><p className="mj-section-label">{copy.loopLabel}</p><h2 id="workspace-flow-heading">{copy.loopTitle}</h2></div>
+        <ol>
+          {copy.loop.map((item, index) => <li key={item.title}><span>{String(index + 1).padStart(2, "0")}</span><div><h3>{item.title}</h3><p>{item.body}</p></div></li>)}
+        </ol>
+        <Link className="mj-text-link" href="/repository">{copy.secondary} <span aria-hidden="true">→</span></Link>
+      </section>
     </PublicSite>
   );
 }

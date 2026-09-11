@@ -76,7 +76,7 @@ test("contact form: submitting sends the exact fields the visitor typed, as JSON
     await waitFor(() => {
       assert.equal(
         getByRole("status").textContent,
-        "Thanks — that reached us. We reply from a person, usually within a couple of days.",
+        "Your message has been sent. We will reply to the email address you provided.",
       );
     });
   } finally {
@@ -176,7 +176,7 @@ test("contact form: a 503 from POST (no sender configured) opens the mailto fall
     await waitFor(() => {
       assert.equal(
         getByRole("status").textContent,
-        "Your email app should open with the inquiry prepared. Send it to add the note to the queue.",
+        "Your message is ready in your email app. Review it and send it there.",
       );
     });
   } finally {
@@ -205,7 +205,7 @@ test("contact form: a malformed mailto address from the server (misconfigured CO
     });
 
     await waitFor(() => {
-      assert.equal(getByRole("status").textContent, "That did not send. Try again in a moment, or write to us directly.");
+      assert.equal(getByRole("status").textContent, "Your message could not be sent. Your text is still here; please try again.");
     });
   } finally {
     fetchStub.restore();
@@ -218,4 +218,47 @@ test("contact form: honeypot field is present, hidden, and not part of what a ke
   assert.ok(honeypot, "no honeypot field — a bot filling every visible field would go undetected");
   assert.equal(honeypot.getAttribute("tabindex"), "-1");
   assert.equal(honeypot.closest('[aria-hidden="true"]') !== null, true);
+});
+
+
+test("contact form: rapid submissions send once, protect the draft, and allow retry after failure", async () => {
+  let respond!: (value: { status: number; body?: unknown }) => void;
+  const pending = new Promise<{ status: number; body?: unknown }>((resolve) => { respond = resolve; });
+  const fetchStub = stubFetch((request) => request.method === "GET"
+    ? { status: 200, body: { configured: true } }
+    : pending);
+  try {
+    const { form, getByLabelText, getByRole } = renderForm();
+    const message = getByLabelText("Message") as HTMLTextAreaElement;
+    fireEvent.change(getByLabelText("Name"), { target: { value: "Ada" } });
+    fireEvent.change(getByLabelText("Email"), { target: { value: "ada@example.com" } });
+    fireEvent.change(message, { target: { value: "Keep this draft" } });
+    act(() => { fireEvent.submit(form); fireEvent.submit(form); });
+    assert.equal(fetchStub.calls.filter((call) => call.method === "POST").length, 1);
+    assert.equal(message.disabled, true);
+    assert.equal(getByRole("button").hasAttribute("disabled"), true);
+    await act(async () => { respond({ status: 502 }); });
+    await waitFor(() => assert.equal(message.disabled, false));
+    assert.equal(message.value, "Keep this draft");
+    assert.match(getByRole("status").textContent ?? "", /could not be sent/);
+    await act(async () => { fireEvent.submit(form); });
+    assert.equal(fetchStub.calls.filter((call) => call.method === "POST").length, 2);
+  } finally {
+    fetchStub.restore();
+  }
+});
+
+test("contact form: a selected pricing plan becomes an editable message", () => {
+  const fetchStub = stubFetch(() => ({ status: 200, body: { configured: true } }));
+  window.history.replaceState(null, "", "/contact?plan=Professional");
+  try {
+    const { getByLabelText } = renderForm();
+    const message = getByLabelText("Message") as HTMLTextAreaElement;
+    assert.equal(message.value, "I'd like to learn more about the Professional plan.");
+    fireEvent.change(message, { target: { value: "My own inquiry" } });
+    assert.equal(message.value, "My own inquiry");
+  } finally {
+    window.history.replaceState(null, "", "/");
+    fetchStub.restore();
+  }
 });

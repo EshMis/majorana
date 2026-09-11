@@ -114,7 +114,8 @@ test("account settings: a failed save shows the server's error and leaves the bu
     });
 
     await waitFor(() => {
-      assert.equal(getByRole("status").textContent, "Database unavailable");
+      assert.equal(getByRole("alert").textContent, "Database unavailable");
+      assert.ok(getByRole("alert").closest("section")?.querySelector("form"), "profile errors stay beside the profile form");
     });
     const button = getByRole("button", { name: /Save name/i });
     assert.equal(button.hasAttribute("disabled"), false);
@@ -147,7 +148,36 @@ test("account settings: the auto-keep-artifacts toggle PATCHes /api/workspace/se
     // the only feedback there is, so it must not keep claiming a state the
     // workspace does not actually have.
     await waitFor(() => assert.equal(toggle.checked, false));
-    assert.ok((getByRole("status").textContent?.length ?? 0) > 0, "a failure must say so, not just quietly revert");
+    assert.ok((getByRole("alert").textContent?.length ?? 0) > 0, "a failure must say so, not just quietly revert");
+  } finally {
+    fetchStub.restore();
+  }
+});
+
+test("account settings: concurrent saves keep success and failure in their own panels", async () => {
+  let finishProfile!: (value: { status: number; body: unknown }) => void;
+  let finishWorkspace!: (value: { status: number; body: unknown }) => void;
+  const profile = new Promise<{ status: number; body: unknown }>(resolve => { finishProfile = resolve; });
+  const settings = new Promise<{ status: number; body: unknown }>(resolve => { finishWorkspace = resolve; });
+  const fetchStub = stubFetch(request => {
+    if (request.method === "GET" && request.url === "/api/me") return { status: 200, body: ME };
+    if (request.method === "GET" && request.url === "/api/workspace") return { status: 200, body: WORKSPACE };
+    if (request.method === "GET" && request.url === "/api/workspaces") return { status: 200, body: WORKSPACES_LIST };
+    if (request.method === "PATCH" && request.url === "/api/me") return profile;
+    if (request.method === "PATCH" && request.url === "/api/workspace/settings") return settings;
+    throw new Error(`unexpected request: ${request.method} ${request.url}`);
+  });
+  try {
+    const view = await renderAndWaitForLoad();
+    act(() => {
+      fireEvent.submit(view.form);
+      fireEvent.click(view.getByLabelText(/Automatically save results/i));
+    });
+    await act(async () => finishProfile({ status: 200, body: ME }));
+    assert.ok(view.getByText("Profile saved.").closest("section")?.querySelector("form"));
+    await act(async () => finishWorkspace({ status: 503, body: {} }));
+    assert.ok(view.getByRole("alert").closest("section")?.querySelector('input[type="checkbox"]'));
+    assert.ok(view.getByText("Profile saved."), "workspace feedback does not erase profile feedback");
   } finally {
     fetchStub.restore();
   }

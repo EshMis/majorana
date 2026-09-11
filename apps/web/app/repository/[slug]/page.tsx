@@ -14,12 +14,15 @@ import {
 import { RepositoryEstimatePanel, hasVisibleEstimate } from "../../../components/repository-estimate";
 import { RepositoryProfilePanel, hasVisibleProfile } from "../../../components/repository-profile";
 import { RepositoryInterfacePanel } from "../../../components/repository-interface";
-import { EntryLayerLinks, EntryStateLinks } from "../../../components/repository-layers";
+import { EntryLayerLinks, EntryStateLinks, entryLayerPresence } from "../../../components/repository-layers";
 import { LAYER_GRAPH } from "../../../lib/repository/layer-graph";
 import { layerCorpusEntry } from "../../../lib/repository/layers";
+import { entryVerificationMethods } from "../../../lib/repository/entry-verification";
 import { STATE_VOCABULARY } from "../../../lib/repository/state-vocabulary";
 import { deriveInterface, neighboursOf, type EntryInterface } from "../../../lib/repository/interface";
 import { resolveEntryPort, type BrowseSearchParams } from "../../../lib/repository/browse-params";
+import { SECTION_PARAM, withCard } from "../../../lib/repository/map-card";
+import { parseRecordSection } from "../../../lib/repository/record-card";
 import { RepositoryEntryView } from "./repository-entry-view";
 
 export async function generateStaticParams() {
@@ -56,7 +59,8 @@ export default async function RepositoryEntryPage({
   searchParams: Promise<BrowseSearchParams>;
 }) {
   const { slug } = await params;
-  const openPort = resolveEntryPort(await searchParams);
+  const search = await searchParams;
+  const openPort = resolveEntryPort(search);
   // The full record for this one slug, then the slim list for the related-links
   // strip. Previously this pulled the ENTIRE corpus with full records (~2.37 MB)
   // just to find one entry and read a few sibling titles; the list projection is
@@ -141,6 +145,16 @@ export default async function RepositoryEntryPage({
     entries.map((candidate) => [candidate.slug, locale === "ja" ? candidate.titleJa : candidate.title]),
   );
 
+  const corpusEntry = layerCorpusEntry({ ...entry, verificationMethods: entryVerificationMethods(entry) });
+  // The section `?sec=` names, resolved against the record's own list the way
+  // the card resolves its own; `?port=` still lands a reader on the end it
+  // names, now as the Input or Output section rather than an open disclosure.
+  const section =
+    parseRecordSection(search[SECTION_PARAM]) ?? (openPort === "in" ? "input" : openPort === "out" ? "output" : null);
+  const hasLayers = entryLayerPresence(LAYER_GRAPH, STATE_VOCABULARY, corpusEntry);
+  // The way onward to the map: the card that names this record, when one does.
+  const mapNode = LAYER_GRAPH.nodes.find((node) => (node.entries ?? []).includes(entry.slug));
+  const mapHref = mapNode === undefined ? null : withCard("/repository/layers", mapNode.id);
   const related = entry.relatedSlugs
     .map((relatedSlug) => entries.find((candidate) => candidate.slug === relatedSlug))
     .filter((relatedEntry): relatedEntry is NonNullable<typeof relatedEntry> => Boolean(relatedEntry))
@@ -160,7 +174,9 @@ export default async function RepositoryEntryPage({
         isSignedIn={Boolean(user)}
         signInHref={signInHref}
         related={related}
-        connectionsOpen={openPort !== null}
+        section={section}
+        hasLayers={hasLayers}
+        mapHref={mapHref}
         estimate={
           // Decided here, not by testing the element: a React element is truthy
           // whatever it renders, so passing one unconditionally gives an empty
@@ -201,7 +217,7 @@ export default async function RepositoryEntryPage({
               graph={LAYER_GRAPH}
               slug={entry.slug}
               locale={locale}
-              corpus={[layerCorpusEntry(entry)]}
+              corpus={[corpusEntry]}
             />
             {/* The other half of the join, and a different claim from the strip
                 above it. `EntryLayerLinks` answers "which map nodes name this
@@ -218,7 +234,7 @@ export default async function RepositoryEntryPage({
             <EntryStateLinks
               graph={LAYER_GRAPH}
               vocabulary={STATE_VOCABULARY}
-              entry={layerCorpusEntry(entry)}
+              entry={corpusEntry}
               locale={locale}
             />
           </>

@@ -1,42 +1,30 @@
 import type { PublicLocale } from "./public-locale";
+import type { HowItWorksCopy } from "../components/how-it-works";
 
 export type HomeBenchmarkCopy = {
   label: string;
   title: string;
   body: string;
-  scoreLabel: string;
-  internalLabel: string;
-  chartLabel: string;
-  chartAria: string;
-  models: Array<{
+  /** The x axis, e.g. "pass@1, %". Every score is a percentage on 0–100. */
+  axisLabel: string;
+  leonaLabel: string;
+  reportedLabel: string;
+  tableLabel: string;
+  tableHeaders: { benchmark: string; model: string; score: string; source: string };
+  /**
+   * One row per benchmark (or per framework of a multi-framework benchmark).
+   * Exactly one score per row is `featured` — LeonaQ, our own evaluation; the
+   * rest are the figures the cited sources report. The numbers are the
+   * measurement: change them only against the source named in `badge`.
+   */
+  rows: Array<{
     name: string;
-    detail: string;
-    score: number;
-    badge: string;
-    featured?: boolean;
+    detail?: string;
+    scores: Array<{ model: string; detail?: string; score: number; badge: string; featured?: boolean }>;
   }>;
   note: string;
   sourcesLabel: string;
   sources: Array<{ label: string; href: string }>;
-  crossFramework: {
-    label: string;
-    title: string;
-    body: string;
-    internalLabel: string;
-    comparisonLabel: string;
-    chartAria: string;
-    frameworks: Array<{
-      name: string;
-      scores: Array<{
-        model: string;
-        score: number;
-        featured?: boolean;
-      }>;
-    }>;
-    note: string;
-    sourcesLabel: string;
-    sources: Array<{ label: string; href: string }>;
-  };
 };
 
 export const LOADING_COPY: Record<PublicLocale, {
@@ -63,401 +51,396 @@ export const LOADING_COPY: Record<PublicLocale, {
 };
 
 export const HOME_COPY: Record<PublicLocale, {
-  hero: {
-    title: string;
-    lede: string;
-    primary: string;
-    secondary: string;
-    contact: string;
-    scrollCue: string;
-  };
-  promptDemo: {
-    label: string;
-    attach: string;
-    mode: string;
-    submit: string;
-    prompts: string[];
-    modalLabel: string;
-    modalTitle: string;
-    modalBody: string;
-    modalPrimary: string;
-    close: string;
-  };
-  visual: {
-    label: string;
-    status: string;
-    demoLabel: string;
-    demoDescription: string;
-    demoFallback: string;
-    pipeline: Array<{ number: string; label: string; detail: string }>;
-    footer: string;
-    meta: string;
-  };
-  intro: { label: string; title: string };
+  hero: { title: string; lede: string };
+  /**
+   * `prompts` rotate through the cover's box, typed and erased by the shared
+   * composer ghost (`lib/composer-ghost.ts`). The same rules as the workspace
+   * list apply and are asserted in `lib/landing-prompts.test.ts`: short enough
+   * to type out, at least half free of quantum vocabulary, same count in both
+   * languages.
+   */
+  promptDemo: { label: string; submit: string; retry: string; prompts: string[] };
+  /** `demoLabel` names the walkthrough video; `demoDescription` is read to screen readers only. */
+  visual: { demoLabel: string; demoDescription: string; demoFallback: string };
+  /** The connected diagram of the five surfaces; `stages[i]` pairs with `product.items[i]`. */
+  how: HowItWorksCopy;
+  /** `items` is shared with the product page's map and list; `label`/`title` name that map there. */
+  product: { label: string; title: string; items: Array<{ title: string; body: string; href: string }> };
+  principles: { label: string; title: string; items: Array<{ title: string; body: string }> };
+  frameworks: { label: string; items: string[] };
   benchmark: HomeBenchmarkCopy;
-  product: {
-    label: string;
-    title: string;
-    items: Array<{ index: string; title: string; body: string; action: string; href: string }>;
-  };
-  atlas: { label: string; title: string; body: string; action: string };
-  trace: {
-    label: string;
-    title: string;
-    body: string;
-    items: Array<{ title: string; body: string }>;
-  };
-  frameworks: { label: string; title: string; body: string; items: string[] };
-  // Required (not optional): PublicLocale parity for this field is enforced only
-  // by TypeScript here — the JA object silently lost its principles section,
-  // including its only privacy statement, when this was briefly `principles?:`
-  // (2026-08-01 review). Do not reintroduce `?` without also adding a runtime
-  // check, or a future locale can drop this section again with no compiler error.
-  principles: {
-    label: string;
-    title: string;
-    items: Array<{ title: string; body: string }>;
-  };
-  cta: { label: string; title: string; body: string; primary: string; secondary: string };
+  cta: { title: string; body: string; primary: string; secondary: string };
 }> = {
   en: {
     hero: {
       title: "A self-evolving quantum solution platform.",
       lede: "Generate, run, and reuse quantum circuits.",
-      primary: "Open the workspace",
-      secondary: "Explore the Atlas",
-      contact: "Get in touch",
-      scrollCue: "Scroll",
     },
     promptDemo: {
-      label: "Describe the quantum circuit you want to build",
-      attach: "Attach context",
-      mode: "Plan",
-      submit: "Build now",
-      // Mostly plain English a non-specialist would type, with a couple that
-      // reach for quantum vocabulary — mix and match, not all-technical
-      // (owner, ai-ops#94). The natural-language ones are shared verbatim with
-      // `workspace-locale.ts`'s `run.examples`, so the same prompt that types
-      // itself out here is proven to work once a visitor signs in.
-      prompts: [
+      "label": "Describe a quantum task",
+      "submit": "Continue in Nala",
+      "retry": "Try opening the workspace again.",
+      "prompts": [
+        "Build a Bell state and verify the measured distribution.",
         "Split 6 suppliers into two groups, cutting the fewest links.",
         "Pick 8 stocks for the best return at a fixed risk.",
-        "Build a Bell state and verify the measured distribution.",
-        "Schedule 6 jobs on 3 machines to finish soonest.",
-        "Use QAOA to solve MaxCut on a five-node ring.",
-      ],
-      modalLabel: "Start building",
-      modalTitle: "Create an account to run this prompt.",
-      // Was "Sign up to generate the circuit, run it in a guarded simulator,
-      // and keep the result" — read together with the blockquote below, which
-      // quotes the exact words back, that promised the three things would
-      // happen as part of signing up. They no longer do: ai-ops 102 carries
-      // the prompt into the workspace composer and stops there, deliberately
-      // — the owner's ruling was pre-fill only, never auto-run, so a real run
-      // still costs a press of the button and one of the free tier's five
-      // weekly runs. This says what actually happens now (flagged by
-      // team-lead, corrected in the same PR that changed the behaviour).
-      modalBody: "Your prompt carries over. Sign up and it will be waiting in your workspace — press run when you are ready.",
-      modalPrimary: "Create an account",
-      close: "Close",
+        "Search 16 records for the one that matches.",
+        "Find the ground-state energy of an H₂ molecule.",
+        "Schedule 6 jobs on 3 machines to finish soonest."
+      ]
     },
     visual: {
-      label: "LEONA QUANTUM / PRODUCT",
-      status: "AI-POWERED CIRCUIT DEVELOPMENT",
-      demoLabel: "Leona Quantum product demo",
-      demoDescription: "A product walkthrough showing Agent Run, Atlas, and Studio from generation and verification through reuse and editing.",
-      demoFallback: "Open the product demo video",
-      pipeline: [
-        { number: "01", label: "Describe", detail: "Express the circuit in natural language" },
-        { number: "02", label: "Generate", detail: "Create the circuit, code, and diagram" },
-        { number: "03", label: "Run & verify", detail: "Execute the circuit and review the checks" },
-        { number: "04", label: "Save & use", detail: "Keep the work in your Studio workspace" },
-      ],
-      footer: "Quantum circuit development, in one flow",
-      meta: "GENERATE · VERIFY · USE",
+      "demoLabel": "See Leona in action",
+      "demoDescription": "Follow a circuit from generation and verification to editing in Studio and reuse through the Atlas.",
+      "demoFallback": "Open the product demo video"
     },
-    intro: {
-      label: "The platform",
-      title: "Generate, run, verify, and use quantum circuits in one environment.",
+    how: {
+      label: "How it fits together",
+      title: "From a question to a result you can check.",
+      lede: "Leona is five parts on one thread. You ask, build, look things up, learn and share, and each part hands its work to the next.",
+      flowLabel: "The five parts of Leona",
+      stages: [
+        {
+          figure: "nala",
+          title: "Ask in plain words",
+          body: "Describe what you want. Nala writes the circuit, runs it, and shows you the checks it passed, so you start from a working answer rather than a blank file.",
+          link: "Open Nala",
+        },
+        {
+          figure: "studio",
+          title: "Edit, run, keep versions",
+          body: "Every circuit opens in Studio. Change a gate, simulate it, verify it, and save the version. Your work stays private until you decide otherwise.",
+          link: "Open Studio",
+        },
+        {
+          figure: "atlas",
+          title: "Look it up at the source",
+          body: "A public reference of algorithms, papers and circuits, each tied to the paper it comes from. Pull one into Studio or cite it.",
+          link: "Browse the Atlas",
+        },
+        {
+          figure: "notebooks",
+          title: "Learn by running it",
+          body: "Turn a question into a Jupyter lesson with cells that run and exercises that check themselves.",
+          link: "Open Notebooks",
+        },
+        {
+          figure: "qapps",
+          title: "Share it as a small app",
+          body: "Wrap a circuit in a few inputs and a chart, then send the link. Anyone can try it without touching code.",
+          link: "Open Qapps",
+        },
+      ],
+    },
+    product: {
+      "label": "The workspace",
+      "title": "Choose where to start",
+      "items": [
+        {
+          "title": "Nala",
+          "body": "Describe a problem, generate quantum code, and review its execution and checks.",
+          "href": "/run"
+        },
+        {
+          "title": "Studio",
+          "body": "Edit circuits, run simulations, and organize your saved work.",
+          "href": "/studio"
+        },
+        {
+          "title": "Quantum Atlas",
+          "body": "Browse quantum concepts, algorithms, and reference implementations.",
+          "href": "/repository"
+        },
+        {
+          "title": "Notebooks",
+          "body": "Work through lessons and combine code, notes, and results.",
+          "href": "/notebooks"
+        },
+        {
+          "title": "Qapps",
+          "body": "Explore quantum applications with guided inputs and results.",
+          "href": "/qapps"
+        }
+      ]
+    },
+    principles: {
+      "label": "Code and evidence",
+      "title": "Keep the work behind each result",
+      "items": [
+        {
+          "title": "Inspect the checks",
+          "body": "Review the code, execution settings, results, and verification record. Checks that fail or could not run stay visible."
+        },
+        {
+          "title": "Continue your research",
+          "body": "Save a circuit in Studio, edit its implementation, and build on the next version. The public Atlas provides reusable references."
+        },
+        {
+          "title": "Choose what to share",
+          "body": "Your Studio work is private by default. Publishing is a separate action you control."
+        }
+      ]
+    },
+    frameworks: {
+      "label": "Work in familiar frameworks:",
+      "items": [
+        "Qiskit",
+        "Cirq",
+        "PennyLane"
+      ]
+    },
+    cta: {
+      "title": "Start with a question or a circuit.",
+      "body": "Describe your task to Nala, or find a starting point in the Atlas.",
+      "primary": "Open workspace",
+      "secondary": "Explore the Atlas"
     },
     benchmark: {
-      label: "Model performance / Qiskit HumanEval",
+      label: "Benchmarks",
       title: "Measured on code that has to run.",
-      body: "In our internal evaluation, LeonaQ reached 55.0% pass@1 on Qiskit HumanEval, an execution-based benchmark for Qiskit code generation.",
-      scoreLabel: "Qiskit HumanEval · pass@1",
-      internalLabel: "Internal evaluation",
-      chartLabel: "Reported pass@1",
-      chartAria: "Qiskit HumanEval pass@1 comparison",
-      models: [
-        { name: "LeonaQ", detail: "Leona Quantum", score: 55.0, badge: "Internal", featured: true },
-        { name: "Qiskit Code Assistant", detail: "mistral-small-3.2-24b-qiskit", score: 47.0, badge: "Official model card" },
-        { name: "Granite 8B Code QK", detail: "granite-8b-code-qk", score: 46.5, badge: "QHE paper" },
-        { name: "DeepSeek Coder 33B", detail: "deepseek-coder-33b-base", score: 39.6, badge: "QHE paper" },
-        { name: "CodeLlama 34B Python", detail: "codellama-34b-python-hf", score: 26.7, badge: "QHE paper" },
+      body: "LeonaQ's pass@1 on two execution-based benchmarks, next to the results their papers report for other models.",
+      axisLabel: "pass@1, %",
+      leonaLabel: "LeonaQ, our evaluation",
+      reportedLabel: "Reported in the source",
+      tableLabel: "The same numbers as a table",
+      tableHeaders: { benchmark: "Benchmark", model: "Model", score: "pass@1", source: "Source" },
+      rows: [
+        {
+          name: "Qiskit HumanEval",
+          detail: "Qiskit code generation, execution-based",
+          scores: [
+            { model: "LeonaQ", detail: "Leona Quantum", score: 55.0, badge: "Internal", featured: true },
+            { model: "Qiskit Code Assistant", detail: "mistral-small-3.2-24b-qiskit", score: 47.0, badge: "Official model card" },
+            { model: "Granite 8B Code QK", detail: "granite-8b-code-qk", score: 46.5, badge: "QHE paper" },
+            { model: "DeepSeek Coder 33B", detail: "deepseek-coder-33b-base", score: 39.6, badge: "QHE paper" },
+            { model: "CodeLlama 34B Python", detail: "codellama-34b-python-hf", score: 26.7, badge: "QHE paper" },
+          ],
+        },
+        {
+          name: "QuanBench+ · Qiskit",
+          detail: "42 tasks",
+          scores: [
+            { model: "LeonaQ", score: 72.3, badge: "Internal", featured: true },
+            { model: "Gemini", score: 59.5, badge: "QuanBench+ paper" },
+            { model: "GPT", score: 57.1, badge: "QuanBench+ paper" },
+            { model: "Claude", score: 45.2, badge: "QuanBench+ paper" },
+          ],
+        },
+        {
+          name: "QuanBench+ · Cirq",
+          detail: "the same 42 tasks",
+          scores: [
+            { model: "LeonaQ", score: 71.4, badge: "Internal", featured: true },
+            { model: "Gemini", score: 54.8, badge: "QuanBench+ paper" },
+            { model: "GPT", score: 52.4, badge: "QuanBench+ paper" },
+            { model: "Claude", score: 35.7, badge: "QuanBench+ paper" },
+          ],
+        },
+        {
+          name: "QuanBench+ · PennyLane",
+          detail: "the same 42 tasks",
+          scores: [
+            { model: "LeonaQ", score: 66.7, badge: "Internal", featured: true },
+            { model: "Gemini", score: 40.5, badge: "QuanBench+ paper" },
+            { model: "GPT", score: 42.9, badge: "QuanBench+ paper" },
+            { model: "Claude", score: 26.2, badge: "QuanBench+ paper" },
+          ],
+        },
       ],
-      note: "LeonaQ's 55.0% is from our internal evaluation. Comparator values are reported results from the Qiskit HumanEval paper and Qiskit's official model card. Dataset revisions, system prompts, and execution environments may differ, so this is a directional comparison rather than a controlled head-to-head test.",
-      sourcesLabel: "Sources and methodology",
+      note: "LeonaQ's figures come from our own evaluation. The comparator figures are the ones reported in the Qiskit HumanEval paper, Qiskit's model card and the QuanBench+ paper. Gemini 3 Pro, GPT-5.1 and Claude 3.7 Sonnet appear here under their family names. Datasets, prompts and environments differ between those runs and ours, so treat this as directional rather than a controlled head-to-head.",
+      sourcesLabel: "Sources",
       sources: [
         { label: "Qiskit HumanEval paper · Table II", href: "https://arxiv.org/abs/2406.14712" },
         { label: "Qiskit model card · benchmark table", href: "https://huggingface.co/Qiskit/mistral-small-3.2-24b-qiskit" },
         { label: "IBM Quantum · Qiskit Code Assistant", href: "https://quantum.cloud.ibm.com/docs/en/guides/qiskit-code-assistant" },
+        { label: "QuanBench+ paper · Table 3", href: "https://arxiv.org/html/2604.08570v2" },
       ],
-      crossFramework: {
-        label: "Multi-framework evaluation / QuanBench+",
-        title: "Quantum code that travels across frameworks.",
-        body: "We evaluated LeonaQ on the same 42 quantum-programming tasks implemented in Qiskit, Cirq, and PennyLane.",
-        internalLabel: "Internal evaluation",
-        comparisonLabel: "Reported Pass@1",
-        chartAria: "QuanBench+ Pass@1 comparison across Qiskit, Cirq, and PennyLane",
-        frameworks: [
-          {
-            name: "Qiskit",
-            scores: [
-              { model: "LeonaQ", score: 72.3, featured: true },
-              { model: "Gemini", score: 59.5 },
-              { model: "GPT", score: 57.1 },
-              { model: "Claude", score: 45.2 },
-            ],
-          },
-          {
-            name: "Cirq",
-            scores: [
-              { model: "LeonaQ", score: 71.4, featured: true },
-              { model: "Gemini", score: 54.8 },
-              { model: "GPT", score: 52.4 },
-              { model: "Claude", score: 35.7 },
-            ],
-          },
-          {
-            name: "PennyLane",
-            scores: [
-              { model: "LeonaQ", score: 66.7, featured: true },
-              { model: "Gemini", score: 40.5 },
-              { model: "GPT", score: 42.9 },
-              { model: "Claude", score: 26.2 },
-            ],
-          },
-        ],
-        note: "LeonaQ results are from our internal evaluation of QuanBench+. Comparator values are reported Pass@1 results for Gemini 3 Pro, GPT-5.1, and Claude 3.7 Sonnet in the QuanBench+ paper; model names are shortened to their families here. Evaluation environments may differ, so this is a directional comparison rather than a controlled head-to-head test.",
-        sourcesLabel: "Source and methodology",
-        sources: [
-          { label: "QuanBench+ paper · Table 3", href: "https://arxiv.org/html/2604.08570v2" },
-        ],
-      },
-    },
-    product: {
-      label: "Our product",
-      title: "Everything needed to develop and use quantum circuits.",
-      items: [
-        { index: "01", title: "AI quantum circuit generation", body: "Leona Quantum generates quantum circuits from natural-language input and outputs code and circuit diagrams.", action: "Open the workspace", href: "/workspace" },
-        { index: "02", title: "Verified circuit execution", body: "Run generated or existing circuits on the supported simulator, then review the verification checks for that result before you rely on it.", action: "Open the workspace", href: "/workspace" },
-        { index: "03", title: "Research and circuit repository", body: "Search and use quantum circuits, algorithms, and implementation code in the Atlas. Save your own code and execution settings in Studio for later editing and use.", action: "Explore the Atlas", href: "/repository" },
-      ],
-    },
-    atlas: {
-      label: "Atlas",
-      title: "Put quantum circuits to work.",
-      body: "Search and use quantum circuits, algorithms, and implementation code in one place with Atlas.",
-      action: "Explore the Atlas",
-    },
-    trace: {
-      label: "Execution record",
-      title: "Trace how each result was produced.",
-      body: "Leona Quantum keeps the circuit, execution settings, results, checks, and related information together. Review what was generated, how it was executed, and how the result was produced.",
-      items: [
-        { title: "Circuit", body: "The generated or selected quantum circuit." },
-        { title: "Code", body: "The implementation used for the run." },
-        { title: "Execution settings", body: "Framework, simulator, shots, seed, and other conditions." },
-        { title: "Results", body: "The outputs returned by the recorded execution." },
-        { title: "Checks", body: "The checks completed for that result." },
-        { title: "Sources", body: "References and context connected to the work." },
-      ],
-    },
-    frameworks: {
-      label: "Frameworks",
-      title: "Supports a range of quantum frameworks",
-      body: "Generate and inspect quantum circuits using supported frameworks such as Qiskit, Cirq, and PennyLane. Select the framework that fits your development environment and purpose.",
-      items: ["Qiskit", "Cirq", "PennyLane"],
-    },
-    principles: {
-      label: "Our principles",
-      title: "What we won't trade away.",
-      items: [
-        { title: "Evidence first", body: "A result you cannot inspect is a claim. The check ships with the answer, including when the check could not run." },
-        { title: "Open by default", body: "The Atlas is public because shared groundwork makes private work faster." },
-        { title: "Privacy by design", body: "Studio content is yours. Nothing you build there feeds anything public." },
-        { title: "Supports a range of quantum frameworks", body: "Work with supported frameworks such as Qiskit, Cirq, and PennyLane, and choose the environment that fits the task." },
-      ],
-    },
-    cta: {
-      label: "Get started",
-      title: "Develop your next quantum circuit with Leona Quantum.",
-      body: "Start from natural language or use an existing circuit from the Atlas.",
-      primary: "Open the workspace",
-      secondary: "Explore the Atlas",
     },
   },
   ja: {
     hero: {
       title: "次世代\n量子コンピューティングプラットフォーム",
       lede: "量子回路の開発から活用まで、ひとつのプラットフォームで",
-      primary: "ワークスペースを開く",
-      secondary: "Atlasを見る",
-      contact: "お問い合わせ",
-      scrollCue: "スクロール",
     },
     promptDemo: {
-      label: "作りたい量子回路を入力",
-      attach: "コンテキストを添付",
-      mode: "プラン",
-      submit: "生成する",
-      prompts: [
+      "label": "取り組みたい量子の課題を入力",
+      "submit": "Nalaで続ける",
+      "retry": "もう一度ワークスペースを開いてください。",
+      "prompts": [
+        "ベル状態を作り、測定分布を検証してください。",
         "6社の取引先を2組に分け、切る取引を最少にしてください。",
         "リスク一定で、8銘柄の最適な組み合わせを選んでください。",
-        "ベル状態を作り、測定分布を検証してください。",
-        "6件の作業を3台の機械に割り当て、最短で終わらせてください。",
-        "5ノードのリンググラフのMaxCut問題をQAOAで解いてください。",
-      ],
-      modalLabel: "量子回路開発を始める",
-      modalTitle: "アカウントを作成して、このプロンプトを実行",
-      modalBody: "入力したプロンプトはそのまま引き継がれます。アカウントを作成すると、ワークスペースにその内容が用意されているので、準備ができたら実行してください。",
-      modalPrimary: "アカウントを作成",
-      close: "閉じる",
+        "16件のデータから該当する1件を探してください。",
+        "H₂分子の基底状態エネルギーを求めてください。",
+        "6件の作業を3台の機械に割り当て、最短で終わらせてください。"
+      ]
     },
     visual: {
-      label: "LEONA QUANTUM / PRODUCT",
-      status: "AIで量子回路を生成",
-      demoLabel: "Leona Quantum プロダクトデモ",
-      demoDescription: "Agent Runでの生成と検証から、Atlasでの再利用、Studioでの編集までを紹介するプロダクトデモです。",
-      demoFallback: "プロダクトデモ動画を開く",
-      pipeline: [
-        { number: "01", label: "自然言語で表現", detail: "生成したい量子回路を入力" },
-        { number: "02", label: "量子回路を生成", detail: "コードや回路図を出力" },
-        { number: "03", label: "実行・検証", detail: "回路を実行し、検証結果を確認" },
-        { number: "04", label: "保存・活用", detail: "情報をStudioに保存" },
-      ],
-      footer: "量子回路の開発を、ひとつの流れに",
-      meta: "生成 · 検証 · 活用",
+      "demoLabel": "Leonaの操作を見る",
+      "demoDescription": "回路の生成と検証から、Studioでの編集、Atlasを使った再利用までを紹介します。",
+      "demoFallback": "プロダクトデモ動画を開く"
     },
-    intro: {
-      label: "プラットフォーム",
-      title: "量子回路の生成、実行、検証、活用までを一つの環境で実行",
+    how: {
+      label: "全体のつながり",
+      title: "問いから、確かめられる結果まで。",
+      lede: "Leonaは、5つの部品がひとつの流れでつながっています。尋ねて、組み立てて、調べて、学んで、共有する。それぞれが次の作業へ受け渡します。",
+      flowLabel: "Leonaを構成する5つの部品",
+      stages: [
+        {
+          figure: "nala",
+          title: "言葉で頼む",
+          body: "作りたいものを説明すると、Nalaが回路を書いて実行し、通った検証を示します。白紙からではなく、動く答えから始められます。",
+          link: "Nalaを開く",
+        },
+        {
+          figure: "studio",
+          title: "編集して、実行して、版を残す",
+          body: "回路はすべてStudioで開けます。ゲートを変え、シミュレーションと検証を行い、版として保存します。公開すると決めるまでは非公開のままです。",
+          link: "Studioを開く",
+        },
+        {
+          figure: "atlas",
+          title: "出典にあたって調べる",
+          body: "アルゴリズム、論文、回路の公開リファレンスです。それぞれが元の論文と結びついています。Studioに取り込むことも、引用することもできます。",
+          link: "Atlasを見る",
+        },
+        {
+          figure: "notebooks",
+          title: "動かしながら学ぶ",
+          body: "問いをJupyterの教材に変えます。セルは実際に実行でき、演習は自動で採点されます。",
+          link: "ノートブックを開く",
+        },
+        {
+          figure: "qapps",
+          title: "小さなアプリとして共有する",
+          body: "回路にいくつかの入力欄とグラフを付けて、リンクを送るだけ。コードに触れずに誰でも試せます。",
+          link: "Qappsを開く",
+        },
+      ],
+    },
+    product: {
+      "label": "ワークスペース",
+      "title": "目的に合わせて始める",
+      "items": [
+        {
+          "title": "Nala",
+          "body": "課題を伝えて量子コードを生成し、実行結果と検証内容を確認できます。",
+          "href": "/run"
+        },
+        {
+          "title": "Studio",
+          "body": "回路を編集してシミュレーションを実行し、保存した研究を整理できます。",
+          "href": "/studio"
+        },
+        {
+          "title": "量子Atlas",
+          "body": "量子の概念、アルゴリズム、実装例を調べられます。",
+          "href": "/repository"
+        },
+        {
+          "title": "ノートブック",
+          "body": "教材で学びながら、コード、ノート、結果をまとめられます。",
+          "href": "/notebooks"
+        },
+        {
+          "title": "Qapps",
+          "body": "入力項目に沿って、量子アプリケーションを試せます。",
+          "href": "/qapps"
+        }
+      ]
+    },
+    principles: {
+      "label": "コードと検証記録",
+      "title": "結果に至る過程も残す",
+      "items": [
+        {
+          "title": "検証内容を確認",
+          "body": "コード、実行条件、結果、検証記録を確認できます。失敗した検証や実施できなかった検証も表示します。"
+        },
+        {
+          "title": "研究を続ける",
+          "body": "回路をStudioに保存し、実装を編集して次の実験へ進めます。公開Atlasでは再利用できる資料を探せます。"
+        },
+        {
+          "title": "共有範囲を選ぶ",
+          "body": "Studioの内容は初期状態では非公開です。公開するかどうかは、自分で決められます。"
+        }
+      ]
+    },
+    frameworks: {
+      "label": "対応フレームワーク:",
+      "items": [
+        "Qiskit",
+        "Cirq",
+        "PennyLane"
+      ]
+    },
+    cta: {
+      "title": "問いや回路から、開発を始める。",
+      "body": "Nalaに課題を伝えるか、Atlasで出発点となる実装を探せます。",
+      "primary": "ワークスペースを開く",
+      "secondary": "Atlasを見る"
     },
     benchmark: {
-      label: "モデル性能 / QISKIT HUMANEVAL",
+      label: "ベンチマーク",
       title: "動くコードで、モデルの実力を測る。",
-      body: "LeonaQは、Qiskitコード生成を実行テストで評価するQiskit HumanEvalにおいて、pass@1 55.0%を記録しました（社内評価）。",
-      scoreLabel: "Qiskit HumanEval · pass@1",
-      internalLabel: "社内評価",
-      chartLabel: "pass@1 公表値との比較",
-      chartAria: "Qiskit HumanEvalのpass@1比較",
-      models: [
-        { name: "LeonaQ", detail: "Leona Quantum", score: 55.0, badge: "社内評価", featured: true },
-        { name: "Qiskit Code Assistant", detail: "mistral-small-3.2-24b-qiskit", score: 47.0, badge: "公式モデルカード" },
-        { name: "Granite 8B Code QK", detail: "granite-8b-code-qk", score: 46.5, badge: "QHE論文" },
-        { name: "DeepSeek Coder 33B", detail: "deepseek-coder-33b-base", score: 39.6, badge: "QHE論文" },
-        { name: "CodeLlama 34B Python", detail: "codellama-34b-python-hf", score: 26.7, badge: "QHE論文" },
+      body: "実行テストに基づく2つのベンチマークでのLeonaQのpass@1を、各論文が公表する他モデルの結果と並べています。",
+      axisLabel: "pass@1（%）",
+      leonaLabel: "LeonaQ（社内評価）",
+      reportedLabel: "出典の公表値",
+      tableLabel: "同じ数値を表で見る",
+      tableHeaders: { benchmark: "ベンチマーク", model: "モデル", score: "pass@1", source: "出典" },
+      rows: [
+        {
+          name: "Qiskit HumanEval",
+          detail: "Qiskitコード生成・実行ベース",
+          scores: [
+            { model: "LeonaQ", detail: "Leona Quantum", score: 55.0, badge: "社内評価", featured: true },
+            { model: "Qiskit Code Assistant", detail: "mistral-small-3.2-24b-qiskit", score: 47.0, badge: "公式モデルカード" },
+            { model: "Granite 8B Code QK", detail: "granite-8b-code-qk", score: 46.5, badge: "QHE論文" },
+            { model: "DeepSeek Coder 33B", detail: "deepseek-coder-33b-base", score: 39.6, badge: "QHE論文" },
+            { model: "CodeLlama 34B Python", detail: "codellama-34b-python-hf", score: 26.7, badge: "QHE論文" },
+          ],
+        },
+        {
+          name: "QuanBench+ · Qiskit",
+          detail: "42課題",
+          scores: [
+            { model: "LeonaQ", score: 72.3, badge: "社内評価", featured: true },
+            { model: "Gemini", score: 59.5, badge: "QuanBench+論文" },
+            { model: "GPT", score: 57.1, badge: "QuanBench+論文" },
+            { model: "Claude", score: 45.2, badge: "QuanBench+論文" },
+          ],
+        },
+        {
+          name: "QuanBench+ · Cirq",
+          detail: "同じ42課題",
+          scores: [
+            { model: "LeonaQ", score: 71.4, badge: "社内評価", featured: true },
+            { model: "Gemini", score: 54.8, badge: "QuanBench+論文" },
+            { model: "GPT", score: 52.4, badge: "QuanBench+論文" },
+            { model: "Claude", score: 35.7, badge: "QuanBench+論文" },
+          ],
+        },
+        {
+          name: "QuanBench+ · PennyLane",
+          detail: "同じ42課題",
+          scores: [
+            { model: "LeonaQ", score: 66.7, badge: "社内評価", featured: true },
+            { model: "Gemini", score: 40.5, badge: "QuanBench+論文" },
+            { model: "GPT", score: 42.9, badge: "QuanBench+論文" },
+            { model: "Claude", score: 26.2, badge: "QuanBench+論文" },
+          ],
+        },
       ],
-      note: "LeonaQの55.0%は社内評価値です。比較対象には、Qiskit HumanEval論文とQiskit公式モデルカードの公表値を使用しています。データセットの版、システムプロンプト、実行環境が異なる可能性があるため、同一条件での厳密な直接比較ではありません。",
-      sourcesLabel: "出典・評価方法",
+      note: "LeonaQの数値は社内評価です。比較値はQiskit HumanEval論文、Qiskit公式モデルカード、QuanBench+論文の公表値で、Gemini 3 Pro、GPT-5.1、Claude 3.7 Sonnetはファミリー名で表記しています。データセットやプロンプト、実行環境が異なるため、同一条件での直接比較ではなく目安としてご覧ください。",
+      sourcesLabel: "出典",
       sources: [
         { label: "Qiskit HumanEval論文 · Table II", href: "https://arxiv.org/abs/2406.14712" },
         { label: "Qiskit公式モデルカード · ベンチマーク表", href: "https://huggingface.co/Qiskit/mistral-small-3.2-24b-qiskit" },
         { label: "IBM Quantum · Qiskit Code Assistant", href: "https://quantum.cloud.ibm.com/docs/en/guides/qiskit-code-assistant" },
+        { label: "QuanBench+論文 · Table 3", href: "https://arxiv.org/html/2604.08570v2" },
       ],
-      crossFramework: {
-        label: "マルチフレームワーク評価 / QUANBENCH+",
-        title: "3つのフレームワークで、性能を測る。",
-        body: "同じ42の量子プログラミング課題をQiskit、Cirq、PennyLaneに実装したQuanBench+で、LeonaQを評価しました。",
-        internalLabel: "社内評価",
-        comparisonLabel: "pass@1 公表値",
-        chartAria: "Qiskit、Cirq、PennyLaneにおけるQuanBench+のpass@1比較",
-        frameworks: [
-          {
-            name: "Qiskit",
-            scores: [
-              { model: "LeonaQ", score: 72.3, featured: true },
-              { model: "Gemini", score: 59.5 },
-              { model: "GPT", score: 57.1 },
-              { model: "Claude", score: 45.2 },
-            ],
-          },
-          {
-            name: "Cirq",
-            scores: [
-              { model: "LeonaQ", score: 71.4, featured: true },
-              { model: "Gemini", score: 54.8 },
-              { model: "GPT", score: 52.4 },
-              { model: "Claude", score: 35.7 },
-            ],
-          },
-          {
-            name: "PennyLane",
-            scores: [
-              { model: "LeonaQ", score: 66.7, featured: true },
-              { model: "Gemini", score: 40.5 },
-              { model: "GPT", score: 42.9 },
-              { model: "Claude", score: 26.2 },
-            ],
-          },
-        ],
-        note: "LeonaQの数値はQuanBench+を使った社内評価です。比較値には、QuanBench+論文が公表しているGemini 3 Pro、GPT-5.1、Claude 3.7 Sonnetのpass@1を使用し、画面上の名称はモデルファミリー名に短縮しています。実行環境が異なる可能性があるため、同一条件での厳密な直接比較ではありません。",
-        sourcesLabel: "出典・評価方法",
-        sources: [
-          { label: "QuanBench+論文 · Table 3", href: "https://arxiv.org/html/2604.08570v2" },
-        ],
-      },
-    },
-    product: {
-      label: "プロダクト",
-      title: "量子回路の開発から活用まで、ひとつのプラットフォームで",
-      items: [
-        { index: "01", title: "量子回路生成", body: "Leona Quantumは自然言語から量子回路を生成し、コードや回路図を出力", action: "ワークスペースを開く", href: "/workspace" },
-        { index: "02", title: "検証済みの回路実行", body: "生成した回路や既存の回路を、対応シミュレータで実行　結果を利用する前に、検証内容を確認できます", action: "ワークスペースを開く", href: "/workspace" },
-        { index: "03", title: "研究・量子回路リポジトリ", body: "Atlasで量子回路、アルゴリズム、実装コードをまとめて検索し、活用　コード、実行条件などの情報は、あとから編集・活用するためにStudioに保存", action: "Atlasを見る", href: "/repository" },
-      ],
-    },
-    atlas: {
-      label: "Atlas",
-      title: "量子回路を活用する",
-      body: "Atlasで量子回路、アルゴリズム、実装コードをまとめて検索し、活用",
-      action: "Atlasを見る",
-    },
-    trace: {
-      label: "実行記録",
-      title: "結果に至った過程を確認",
-      body: "量子回路、実行条件、実行結果、確認内容などをまとめて保存　何が生成され、どのように実行され、結果に至ったかをあとから確認",
-      items: [
-        { title: "量子回路", body: "生成または選択した量子回路" },
-        { title: "コード", body: "実行に使用した実装コード" },
-        { title: "実行条件", body: "フレームワーク、シミュレータ、ショット数、シードなどの条件" },
-        { title: "実行結果", body: "記録された実行から得られた出力" },
-        { title: "確認内容", body: "実行結果に対して完了した確認" },
-        { title: "出典", body: "量子回路に関連する参考情報" },
-      ],
-    },
-    frameworks: {
-      label: "フレームワーク",
-      title: "さまざまな量子フレームワークに対応",
-      body: "Qiskit、Cirq、PennyLaneなど、さまざまな量子フレームワークに対応　開発環境や目的に合わせて、使用するフレームワークを選択",
-      items: ["Qiskit", "Cirq", "PennyLane"],
-    },
-    principles: {
-      label: "原則",
-      title: "Leona Quantumが大切にすること",
-      items: [
-        { title: "結果だけでなく、検証内容も示す", body: "確認できない結果は、検証済みとして扱いません。検証できなかった場合も、そのまま記録します。" },
-        { title: "公開できる研究は、誰でも確認できる形に", body: "共有された研究を再利用できるよう、Atlasは公開しています。" },
-        { title: "非公開の研究データは、初めから保護", body: "Studioの内容は利用者のものです。非公開ワークスペースの作業が自動的に公開されることはありません。" },
-        { title: "さまざまな量子フレームワークに対応", body: "Qiskit、Cirq、PennyLaneなど、対応フレームワークで作業し、目的に合った環境を選べます。" },
-      ],
-    },
-    cta: {
-      label: "始める",
-      title: "次の量子回路開発を、Leona Quantumで",
-      body: "Leona Quantumで全く新しい量子回路生成を体験",
-      primary: "ワークスペースを開く",
-      secondary: "Atlasを見る",
     },
   },
 };
@@ -549,21 +532,21 @@ export const PRICING_COPY: Record<PublicLocale, {
   plans: Array<{ name: string; price: string; cadence: string; features: string[]; action: string; tone: "quiet" | "featured" }>;
 }> = {
   en: {
-    hero: { title: "A clear path from first run to team work.", body: "Start free, keep private work in Studio, and move up when you need more verification capacity, export tooling, or shared R&D controls." },
+    hero: { title: "A clear path from first run to team work.", body: "Explore plans for your research needs. Pricing is still under consideration, and features may change. Contact us to discuss your needs." },
     plans: [
-      { name: "Free", price: "$0", cadence: "per user, per month", features: ["Full public Atlas", "Weekly agent runs", "Private artifacts", "Browser simulation"], action: "Try the preview", tone: "quiet" },
-      { name: "Plus", price: "$50", cadence: "per user, per month", features: ["Everything in Free", "More weekly runs", "More private artifacts", "Wider browser simulation"], action: "Join early access", tone: "featured" },
-      { name: "Professional", price: "$240", cadence: "per user, per month", features: ["Everything in Plus", "Share outside your workspace", "Read-only or editable sharing", "More runs and artifacts", "Widest browser simulation"], action: "Contact us", tone: "quiet" },
-      { name: "Enterprise", price: "$420+", cadence: "per user, per month", features: ["Everything in Professional", "Allowances agreed with you", "Private-corpus conversations", "Named onboarding contact"], action: "Talk to sales", tone: "quiet" },
+      { name: "Free", price: "TBD", cadence: "Proposed plan · subject to change", features: ["Full public Atlas", "Weekly agent runs", "Private artifacts", "Browser simulation"], action: "Try the preview", tone: "quiet" },
+      { name: "Plus", price: "TBD", cadence: "Proposed plan · subject to change", features: ["Everything in Free", "More weekly runs", "More private artifacts", "Wider browser simulation"], action: "Contact us", tone: "featured" },
+      { name: "Professional", price: "TBD", cadence: "Proposed plan · subject to change", features: ["Everything in Plus", "Share outside your workspace", "Read-only or editable sharing", "More runs and artifacts", "Widest browser simulation"], action: "Contact us", tone: "quiet" },
+      { name: "Enterprise", price: "TBD", cadence: "Proposed plan · subject to change", features: ["Everything in Professional", "Allowances agreed with you", "Private-corpus conversations", "Named onboarding contact"], action: "Contact us", tone: "quiet" },
     ],
   },
   ja: {
-    hero: { title: "まずは個人で試し、そのままチームで研究へ。", body: "無料で始め、非公開の研究はStudioに保存できます。検証できる実行回数、エクスポート、共同研究の管理が必要になったら次のプランへ進めます。" },
+    hero: { title: "まずは個人で試し、そのままチームで研究へ。", body: "研究の用途に合わせたプランをご紹介します。料金は現在検討中で、機能構成は今後変更する場合があります。ご利用についてはお問い合わせください。" },
     plans: [
-      { name: "Free", price: "$0", cadence: "1ユーザーあたり月額", features: ["公開Atlasのすべて", "週ごとのエージェント実行", "非公開の回路・実行記録", "ブラウザ実行"], action: "プレビューを試す", tone: "quiet" },
-      { name: "Plus", price: "$50", cadence: "1ユーザーあたり月額", features: ["Freeのすべて", "実行回数を拡大", "保存件数を拡大", "より広いブラウザ実行"], action: "早期アクセスに参加", tone: "featured" },
-      { name: "Professional", price: "$240", cadence: "1ユーザーあたり月額", features: ["Plusのすべて", "ワークスペース外への共有", "閲覧のみ／編集可を選択", "実行と保存をさらに拡大", "最も広いブラウザ実行"], action: "お問い合わせ", tone: "quiet" },
-      { name: "Enterprise", price: "$420+", cadence: "1ユーザーあたり月額", features: ["Professionalのすべて", "利用上限は個別に調整", "社内データに関する相談", "導入と評価の担当窓口"], action: "営業担当に相談", tone: "quiet" },
+      { name: "Free", price: "未定", cadence: "プラン内容は検討中です", features: ["公開Atlasのすべて", "週ごとのエージェント実行", "非公開の回路・実行記録", "ブラウザ実行"], action: "プレビューを試す", tone: "quiet" },
+      { name: "Plus", price: "未定", cadence: "プラン内容は検討中です", features: ["Freeのすべて", "実行回数を拡大", "保存件数を拡大", "より広いブラウザ実行"], action: "お問い合わせ", tone: "featured" },
+      { name: "Professional", price: "未定", cadence: "プラン内容は検討中です", features: ["Plusのすべて", "ワークスペース外への共有", "閲覧のみ／編集可を選択", "実行と保存をさらに拡大", "最も広いブラウザ実行"], action: "お問い合わせ", tone: "quiet" },
+      { name: "Enterprise", price: "未定", cadence: "プラン内容は検討中です", features: ["Professionalのすべて", "利用上限は個別に調整", "社内データに関する相談", "導入と評価の担当窓口"], action: "お問い合わせ", tone: "quiet" },
     ],
   },
 };
@@ -602,8 +585,8 @@ export const UPGRADE_COPY: Record<PublicLocale, {
   backToAccount: string;
 }> = {
   en: {
-    title: "Move up a plan",
-    lede: "What each plan adds, measured against what you are using now.",
+    title: "Plans under review",
+    lede: "Pricing and future plan details have not been finalized and may change.",
     currentLabel: "Your plan",
     currentSuffix: "— what you have today",
     usageTitle: "Where you are this week",
@@ -612,10 +595,10 @@ export const UPGRADE_COPY: Record<PublicLocale, {
     usageExhausted: "This week's allowance is used. Browser simulation in Studio stays available.",
     topOfLadderTitle: "You are on the top published plan.",
     topOfLadderBody:
-      "Professional is the highest plan with prices set here. Anything beyond it — larger allowances, private-corpus work, terms agreed with your organisation — is arranged directly.",
+      "Professional is the highest current account tier. Future pricing and plan details remain under review. Contact us about larger allowances or organisation-specific needs.",
     developerTitle: "Your account is unmetered.",
     developerBody:
-      "Developer accounts are an operator grant, not a purchase. No allowance on this page applies to you.",
+      "Your developer account has no weekly usage limit.",
     checkoutTitle: "Checkout is not live yet.",
     checkoutBody:
       "No payment method can be added in this deployment — there is no card entry, checkout, or charge. Get in touch and your plan is changed by hand in the meantime.",
@@ -624,8 +607,8 @@ export const UPGRADE_COPY: Record<PublicLocale, {
     backToAccount: "Back to account",
   },
   ja: {
-    title: "プランを変更する",
-    lede: "現在の使用状況と照らして、各プランで何が増えるかを示します。",
+    title: "検討中のプラン",
+    lede: "料金と今後のプラン内容はまだ決まっておらず、変更する場合があります。",
     currentLabel: "現在のプラン",
     currentSuffix: "— 現在ご利用中の内容",
     usageTitle: "今週の使用状況",
@@ -635,10 +618,10 @@ export const UPGRADE_COPY: Record<PublicLocale, {
       "今週分の上限に達しました。Studioのブラウザ実行は引き続きご利用いただけます。",
     topOfLadderTitle: "公開されている最上位のプランをご利用中です。",
     topOfLadderBody:
-      "価格を公開しているプランではProfessionalが最上位です。これを超える利用上限、社内データを扱う運用、組織ごとの契約条件については個別にご相談ください。",
+      "現在のアカウント区分ではProfessionalが最上位です。今後の料金とプラン内容は検討中です。利用上限や組織ごとのご要望についてはお問い合わせください。",
     developerTitle: "このアカウントには上限がありません。",
     developerBody:
-      "開発者アカウントは購入ではなく運営側による付与です。このページの上限はいずれも適用されません。",
+      "この開発者アカウントには、週ごとの利用上限がありません。",
     checkoutTitle: "決済はまだ開始していません。",
     checkoutBody:
       "現在の環境では支払い方法を登録できず、カード入力も決済も行われません。それまでの間はお問い合わせいただければ手動でプランを変更します。",
@@ -677,10 +660,10 @@ export const CONTACT_COPY: Record<PublicLocale, {
   topics: string[];
 }> = {
   en: {
-    overline: "Contact queue",
-    title: "Tell us what you are trying to build or validate.",
-    body: "Leona Quantum is building an evidence layer around quantum software: public research, private workspaces, and execution that can be inspected. Send a short brief and we’ll take it from there.",
-    panelTitle: "Good reasons to write",
+    overline: "Contact",
+    title: "Tell us what you are working on.",
+    body: "Get in touch about product access, a research project, or working together.",
+    panelTitle: "How we can help",
     reasons: ["Research workflows and early product access", "Enterprise R&D and private-corpus conversations", "Public research contributions and technical feedback", "Press, partnerships, and speaking"],
     // One sentence, and it is the one a sender needs: what the button does.
     // The clause that used to follow it ("the current queue is mailto-backed;
@@ -697,13 +680,13 @@ export const CONTACT_COPY: Record<PublicLocale, {
       message: "Message",
       placeholder: "What are you building, and what evidence or access would help?",
       submit: "Prepare inquiry",
-      status: "Your email app should open with the inquiry prepared. Send it to add the note to the queue.",
+      status: "Your message is ready in your email app. Review it and send it there.",
       send: "Send inquiry",
       sending: "Sending…",
-      sent: "Thanks — that reached us. We reply from a person, usually within a couple of days.",
-      failed: "That did not send. Try again in a moment, or write to us directly.",
+      sent: "Your message has been sent. We will reply to the email address you provided.",
+      failed: "Your message could not be sent. Your text is still here; please try again.",
     },
-    noteSends: "We reply to the address you give us. Nothing else is collected.",
+    noteSends: "We use the details you provide to respond to your inquiry.",
     topics: ["Product access", "Research workflow", "Enterprise R&D", "Public research contribution", "Other"],
   },
   ja: {
@@ -724,88 +707,46 @@ export const CONTACT_COPY: Record<PublicLocale, {
       status: "内容を確認してメールを送信してください。",
       send: "送信",
       sending: "送信中…",
-      sent: "送信しました。担当者より数日以内にご返信します。",
+      sent: "送信しました。ご記入のメールアドレスに返信します。",
       failed: "送信できませんでした。しばらくしてからもう一度お試しください。",
     },
-    noteSends: "ご記入のメールアドレスにご返信します。その他の情報は取得しません。",
+    noteSends: "お問い合わせへの返信に、ご記入の情報を使用します。",
     topics: ["プロダクトへのアクセス", "研究ワークフロー", "企業R&D", "公開研究への投稿", "その他"],
   },
 };
 
 export const WORKSPACE_LANDING_COPY: Record<PublicLocale, {
-  overline: string;
-  title: string;
-  body: string;
-  primary: string;
-  /**
-   * The same call to action for a reader who already has what `primary` asks
-   * them to request. Both ship in the cached HTML; CSS picks one — see the
-   * comment on this page's hero actions for why it cannot be picked here.
-   */
-  primarySignedIn: string;
-  secondary: string;
-  loopLabel: string;
-  loopTitle: string;
-  loop: Array<{ kicker: string; title: string; body: string }>;
-  computeLabel: string;
-  computeTitle: string;
-  compute: Array<{ title: string; body: string }>;
-  foundationsLabel: string;
-  foundationsTitle: string;
-  foundationsBody: string;
-  codeLink: string;
+  overline: string; title: string; body: string; primary: string; secondary: string;
+  loopLabel: string; loopTitle: string;
+  loop: Array<{ title: string; body: string }>;
 }> = {
   en: {
-    overline: "Personal quantum workspace",
-    title: "Turn a quantum question into work you can reopen.",
-    body: "Leona Quantum connects a guided workflow to a guarded simulator, verification evidence, and a personal Studio for editing and keeping saved work. Every account starts with its own workspace; prompts, runs, and saved artifacts are private by default.",
-    primary: "Request workspace access",
-    primarySignedIn: "Open your workspace",
-    secondary: "Start from the Atlas",
-    loopLabel: "One personal loop",
-    loopTitle: "Research, Studio, and execution stay connected.",
+    overline: "Your quantum workspace",
+    title: "Build, inspect, and continue your research.",
+    body: "Use Nala to develop quantum code, Studio to edit and run circuits, and notebooks to keep notes alongside your results. Your work is private by default.",
+    primary: "Open workspace",
+    secondary: "Explore the Atlas",
+    loopLabel: "From question to saved work",
+    loopTitle: "Keep each experiment connected",
     loop: [
-      { kicker: "01 / RUN", title: "Ask in natural language", body: "Turn a question into a visible plan, generated implementation, simulation, verification, and a readable answer." },
-      { kicker: "02 / STUDIO", title: "Inspect and continue", body: "Open a saved circuit, switch framework variants, edit the implementation, and send the next version through the same evidence path." },
-      { kicker: "03 / RECORD", title: "Keep the record", body: "Private artifacts keep code, run records, verification, exports, provenance, resources, and limitations together." },
+      { title: "Describe the task", body: "Give Nala the problem, constraints, and framework you want to use. Review the plan before execution." },
+      { title: "Inspect the result", body: "Read the code, execution settings, outputs, and checks for the recorded run, including failures and limitations." },
+      { title: "Save and continue", body: "Organize circuits in Studio, edit the next version, and choose what to share." },
     ],
-    computeLabel: "Compute roadmap",
-    computeTitle: "Use the right execution lane when the product is ready.",
-    compute: [
-      { title: "CPU simulation", body: "Current supported path for small, reproducible verified workflows." },
-      { title: "GPU simulation", body: "Planned heavy-compute lane for larger circuits; provider, limits, and cost remain explicit." },
-      { title: "QPU access", body: "Planned hardware lane with estimates, attestation, and confirmation before spend." },
-    ],
-    foundationsLabel: "Open foundations",
-    foundationsTitle: "Review the engineering boundary.",
-    foundationsBody: "The public research surface is open for review, while authenticated workspaces, credentials, and saved artifacts remain account-scoped.",
-    codeLink: "Read the public contribution notes",
   },
   ja: {
-    overline: "個人量子ワークスペース",
-    title: "量子の問いを、再現できる研究成果へ。",
-    body: "Leona Quantumは、ガイド付きのワークフローをシミュレータ、検証記録、そして編集と保存を担う個人用Studioにつなぎます。各アカウントには専用ワークスペースが用意され、質問、実行、保存した回路・実行結果は初期状態で非公開です。",
-    primary: "利用を相談する",
-    primarySignedIn: "ワークスペースを開く",
-    secondary: "Atlasから始める",
-    loopLabel: "個人の研究ループ",
-    loopTitle: "RunとStudioをひとつにつなぐ。",
+    overline: "量子ワークスペース",
+    title: "作成、検証から、次の研究へ。",
+    body: "Nalaで量子コードを作成し、Studioで回路を編集・実行。ノートブックで結果とノートをまとめられます。作業内容は初期状態では非公開です。",
+    primary: "ワークスペースを開く",
+    secondary: "Atlasを見る",
+    loopLabel: "問いから研究記録へ",
+    loopTitle: "実験の過程をつなぐ",
     loop: [
-      { kicker: "01 / RUN", title: "自然言語でたずねる", body: "質問から回路の作成、シミュレーション、検証、回答までを一貫して支援します。" },
-      { kicker: "02 / STUDIO", title: "確認して続ける", body: "保存した回路を開き、フレームワークを切り替えて編集し、同じ手順で再実行・再検証できます。" },
-      { kicker: "03 / RECORD", title: "記録を残す", body: "コード、実行条件、検証結果、エクスポート、出典、利用した計算資源、制限事項を非公開の研究記録にまとめます。" },
+      { title: "課題を伝える", body: "Nalaに課題、条件、使用するフレームワークを伝え、実行前に計画を確認します。" },
+      { title: "結果を確認する", body: "コード、実行条件、出力、検証内容を確認できます。失敗や制限事項も記録します。" },
+      { title: "保存して続ける", body: "Studioで回路を整理し、次のバージョンを編集。共有する内容も自分で選べます。" },
     ],
-    computeLabel: "計算ロードマップ",
-    computeTitle: "用途に合わせて実行先を選べます。",
-    compute: [
-      { title: "CPUシミュレーション", body: "小規模で再現可能な検証に、現在利用できる実行環境です。" },
-      { title: "GPUシミュレーション", body: "大きな回路向けの実行環境を予定しています。提供元、上限、費用を明示します。" },
-      { title: "量子コンピュータで実行", body: "見積り、実行証明、利用前の確認を備えた実機実行を予定しています。" },
-    ],
-    foundationsLabel: "公開技術を基盤に",
-    foundationsTitle: "公開情報と非公開データの扱いを確認する。",
-    foundationsBody: "Atlasの公開研究は誰でも確認できます。非公開ワークスペースの情報は、参加者だけがアクセスできます。",
-    codeLink: "公開の貢献ガイドを見る",
   },
 };
 

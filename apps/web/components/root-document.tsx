@@ -44,11 +44,19 @@ import { Analytics } from "@vercel/analytics/next";
 import { Instrument_Sans, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import { THEME_STORAGE_KEY } from "../lib/theme";
+import { ThemeController } from "./theme-controller";
+import { SIDEBAR_STORAGE_KEY } from "../lib/sidebar-layout";
 import { AUTH_HINT_COOKIE, AUTH_HINT_SIGNED_IN } from "../lib/auth-hint";
 import { LEGACY_PUBLIC_LOCALE_COOKIE, PUBLIC_LOCALE_COOKIE } from "../lib/public-locale";
 import { canonicalOrigin } from "../lib/site-origin";
 import { OG_IMAGE, SITE_NAME, TITLE_TEMPLATE } from "../lib/public-metadata";
 import "../app/globals.css";
+import "../styles/ux-shell.css";
+import "../styles/ux-site.css";
+import "../styles/ux-nala.css";
+import "../styles/ux-workspace.css";
+import "../styles/ux-atlas.css";
+import "../styles/ux-polish.css";
 
 const themeScript = `(() => {
   try {
@@ -57,6 +65,7 @@ const themeScript = `(() => {
       ? saved
       : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     document.documentElement.dataset.theme = theme;
+    document.documentElement.dataset.sidebarCollapsed = localStorage.getItem(${JSON.stringify(SIDEBAR_STORAGE_KEY)}) === "true" ? "true" : "false";
   } catch {}
 })();`;
 
@@ -232,6 +241,7 @@ export function RootDocument({ lang, children }: { lang: string; children: React
         </script>
       </head>
       <body>
+        <ThemeController locale={lang} />
         {children}
         {/* Vercel Web Analytics: cookie-free pageview beacon (ai-ops#92). The
             script no-ops when the project's Analytics feature is off, so this

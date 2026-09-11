@@ -12,5 +12,5 @@ export default async function StudioPage({ searchParams }: { searchParams: Promi
   ]);
   // Only the numbers cross into the client component. The allowlist that
   // produced them stays on the server.
-  return <StudioWorkspace artifactId={params.artifact} newDraft={params.new === "1"} locale={locale} limits={limits} />;
+  return <StudioWorkspace key={params.artifact ?? (params.new === "1" ? "new" : "browse")} artifactId={params.artifact} newDraft={params.new === "1"} locale={locale} limits={limits} />;
 }

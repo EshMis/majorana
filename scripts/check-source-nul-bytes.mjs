@@ -76,7 +76,7 @@ const SKIP_DIRS = new Set([
 function walk(dir, found = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) continue;
+      if (SKIP_DIRS.has(entry.name) || entry.name.startsWith(".next-")) continue;
       walk(join(dir, entry.name), found);
       continue;
     }

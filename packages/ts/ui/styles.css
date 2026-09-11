@@ -1353,40 +1353,16 @@ a.mj-facet-option:hover {
   border-color: var(--text-1);
 }
 
-.mj-repository-detail-kicker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-3);
-  margin-top: var(--sp-8);
-  color: var(--text-2);
-  font-family: var(--font-mono);
-  font-size: var(--fs-12);
-  text-transform: uppercase;
-}
 
-.mj-repository-detail-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.38fr);
-  gap: var(--sp-12);
-}
-.mj-repository-detail-layout > *,
+
+
 .mj-repository-aside-card,
 .mj-repository-entry-links {
   min-width: 0;
 }
-.mj-repository-detail-main {
-  min-width: 0;
-}
 
-.mj-repository-detail-section h2,
-.mj-repository-related h2 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--fs-display-3);
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-}
+
+
 
 .mj-repository-outcomes {
   display: grid;
@@ -1494,12 +1470,7 @@ a.mj-facet-option:hover {
   margin: var(--sp-3) 0;
   line-height: 1.6;
 }
-.mj-repository-detail-aside {
-  display: grid;
-  align-content: start;
-  gap: var(--sp-4);
-  padding-top: var(--sp-12);
-}
+
 .mj-repository-aside-card {
   padding: var(--sp-5);
   border: 1px solid var(--border-0);
@@ -1550,38 +1521,12 @@ a.mj-facet-option:hover {
   font-size: var(--fs-12);
   line-height: 1.5;
 }
-.mj-repository-related {
-  padding: var(--sp-12) 0;
-  border-top: 1px solid var(--border-0);
-}
-.mj-repository-related-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--sp-4);
-  margin-top: var(--sp-6);
-}
-.mj-repository-related-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-  padding: var(--sp-5);
-  border: 1px solid var(--border-0);
-  border-radius: var(--radius-card);
-  color: var(--text-0);
-  background: var(--bg-1);
-  text-decoration: none;
-}
-.mj-repository-related-card:hover { border-color: var(--accent); }
-.mj-repository-related-card span {
-  color: var(--text-2);
-  font-family: var(--font-mono);
-  font-size: var(--fs-12);
-}
-.mj-repository-related-card strong {
-  font-size: var(--fs-14);
-  font-weight: 500;
-  text-transform: capitalize;
-}
+
+
+
+
+
+
 
 /* contact and legal pages */
 .mj-contact-hero {
@@ -2907,6 +2852,10 @@ a.mj-facet-option:hover {
      Settings is long — preferences, identity, archive, usage, billing — so on
      a short viewport this is a hard ceiling and the body below scrolls, rather
      than the dialog growing off the screen. */
+  /* A fixed height, not one that follows the pane: switching sections used to resize
+     the whole dialog by however much the new pane differed (owner, 2026-09-10). The
+     body scrolls inside it. */
+  height: min(680px, 100%);
   max-height: 100%;
   border: 1px solid var(--border-0);
   border-radius: var(--radius-card);
@@ -3019,6 +2968,67 @@ a.mj-facet-option:hover {
   font-weight: 500;
   box-shadow: inset 2px 0 0 var(--accent);
 }
+/* Skeleton panes: the size of the loaded panel, before its numbers arrive. */
+.mj-account-skeleton {
+  display: grid;
+  gap: var(--sp-5);
+  min-height: calc(var(--sp-16) * 4);
+  padding: var(--sp-4);
+  border: 1px solid var(--border-0);
+  border-radius: var(--radius-card);
+  background: var(--bg-1);
+}
+.mj-account-skeleton-row {
+  display: grid;
+  gap: var(--sp-2);
+}
+.mj-account-skeleton-row > .mj-skeleton:first-child { width: 32%; height: var(--sp-3); }
+.mj-account-skeleton-row > .mj-skeleton:last-child { height: var(--sp-8); }
+/* On a narrow viewport the rail is stacked over the detail pane and starts
+   closed; until the client has said so, the open server markup keeps its list
+   hidden so nothing flashes open and shut. */
+@media (max-width: 720px) {
+  .mj-account-nav[open]:not([data-hydrated]) > nav { display: none; }
+}
+/* Profile: the initial beside the two facts. */
+.mj-account-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  margin-bottom: var(--sp-4);
+}
+.mj-account-profile .mj-resource-list { flex: 1 1 auto; min-width: 0; }
+.mj-avatar--large {
+  width: var(--sp-12);
+  height: var(--sp-12);
+  font-size: var(--fs-20);
+}
+.mj-resource-list--row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-4);
+}
+/* Usage: the two ceilings under the meters, side by side. */
+.mj-usage-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-4);
+  margin: var(--sp-5) 0 0;
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-0);
+}
+.mj-usage-facts dt { color: var(--text-2); font-size: var(--fs-12); }
+.mj-usage-facts dd { margin: var(--sp-1) 0 0; font-size: var(--fs-14); font-variant-numeric: tabular-nums; }
+.mj-meter--unmetered { align-items: baseline; }
+.mj-usage-spend { margin-top: var(--sp-5); }
+.mj-usage-spend > summary { cursor: pointer; color: var(--text-1); font-size: var(--fs-13); }
+.mj-usage-spend-table { width: 100%; margin-top: var(--sp-3); border-collapse: collapse; font-size: var(--fs-13); }
+.mj-usage-spend-table th { padding: var(--sp-1) 0; color: var(--text-1); font-weight: 400; text-align: left; }
+.mj-usage-spend-table td { padding: var(--sp-1) 0; font-family: var(--font-mono); text-align: right; }
+.mj-usage-spend-note { margin: var(--sp-3) 0 0; color: var(--text-2); font-size: var(--fs-12); }
+/* A link inside running text is told apart by more than its colour. */
+.mj-meter-sub a, .mj-account-detail p a, .mj-account-detail li a, .mj-account-detail small a { text-decoration: underline; text-underline-offset: var(--sp-1); }
+
 .mj-account-detail {
   flex: 1 1 auto;
   min-width: 0;
@@ -3235,11 +3245,12 @@ a.mj-facet-option:hover {
   opacity: 0.65;
 }
 .mj-command-hint {
-  color: var(--text-1);
+  /* A quiet hint that still reads: --text-2 is AA on every surface; the 0.7 opacity
+     it used to carry dropped it to 3.4:1 (light) and 4.0:1 (dark). */
+  color: var(--text-2);
   font-family: var(--font-mono);
   font-size: var(--fs-12);
   font-weight: 400;
-  opacity: 0.7;
 }
 
 /* ---------- Nameko run home + fixed composer ---------- */
@@ -6090,58 +6101,11 @@ div.mj-rail-row:hover {
   flex-direction: column;
   background: var(--bg-0);
 }
-.mj-studio-header,
-.mj-studio-brand,
-.mj-studio-header-meta,
-.mj-studio-sidebar-head,
 .mj-studio-surface-head,
 .mj-studio-canvas-footer,
-.mj-studio-footer,
-.mj-studio-inspector-head,
-.mj-studio-framework-note {
+.mj-studio-footer {
   display: flex;
   align-items: center;
-}
-.mj-studio-header {
-  flex: 0 0 auto;
-  justify-content: space-between;
-  gap: var(--sp-4);
-  min-height: 56px;
-  padding: 0 var(--sp-6);
-  border-bottom: 1px solid var(--border-0);
-  background: var(--bg-1);
-}
-.mj-studio-brand {
-  gap: var(--sp-3);
-  color: var(--accent);
-}
-.mj-studio-brand > div {
-  display: grid;
-  gap: var(--sp-1);
-}
-.mj-studio-brand .mj-section-label {
-  margin: 0;
-  font-size: var(--fs-12);
-}
-.mj-studio-brand strong {
-  color: var(--text-0);
-  font-size: var(--fs-14);
-  font-weight: 600;
-}
-.mj-studio-header-meta {
-  justify-content: flex-end;
-  gap: var(--sp-4);
-}
-.mj-studio-status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  color: var(--text-1);
-  font-size: var(--fs-12);
-}
-.mj-studio-status .mj-status-dot {
-  width: 6px;
-  height: 6px;
 }
 .mj-studio-workspace {
   min-height: 0;
@@ -6236,7 +6200,7 @@ div.mj-rail-row:hover {
   display: inline-flex;
   align-items: baseline;
   gap: var(--sp-1);
-  padding: 6px var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
   border: 1px solid var(--border-0);
   border-radius: var(--radius-control);
   background: transparent;
@@ -6326,122 +6290,15 @@ div.mj-rail-row:hover {
   font-size: var(--fs-12);
   text-decoration: none;
 }
-.mj-studio-sidebar,
-.mj-studio-inspector {
-  min-width: 0;
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--sp-5);
-  background: var(--bg-1);
-}
-.mj-studio-sidebar {
-  border-right: 1px solid var(--border-0);
-}
-.mj-studio-inspector {
-  border-left: 1px solid var(--border-0);
-}
-.mj-studio-sidebar-head,
-.mj-studio-inspector-head {
-  justify-content: space-between;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-4);
-}
-.mj-studio-sidebar-head .mj-section-label,
-.mj-studio-inspector-head .mj-section-label {
-  margin: 0;
-}
-.mj-studio-sidebar-head .mj-secondary-button {
-  min-height: 28px;
-  padding-inline: var(--sp-2);
-  font-size: var(--fs-12);
-}
-.mj-studio-inspector-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
-  color: var(--text-2);
-  background: transparent;
-  font-size: var(--fs-14);
-  line-height: 1;
-  cursor: pointer;
-}
-.mj-studio-inspector-close:hover {
-  border-color: var(--border-0);
-  color: var(--text-0);
-}
-.mj-studio-artifact-list {
-  display: grid;
-  gap: var(--sp-1);
-}
-.mj-studio-artifact {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-2);
-  width: 100%;
-  padding: var(--sp-2);
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
-  color: var(--text-1);
-  background: transparent;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-}
-.mj-studio-artifact:hover,
-.mj-studio-artifact.is-active {
-  border-color: var(--border-0);
-  color: var(--text-0);
-  background: var(--bg-2);
-}
-.mj-studio-artifact.is-active {
-  border-left-color: var(--accent);
-}
-.mj-studio-artifact > span:last-child {
-  display: grid;
-  min-width: 0;
-  gap: var(--sp-1);
-}
-.mj-studio-artifact strong,
-.mj-studio-artifact small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.mj-studio-artifact strong {
-  color: var(--text-0);
-  font-size: var(--fs-12);
-  font-weight: 500;
-}
-.mj-studio-artifact small {
-  color: var(--text-2);
-  font-size: var(--fs-12);
-}
-.mj-studio-artifact-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 16px;
-  width: 16px;
-  height: 16px;
-  border: 1px solid var(--border-0);
-  border-radius: 50%;
-  color: var(--ok);
-  font-size: var(--fs-12);
-}
-.mj-studio-empty,
-.mj-studio-sidebar-note {
+/* Empty states get room and centering rather than hugging the left edge of an
+   otherwise-empty pane — the discovery list, the simulation-records list and
+   the artifact-loading placeholder all share this one class. */
+.mj-studio-empty {
+  padding: var(--sp-8) var(--sp-4);
   color: var(--text-2);
   font-size: var(--fs-12);
   line-height: 1.45;
-}
-.mj-studio-sidebar-note {
-  margin: var(--sp-6) 0 0;
-  padding-top: var(--sp-4);
-  border-top: 1px solid var(--border-0);
+  text-align: center;
 }
 .mj-studio-main {
   min-width: 0;
@@ -6687,9 +6544,6 @@ div.mj-rail-row:hover {
   border-radius: var(--radius-card);
   background: var(--bg-0);
 }
-.mj-studio-lane[data-state="pending"] {
-  border-style: dashed;
-}
 .mj-studio-lane-head {
   display: flex;
   align-items: baseline;
@@ -6823,6 +6677,12 @@ div.mj-rail-row:hover {
   display: flex;
   flex-direction: column;
 }
+/* The Code tab's own interior inset comes from its editor's padding; the
+   canvas has no such child, so it needs the same inset on the panel itself
+   or its content sits flush against the card border. */
+.mj-studio-canvas {
+  padding: var(--sp-5);
+}
 /* Colored code editor: the highlight <pre> and the <textarea> are stacked and
    MUST share identical box metrics (font, size, line-height, padding, tab-size,
    wrapping) so the caret lands on the glyph it appears to. Change one, change
@@ -6867,13 +6727,6 @@ div.mj-rail-row:hover {
 .mj-studio-code-editor::selection {
   /* Selection must show against the highlight layer behind the transparent text. */
   background: color-mix(in srgb, var(--accent) 28%, transparent);
-}
-.mj-studio-editor-note {
-  margin: 0;
-  padding: var(--sp-3) var(--sp-4);
-  border-top: 1px solid var(--border-0);
-  color: var(--text-1);
-  font-size: var(--fs-12);
 }
 .mj-studio-simulation-panel {
   padding-bottom: var(--sp-5);
@@ -6924,29 +6777,14 @@ div.mj-rail-row:hover {
   flex-wrap: wrap;
   gap: var(--sp-2);
 }
-.mj-studio-hardware-lanes,
 .mj-studio-simulation-records {
   display: grid;
   gap: var(--sp-3);
   padding-top: var(--sp-4);
   border-top: 1px solid var(--border-0);
 }
-.mj-studio-hardware-lanes > .mj-section-label,
 .mj-studio-simulation-records-head .mj-section-label {
   margin: 0;
-}
-.mj-studio-hardware-lanes > div {
-  display: grid;
-  gap: var(--sp-2);
-}
-.mj-studio-hardware-lanes button {
-  justify-self: start;
-}
-.mj-studio-hardware-lanes p {
-  margin: 0;
-  color: var(--text-1);
-  font-size: var(--fs-12);
-  line-height: 1.5;
 }
 .mj-studio-simulation-records-head,
 .mj-studio-simulation-record-head {
@@ -7148,16 +6986,30 @@ div.mj-rail-row:hover {
   cursor: not-allowed;
   opacity: 0.55;
 }
+/* Matches .mj-qpu-flow's card treatment: the one card-shaped thing in the QPU
+   lane with no rule of its own. */
+.mj-qpu-record {
+  display: grid;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--border-0);
+  border-radius: var(--radius-card);
+  background: var(--bg-2);
+}
 .mj-studio-version-panel {
   padding-bottom: var(--sp-5);
 }
+/* A bordered card like .mj-studio-simulation-record, not margin-plus-a-single-
+   border — the version list and the simulation-records list read as one
+   family of rows now instead of two different conventions. */
 .mj-studio-version-row {
   display: flex;
   align-items: flex-start;
   gap: var(--sp-3);
-  margin: var(--sp-5) var(--sp-5) 0;
-  padding-bottom: var(--sp-5);
-  border-bottom: 1px solid var(--border-0);
+  padding: var(--sp-4);
+  border: 1px solid var(--border-0);
+  border-radius: var(--radius-card);
+  background: var(--bg-2);
 }
 .mj-studio-version-row > div {
   display: grid;
@@ -7222,9 +7074,6 @@ div.mj-rail-row:hover {
   color: var(--text-1);
   font-size: var(--fs-12);
 }
-.mj-studio-inspector-head .mj-mono-muted {
-  font-size: var(--fs-12);
-}
 .mj-studio-field {
   display: grid;
   gap: var(--sp-2);
@@ -7239,65 +7088,6 @@ div.mj-rail-row:hover {
   color: var(--text-0);
   background: var(--bg-2);
   font: inherit;
-}
-.mj-studio-inspector-card {
-  display: grid;
-  gap: var(--sp-2);
-  margin-top: var(--sp-6);
-  padding-top: var(--sp-4);
-  border-top: 1px solid var(--border-0);
-}
-.mj-studio-inspector-card .mj-section-label {
-  margin: 0;
-}
-.mj-studio-inspector-card strong {
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: var(--fs-20);
-  font-weight: 500;
-}
-.mj-studio-inspector-card p {
-  margin: 0;
-  color: var(--text-1);
-  font-size: var(--fs-12);
-  line-height: 1.5;
-}
-.mj-studio-sampling {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--sp-2) var(--sp-3);
-  align-items: center;
-  margin-top: var(--sp-3);
-}
-.mj-studio-sampling label {
-  color: var(--text-1);
-  font-size: var(--fs-12);
-}
-.mj-studio-sampling input {
-  width: 100%;
-  padding: var(--sp-1) var(--sp-2);
-  border: 1px solid var(--border-0);
-  border-radius: var(--radius-control);
-  background: var(--bg-1);
-  color: var(--text-0);
-  font-family: var(--font-mono);
-  font-size: var(--fs-12);
-}
-.mj-studio-sampling-note {
-  margin: var(--sp-2) 0 0;
-  color: var(--text-1);
-  font-size: var(--fs-12);
-}
-.mj-studio-version-evidence {
-  display: grid;
-  gap: var(--sp-2);
-  padding: var(--sp-3) 0 0;
-  border-top: 1px solid var(--border-0);
-}
-.mj-studio-evidence-grade {
-  margin: 0;
-  color: var(--text-0);
-  font-size: var(--fs-13);
 }
 .mj-studio-evidence-summary {
   margin: 0;
@@ -7325,20 +7115,6 @@ div.mj-rail-row:hover {
   color: var(--text-0);
   font-family: var(--font-mono);
   text-align: right;
-}
-.mj-studio-framework-note {
-  align-items: flex-start;
-  gap: var(--sp-2);
-  margin-top: var(--sp-6);
-  padding-top: var(--sp-4);
-  border-top: 1px solid var(--border-0);
-  color: var(--text-1);
-  font-size: var(--fs-12);
-  line-height: 1.45;
-}
-.mj-studio-framework-note svg {
-  flex: 0 0 auto;
-  color: var(--ok);
 }
 
 /* ---------- run page (S3 rail + S4 result panel) ---------- */
@@ -7594,16 +7370,11 @@ div.mj-rail-row:hover {
  * vertical navigation aid; on mobile it becomes a compact stage strip so the
  * evidence panel never forces the page wider than the viewport. */
 @media (max-width: 860px) {
-  .mj-repository-guidance,
-  .mj-repository-detail-layout {
+  .mj-repository-guidance {
     grid-template-columns: minmax(0, 1fr);
   }
-  .mj-repository-detail-aside {
-    padding-top: 0;
-  }
-  .mj-repository-related-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  
+  
 }
 
 @media (max-width: 620px) {
@@ -7614,13 +7385,7 @@ div.mj-rail-row:hover {
   .mj-public-header > .mj-language-toggle button {
     font-size: var(--fs-12);
   }
-  .mj-repository-related-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-.mj-repository-detail-section,
-.mj-repository-related {
-    padding-block: var(--sp-8);
-  }
+  
 }
 
 @media (max-width: 760px) {
@@ -7635,21 +7400,8 @@ div.mj-rail-row:hover {
   .mj-run-home-examples .mj-example-list {
     grid-template-columns: minmax(0, 1fr);
   }
-  .mj-studio-header {
-    align-items: flex-start;
-    flex-direction: column;
-    padding-block: var(--sp-3);
-  }
-  .mj-studio-header-meta {
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
   .mj-studio-workspace--editor {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .mj-studio-inspector {
-    border-top: 1px solid var(--border-0);
-    border-left: 0;
   }
   .mj-studio-discovery {
     padding: var(--sp-8) var(--sp-4);
@@ -7732,58 +7484,12 @@ div.mj-rail-row:hover {
   .mj-studio-actions {
     flex-wrap: wrap;
   }
-  .mj-studio-inspector {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    align-items: start;
-    gap: var(--sp-4);
-    border-top: 1px solid var(--border-0);
-    border-left: 0;
-  }
-  .mj-studio-inspector-head,
-  .mj-studio-framework-note {
-    margin: 0;
-  }
-  .mj-studio-inspector-card {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
-  }
 }
 
 @media (max-width: 900px) {
-  .mj-studio-header {
-    align-items: flex-start;
-    flex-direction: column;
-    padding: var(--sp-4);
-  }
-  .mj-studio-header-meta {
-    justify-content: space-between;
-    width: 100%;
-  }
   .mj-studio-workspace {
     display: block;
     overflow-y: auto;
-  }
-  .mj-studio-sidebar,
-  .mj-studio-inspector {
-    overflow: visible;
-    border: 0;
-    border-bottom: 1px solid var(--border-0);
-  }
-  .mj-studio-sidebar {
-    padding: var(--sp-4);
-  }
-  .mj-studio-artifact-list {
-    display: flex;
-    overflow-x: auto;
-  }
-  .mj-studio-artifact {
-    min-width: 190px;
-  }
-  .mj-studio-sidebar-note {
-    display: none;
   }
   .mj-studio-main {
     overflow: visible;
@@ -7822,21 +7528,6 @@ div.mj-rail-row:hover {
   .mj-studio-footer {
     align-items: flex-start;
     flex-direction: column;
-  }
-  .mj-studio-inspector {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--sp-4);
-    padding: var(--sp-4);
-  }
-  .mj-studio-inspector-head,
-  .mj-studio-framework-note {
-    margin: 0;
-  }
-  .mj-studio-inspector-card {
-    margin-top: 0;
-    padding-top: var(--sp-4);
-    border-top: 1px solid var(--border-0);
   }
 }
 
@@ -8525,76 +8216,24 @@ div.mj-rail-row:hover {
 }
 
 /* ---------- repository detail: compact hero + collapsible sections ---------- */
-.mj-repo-detail-hero {
-  padding: var(--sp-6) 0 var(--sp-6);
-  border-bottom: 1px solid var(--border-0);
-}
-.mj-repo-detail-hero h1 {
-  max-width: 680px;
-  margin: var(--sp-3) 0 0;
-  font-size: var(--fs-28);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
-}
-.mj-repo-detail-hero > p {
-  max-width: 720px;
-  margin: var(--sp-2) 0 0;
-  color: var(--text-1);
-  font-size: var(--fs-14);
-  line-height: 1.55;
-}
-.mj-repo-detail-hero-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  margin-top: var(--sp-4);
-}
-.mj-repo-detail-hero-foot .mj-repository-tags { margin-top: 0; }
-.mj-repo-detail-lede {
-  max-width: 760px;
-  margin: 0 0 var(--sp-4);
-  color: var(--text-1);
-  font-size: var(--fs-14);
-  line-height: 1.6;
-}
-.mj-repo-section {
-  margin: 0 0 var(--sp-3);
-  border: 1px solid var(--border-0);
-  border-radius: var(--radius-card);
-  background: var(--bg-1);
-}
-.mj-repo-section > summary {
-  padding: var(--sp-3) var(--sp-4);
-  color: var(--text-0);
-  font-size: var(--fs-14);
-  font-weight: 500;
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  align-items: center;
-}
-.mj-repo-section > summary::-webkit-details-marker { display: none; }
-.mj-repo-section > summary::after {
-  content: "+";
-  margin-left: auto;
-  color: var(--text-2);
-  font-family: var(--font-mono);
-}
-.mj-repo-section[open] > summary::after { content: "−"; }
-.mj-repo-section-body {
-  padding: 0 var(--sp-4) var(--sp-4);
-}
+
+
+
+
+
+
+
+
+
+
+
+
 /* Consecutive paragraphs inside a disclosure were touching, so two paragraphs
    read as one run-on block — visible the moment a disclosure carried prose
    rather than a table or a code block, which is what the Atlas's "About" box
    is. Scoped to `p + p` so a body whose first child is a paragraph keeps
    sitting tight under its summary. */
-.mj-repo-section-body > p + p {
-  margin-top: var(--sp-3);
-}
+
 .mj-repo-code-controls {
   display: flex;
   align-items: end;
@@ -9051,34 +8690,37 @@ div.mj-rail-row:hover {
   font-size: var(--fs-13);
 }
 
-/* Algorithm groups (Owner Inbox 2026-07-19): families collapse into clickable
-   disclosure groups. */
-.mj-repo-groups { display: flex; flex-direction: column; gap: var(--sp-2); }
+/* Algorithm groups: the algorithms view is sectioned by method (the technique
+   facet in `topics.ts`, in that file's order), each section a box with its
+   heading and count, and a sticky index above them that jumps between sections
+   (`ux-atlas.css`). The family disclosure groups of 2026-07-19 gave way to this
+   in the 2026-09-10 Atlas pass: sections stay open, so a reader scanning for a
+   method sees the entries, not thirteen closed rows. */
+.mj-repo-groups { display: flex; flex-direction: column; gap: var(--sp-5); }
 .mj-repo-group {
   border: 1px solid var(--border-0);
   border-radius: var(--radius-card);
   background: var(--bg-1);
+  /* Room for the sticky index, which wraps to two rows on a desktop width. */
+  scroll-margin-top: calc(var(--sp-16) + var(--sp-12));
 }
-.mj-repo-group > summary {
+.mj-repo-group > h2 {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: baseline;
   gap: var(--sp-3);
+  margin: 0;
   padding: var(--sp-3) var(--sp-4);
-  cursor: pointer;
+  border-bottom: var(--border-hairline) solid var(--border-0);
   color: var(--text-0);
-  font-size: var(--fs-14);
-  font-weight: 600;
-  list-style: none;
+  font-size: var(--fs-16);
+  font-weight: 500;
 }
-.mj-repo-group > summary::-webkit-details-marker { display: none; }
 .mj-repo-group-count {
   color: var(--text-2);
   font-family: var(--font-mono);
   font-size: var(--fs-12);
   font-weight: 400;
 }
-.mj-repo-group[open] > summary { border-bottom: var(--border-hairline) solid var(--border-0); }
 .mj-repo-group .mj-repo-list { padding: var(--sp-3); }
 
 /* Variant folding (Owner Inbox 2026-07-19): curated qubit-count / form variants
@@ -9299,15 +8941,24 @@ div.mj-rail-row:hover {
   background: var(--bg-1);
 }
 .mj-sidebar-user-drawer a {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  min-height: 30px;
+  display: block;
   padding: 0 var(--sp-2);
   border-radius: var(--radius-control);
   color: var(--text-1);
   font-size: var(--fs-12);
   text-decoration: none;
+}
+/* Every item starts with one line built the same way: a 16px icon, then the
+   label, centred on a row of the shared menu height. The usage item adds its
+   bar and its sentence under that line, indented to the label. */
+.mj-sidebar-menu-line {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--sidebar-menu-item-height);
+}
+.mj-sidebar-menu-line > svg {
+  flex: 0 0 var(--sp-4);
 }
 .mj-sidebar-user-drawer a:hover,
 .mj-sidebar-user-drawer a:focus-visible {
@@ -9329,17 +8980,32 @@ div.mj-rail-row:hover {
    competing for 220px is not a layout, and the Japanese strings are longer
    still. This was visible only on the rendered page — the markup was fine. */
 .mj-sidebar-user-drawer a.mj-sidebar-usage {
-  display: grid;
-  align-items: start;
-  gap: 1px;
-  padding-block: var(--sp-1);
+  padding-bottom: var(--sp-2);
 }
+.mj-sidebar-usage-meter,
 .mj-sidebar-usage-detail {
   display: grid;
   gap: 1px;
+  padding-left: calc(var(--sp-4) + var(--sp-2));
+}
+.mj-sidebar-usage-meter {
+  padding-bottom: var(--sp-1);
+}
+.mj-sidebar-usage-detail {
   color: var(--text-1);
   font-variant-numeric: tabular-nums;
 }
+/* The compact meter stacks: label and figure on one line, the bar under them. */
+.mj-meter--compact {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+  font-size: var(--fs-12);
+}
+.mj-meter--compact > :first-child { grid-row: 1; grid-column: 1; }
+.mj-meter--compact .mj-meter-pct { grid-row: 1; grid-column: 2; font-size: var(--fs-12); }
+.mj-meter--compact .mj-meter-track { grid-row: 2; grid-column: 1 / -1; height: 4px; }
+.mj-meter--compact .mj-meter-name { font-size: var(--fs-12); }
 .mj-sidebar-usage-detail small {
   font-size: var(--fs-12);
   color: var(--text-2);
@@ -9677,93 +9343,6 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   font-size: var(--fs-13);
   line-height: 1.55;
 }
-.mj-studio-optimizer-steps {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--sp-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.mj-studio-optimizer-steps li {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  color: var(--text-1);
-  font-size: var(--fs-12);
-}
-.mj-studio-optimizer-steps li > span {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border: 1px solid var(--border-0);
-  border-radius: 999px;
-  color: var(--accent);
-  background: var(--bg-0);
-  font-family: var(--font-mono);
-  font-size: var(--fs-12);
-}
-.mj-studio-optimizer-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sp-2);
-  padding: var(--sp-1);
-  border: 1px solid var(--border-0);
-  border-radius: var(--radius-card);
-  background: var(--bg-0);
-}
-.mj-studio-optimizer-tabs > button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  min-width: 0;
-  padding: var(--sp-3);
-  border: 1px solid transparent;
-  border-radius: var(--radius-control);
-  color: var(--text-1);
-  background: transparent;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.mj-studio-optimizer-tabs > button:hover {
-  background: var(--bg-1);
-}
-.mj-studio-optimizer-tabs > button[aria-selected="true"] {
-  border-color: var(--accent);
-  color: var(--text-0);
-  background: var(--bg-2);
-}
-.mj-studio-optimizer-tabs > button > span {
-  display: grid;
-  gap: var(--sp-1);
-  min-width: 0;
-}
-.mj-studio-optimizer-tabs strong {
-  font-size: var(--fs-13);
-  font-weight: 500;
-}
-.mj-studio-optimizer-tabs small {
-  color: var(--text-1);
-  font-size: var(--fs-12);
-  line-height: 1.45;
-}
-.mj-studio-optimizer-tabs b {
-  display: grid;
-  flex: 0 0 auto;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 var(--sp-1);
-  place-items: center;
-  border-radius: 999px;
-  color: var(--bg-0);
-  background: var(--accent);
-  font-family: var(--font-mono);
-  font-size: var(--fs-12);
-  font-weight: 500;
-}
 .mj-studio-optimizer-panel {
   display: grid;
   gap: var(--sp-4);
@@ -9912,7 +9491,7 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   display: grid;
   flex: 0 0 auto;
   gap: var(--sp-1);
-  max-width: 250px;
+  max-width: 32ch;
   color: var(--text-1);
   font-size: var(--fs-12);
 }
@@ -9955,7 +9534,7 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   padding-right: var(--sp-4);
 }
 .mj-studio-compiler-name em {
-  padding: 2px var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
   border-radius: 999px;
   color: var(--accent);
   background: var(--bg-2);
@@ -10031,8 +9610,6 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   }
 }
 @media (max-width: 720px) {
-  .mj-studio-optimizer-steps,
-  .mj-studio-optimizer-tabs,
   .mj-studio-compression-strategies > div,
   .mj-studio-compression-metrics {
     grid-template-columns: minmax(0, 1fr);
@@ -11571,6 +11148,31 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   color: var(--text-2);
   font-style: italic;
 }
+/* The claims page's per-row status: the same chip, extended with the two
+   states that surface needs. `absent` gets the warn tint
+   `.mj-layers-repeat--measured` uses elsewhere on this page for "an answer
+   worth noticing" -- never red or an error tone, because the finding is
+   about one paper's text, not a defect in the record. `unchecked` reuses the
+   quiet, italic "nobody has established this" treatment `unknown` already
+   has above. */
+.mj-papers-chip[data-status="absent"] {
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--border-0));
+  color: var(--text-0);
+}
+.mj-papers-chip[data-status="unchecked"] {
+  color: var(--text-2);
+  font-style: italic;
+}
+/* The long "what was read" text, collapsed by default so a row reads as one
+   line and one link, not a paragraph. */
+.mj-claims-read { margin: var(--sp-2) 0 0; }
+.mj-claims-read > summary {
+  color: var(--text-2);
+  font-size: var(--fs-12);
+  cursor: pointer;
+}
+.mj-claims-read > summary:hover { color: var(--accent); }
+.mj-claims-read > p { margin: var(--sp-2) 0 0; }
 /* Four shapes and four readings. `point` gets no emphasis at all, because it is
    the commonest answer — 60 of 84 — and styling it as a deficiency would tell a
    reader that most of the bibliography is broken when it is merely cited once. */
@@ -11582,6 +11184,77 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   line-height: 1.6;
 }
 .mj-papers-shape[data-shape="scattered"] { color: var(--text-2); }
+/* The papers index: a sticky toolbar (search + year strip) over grouped,
+   year-headed rows. Sticky rather than scrolling away, because the register
+   is 328 rows across ~40 years — a jump link or a live filter is only useful
+   if it stays reachable while the list itself scrolls under it. */
+.mj-papers-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) 0;
+  background: var(--bg-0);
+  border-bottom: var(--border-hairline) solid var(--border-0);
+}
+.mj-papers-search-input {
+  width: 100%;
+  max-width: 28rem;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--border-0);
+  border-radius: var(--radius-control);
+  background: var(--bg-1);
+  color: var(--text-0);
+  font-size: var(--fs-13);
+}
+/* One row, horizontally scrollable rather than wrapped: ~40 year links
+   wrapped to fill the width would push the toolbar (and everything sticky
+   below it) to several lines tall. The scrollbar is contained to this strip,
+   never the page — see `check-invisible-hit-targets`'s sibling concern about
+   overflow leaking a layer up. */
+.mj-papers-year-strip {
+  display: flex;
+  gap: var(--sp-1);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.mj-papers-year-strip a {
+  flex: 0 0 auto;
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-control);
+  color: var(--text-1);
+  font-size: var(--fs-12);
+  text-decoration: none;
+}
+.mj-papers-year-strip a:hover { color: var(--accent); background: var(--bg-1); }
+.mj-papers-year-group { margin-top: var(--sp-6); }
+.mj-papers-year-heading {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-16);
+  font-weight: 500;
+  /* The jump target for the year strip's own links. Without this the sticky
+     toolbar covers the top of the heading it just navigated to. */
+  scroll-margin-top: calc(var(--sp-16) + var(--sp-6));
+}
+.mj-papers-year-count {
+  color: var(--text-2);
+  font-size: var(--fs-12);
+  font-weight: 400;
+}
+/* The compact report marks on an index row — only the axes that came back
+   "reported", never a chip for "absent" or "not established". The detail
+   page keeps the full bordered-chip breakdown (`.mj-papers-chip` above);
+   this is deliberately plainer, since it is a summary rather than the record. */
+.mj-papers-marks {
+  margin: var(--sp-1) 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-12);
+}
 .mj-layers-roots {
   display: flex;
   flex-direction: column;
@@ -14450,6 +14123,87 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   color: var(--text-2);
   font-size: var(--fs-12);
 }
+/* The record's own chrome on a card's record list (2026-09-10): the tier glyph
+   and the frameworks its code is written in, so a record looks the same from
+   the map as it does on its page and on the browse card. */
+.mj-card-record-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-1) 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-12);
+}
+/* --- the record page wears the card (2026-09-10) ------------------------- */
+/* The owner asked for Atlas entries to *"match exactly how the cards look like
+   when clicked into on the map"*: same eyebrow, name, lede, way onward, row of
+   section names, one section under it, references below. `.mj-card--page` is
+   the card as a page rather than a popover — static, opaque, as tall as its
+   content, and the body does not scroll inside it. */
+.mj-record-page {
+  width: min(100%, 48rem);
+  margin: 0 auto;
+  padding: var(--sp-4) 0 var(--sp-8);
+}
+.mj-card--page {
+  position: static;
+  width: auto;
+  max-height: none;
+  background: var(--bg-1);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+.mj-card--page h1 {
+  margin: 0;
+  font-size: var(--fs-20);
+}
+.mj-card--page .mj-back-link {
+  margin-bottom: var(--sp-4);
+}
+.mj-card--page .mj-card-body {
+  overflow: visible;
+}
+.mj-card--page .mj-card-onward {
+  align-items: center;
+}
+.mj-card--page .mj-repository-topics {
+  margin-top: var(--sp-3);
+}
+/* A section that holds two or three panels names each one quietly, the way the
+   references heading does — a page has an h1, so these are h2 and the
+   references heading is too. */
+.mj-card--page .mj-record-subhead,
+.mj-card--page .mj-card-references > h2 {
+  margin: var(--sp-4) 0 var(--sp-3);
+  color: var(--text-2);
+  font-size: var(--fs-12);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.mj-card--page .mj-record-subhead:first-child,
+.mj-card--page .mj-card-references > h2 {
+  margin-top: 0;
+}
+.mj-card--page .mj-layers-entry-strip {
+  margin-top: 0;
+}
+/* What has no section on the card sits under it: how the record was verified,
+   where it came from, where it is used. */
+.mj-record-aside {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+.mj-record-aside .mj-repository-tags {
+  margin-top: var(--sp-3);
+}
+.mj-record-page .mj-repository-star-note {
+  margin-top: var(--sp-3);
+}
 
 /* ---------- Notebooks ---------- */
 
@@ -14533,15 +14287,24 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   display: grid;
   gap: var(--sp-2);
 }
+.mj-notebooks-starters-label {
+  margin: 0;
+  color: var(--text-1);
+  font-size: var(--fs-13);
+  font-weight: 500;
+}
+.mj-notebooks-show-more {
+  justify-self: start;
+}
 .mj-notebooks-starter-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--sp-2);
 }
 .mj-notebooks-starter-chip {
   display: grid;
   gap: var(--sp-1);
-  padding: var(--sp-3);
+  padding: var(--sp-4);
   border: 1px solid var(--border-0);
   border-radius: var(--radius-control);
   color: var(--text-1);
@@ -14556,17 +14319,19 @@ html:not([data-auth="in"]) .mj-auth-slot[data-auth-slot="in"] {
   background: var(--bg-2);
 }
 .mj-notebooks-starter-chip strong {
-  overflow: hidden;
   color: var(--text-0);
   font-size: var(--fs-13);
   font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+.mj-notebooks-starter-preview {
+  color: var(--text-2);
+  font-size: var(--fs-12);
+  line-height: 1.5;
 }
 
 .mj-notebooks-fields {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-4);
 }
 .mj-notebooks-field {

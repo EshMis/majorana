@@ -1,17 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { THEME_STORAGE_KEY, readDocumentTheme, type Theme } from "../lib/theme";
+import { useSyncExternalStore } from "react";
+import { applyTheme, subscribeTheme, readDocumentTheme, type Theme } from "../lib/theme";
 import type { PublicLocale } from "../lib/public-locale";
-
-function applyTheme(theme: Theme) {
-  document.documentElement.dataset.theme = theme;
-  try {
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-  } catch {
-    // The active page can still switch themes when storage is unavailable.
-  }
-}
 
 function ThemeIcon({ theme }: { theme: Theme }) {
   return theme === "light" ? (
@@ -27,18 +18,10 @@ function ThemeIcon({ theme }: { theme: Theme }) {
 }
 
 export function ThemeToggle({ locale = "en" }: { locale?: PublicLocale }) {
-  const [theme, setTheme] = useState<Theme | null>(null);
-
-  useEffect(() => {
-    // The blocking layout script applies the stored theme before hydration.
-    // Keep aria-pressed unset until this client-only sync so server and client
-    // markup match while CSS still reflects the active document theme.
-    setTheme(readDocumentTheme());
-  }, []);
+  const theme = useSyncExternalStore(subscribeTheme, readDocumentTheme, () => null);
 
   function selectTheme(nextTheme: Theme) {
-    setTheme(nextTheme);
-    applyTheme(nextTheme);
+    applyTheme(nextTheme, true);
   }
 
   const copy = locale === "ja"

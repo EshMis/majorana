@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FormEvent, ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SearchIcon } from "../../../../components/icons";
 import { refusalSentence } from "../../../../lib/api-error";
 import { courseProgress } from "../../../../lib/course-progress";
@@ -91,6 +91,7 @@ export function CoursesHome({ locale = "en" }: { locale?: PublicLocale }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   const [starters, setStarters] = useState<NotebookStarter[]>([]);
 
@@ -102,6 +103,7 @@ export function CoursesHome({ locale = "en" }: { locale?: PublicLocale }) {
   const [moduleCount, setModuleCount] = useState<ModuleCountChoice>("auto");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const mutationPending = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -130,7 +132,7 @@ export function CoursesHome({ locale = "en" }: { locale?: PublicLocale }) {
     return () => {
       active = false;
     };
-  }, [coursesCopy.listLoadFailed]);
+  }, [coursesCopy.listLoadFailed, loadAttempt]);
 
   useEffect(() => {
     let active = true;
@@ -155,14 +157,24 @@ export function CoursesHome({ locale = "en" }: { locale?: PublicLocale }) {
     return items.filter((item) => item.title.toLocaleLowerCase(locale).includes(needle));
   }, [items, locale, query]);
 
-  function applyStarter(starterBrief: string) {
-    setBrief(starterBrief);
+  function applyStarter(starter: NotebookStarter) {
+    setBrief(starter.brief);
+    const starterLevel = (starter.level ?? "engineer") as AudienceLevel;
+    setLevel(starterLevel);
+    if (starterLevel === "researcher") {
+      setMathLevel("full");
+      setAnalogies(false);
+    } else if (starterLevel === "newcomer") {
+      setMathLevel("minimal");
+      setAnalogies(true);
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = brief.trim();
-    if (!trimmed || submitting) return;
+    if (!trimmed || mutationPending.current) return;
+    mutationPending.current = true;
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -199,6 +211,7 @@ export function CoursesHome({ locale = "en" }: { locale?: PublicLocale }) {
       router.push(`/notebooks/courses/${encodeURIComponent(courseId)}`);
     } catch (cause) {
       setSubmitError(cause instanceof Error ? cause.message : coursesCopy.createFailed);
+      mutationPending.current = false;
       setSubmitting(false);
     }
   }
@@ -208,7 +221,6 @@ export function CoursesHome({ locale = "en" }: { locale?: PublicLocale }) {
       <div className="mj-course-scroll">
         <header className="mj-course-hero">
           <div>
-            <p className="mj-section-label">{coursesCopy.title}</p>
             <h1>{coursesCopy.title}</h1>
             <p>{coursesCopy.lede}</p>
           </div>
@@ -217,37 +229,43 @@ export function CoursesHome({ locale = "en" }: { locale?: PublicLocale }) {
           </Link>
         </header>
 
-        <form className="mj-course-composer" onSubmit={(event) => void submit(event)}>
-          <p className="mj-section-label">{coursesCopy.planLabel}</p>
+        <form className="mj-course-composer" onSubmit={(event) => void submit(event)} aria-busy={submitting}>
+          <fieldset className="mj-notebooks-composer-content" disabled={submitting}>
+            <legend className="sr-only">{coursesCopy.planLabel}</legend>
           <label className="mj-notebooks-brief">
             <span>{coursesCopy.briefLabel}</span>
             <textarea
               value={brief}
               onChange={(event) => setBrief(event.target.value)}
               placeholder={coursesCopy.briefPlaceholder}
-              rows={4}
+              rows={3}
               required
             />
           </label>
 
           {starters.length > 0 ? (
-            <div className="mj-notebooks-starters">
-              <span className="mj-section-label">{coursesCopy.startersLabel}</span>
+            <details className="mj-notebooks-disclosure mj-notebooks-starters">
+              <summary>{coursesCopy.startersLabel}</summary>
               <div className="mj-notebooks-starter-list">
                 {starters.map((starter) => (
                   <button
                     key={starter.id}
                     type="button"
                     className="mj-notebooks-starter-chip"
-                    onClick={() => applyStarter(starter.brief)}
+                    onClick={() => applyStarter(starter)}
                   >
                     <strong>{starter.title}</strong>
                   </button>
                 ))}
               </div>
-            </div>
+            </details>
           ) : null}
 
+          <details className="mj-notebooks-disclosure">
+            <summary>
+              <span>{locale === "ja" ? "コースの設定" : "Course options"}</span>
+              <span className="mj-notebooks-option-summary">{copy.notebooks.audienceLevelOption[level]} · {copy.notebooks.languageOption[language]}</span>
+            </summary>
           <div className="mj-notebooks-fields">
             <ComposerField label={coursesCopy.moduleCountLabel}>
               <PillToggle
@@ -297,6 +315,8 @@ export function CoursesHome({ locale = "en" }: { locale?: PublicLocale }) {
             </ComposerField>
           </div>
 
+          </details>
+
           {submitError ? <p role="alert" className="mj-notebooks-error">{submitError}</p> : null}
 
           <div className="mj-notebooks-composer-actions">
@@ -304,18 +324,25 @@ export function CoursesHome({ locale = "en" }: { locale?: PublicLocale }) {
               {submitting ? coursesCopy.creating : coursesCopy.create}
             </button>
           </div>
+          </fieldset>
         </form>
 
-        <div className="mj-library-toolbar">
+        <div className="mj-library-toolbar mj-notebooks-library-toolbar">
+          <h2>{locale === "ja" ? "マイコース" : "Your courses"}</h2>
           <label className="mj-library-search">
             <SearchIcon size={16} />
             <span className="sr-only">{coursesCopy.search}</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={coursesCopy.searchPlaceholder} />
+            <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={coursesCopy.searchPlaceholder} />
           </label>
         </div>
 
         {loading ? <CoursesNotice role="status" text={coursesCopy.listLoading} /> : null}
-        {loadError ? <CoursesNotice role="alert" text={loadError} /> : null}
+        {loadError ? (
+          <div className="mj-notebooks-retry" role="alert">
+            <p>{loadError}</p>
+            <button type="button" className="mj-secondary-button" onClick={() => setLoadAttempt((current) => current + 1)}>{locale === "ja" ? "再試行" : "Retry"}</button>
+          </div>
+        ) : null}
         {!loading && !loadError && visible.length === 0 ? (
           <CoursesNotice text={items.length ? coursesCopy.noMatch : coursesCopy.listEmpty} />
         ) : null}
@@ -346,7 +373,7 @@ function CourseCard({ course, locale }: { course: CourseSummary; locale: PublicL
         {course.summary ? <p>{course.summary}</p> : null}
       </div>
       <div className="mj-course-card-progress">
-        <div className="mj-course-progress-bar" role="progressbar" aria-valuenow={progress.percent} aria-valuemin={0} aria-valuemax={100}>
+        <div className="mj-course-progress-bar" role="progressbar" aria-label={course.title} aria-valuetext={copy.progress(progress.ready, progress.total)} aria-valuenow={progress.percent} aria-valuemin={0} aria-valuemax={100}>
           <span style={{ width: `${progress.percent}%` }} />
         </div>
         <span className="mj-mono-muted">{copy.progress(progress.ready, progress.total)}</span>

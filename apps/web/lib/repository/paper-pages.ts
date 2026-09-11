@@ -149,6 +149,47 @@ export function paperPageFor(pages: readonly PaperPage[], id: PaperId): PaperPag
   return pages.find((page) => page.paper.id === id) ?? null;
 }
 
+/** One year's papers, in the order `groupPapersByYear` puts groups. */
+export interface PaperYearGroup {
+  /** Four digits, or `null` for the group of papers with no recorded year. */
+  year: string | null;
+  pages: readonly PaperPage[];
+}
+
+/**
+ * Every page, grouped by `paper.year` and sorted newest year first.
+ *
+ * `RegisteredPaper.year` is checked to be four digits on every row today
+ * (`validatePaperRegister`), so the `null` group is unreachable against the
+ * current register — it exists so a row without one is placed rather than
+ * silently dropped, the same rule every list on this surface follows for a
+ * value it cannot explain. It sorts last, and the caller supplies its label
+ * (`copy.undated`) rather than this module inventing a display string.
+ *
+ * Order within a year is register order, unchanged: this partitions the
+ * array `paperPages` already returns rather than re-sorting it with a second,
+ * competing opinion about ties.
+ */
+export function groupPapersByYear(pages: readonly PaperPage[]): PaperYearGroup[] {
+  const byYear = new Map<string, PaperPage[]>();
+  const undated: PaperPage[] = [];
+  for (const page of pages) {
+    const year = page.paper.year;
+    if (!year) {
+      undated.push(page);
+      continue;
+    }
+    const group = byYear.get(year);
+    if (group) group.push(page);
+    else byYear.set(year, [page]);
+  }
+  const groups: PaperYearGroup[] = [...byYear.entries()]
+    .sort(([a], [b]) => (a < b ? 1 : a > b ? -1 : 0))
+    .map(([year, yearPages]) => ({ year, pages: yearPages }));
+  if (undated.length > 0) groups.push({ year: null, pages: undated });
+  return groups;
+}
+
 /**
  * How many papers sit in each state of being read and placed.
  *

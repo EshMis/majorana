@@ -1,49 +1,39 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ChevronIcon, PlusIcon } from "./icons";
+import { useRouter } from "next/navigation";
+import { ArrowLeftIcon } from "./icons";
 import { ComposerGhostOverlay } from "./composer-ghost-overlay";
 import { DELETE_MS_PER_CHARACTER, TYPE_MS_PER_CHARACTER, composerGhost } from "../lib/composer-ghost";
 import { writeLandingPromptHandoff } from "../lib/landing-prompt-handoff";
 
-/**
- * The one destination this component links to, and the reason it is a constant.
- *
- * The page that renders this is prerendered at build time and held by the CDN
- * for five minutes (`app/[locale]/page.tsx`), so it may not mint a WorkOS
- * authorization URL: that URL is per-request by construction and, with PKCE on,
- * carries a one-shot challenge that a shared cache would hand to every visitor.
- * `app/auth/sign-in/route.ts` exists to keep the per-request half per-request —
- * it is a `force-dynamic` route handler that redirects — which leaves this
- * component with a plain string and the page fully static.
- *
- * There is no `/auth/sign-up` counterpart in the app today, so the sign-up call
- * to action lands on the AuthKit sign-in screen and its "Sign up" link. Adding
- * one is a ten-line mirror of the sign-in route; it is deliberately not part of
- * this change.
- */
-const SIGN_IN_HREF = "/auth/sign-in";
-
 type LandingPromptCopy = {
   label: string;
-  attach: string;
-  mode: string;
   submit: string;
+  retry: string;
   prompts: string[];
-  modalLabel: string;
-  modalTitle: string;
-  modalBody: string;
-  modalPrimary: string;
-  close: string;
 };
 
+/**
+ * The cover's box. Carries a draft into Nala; opening the workspace never starts
+ * a run.
+ *
+ * While the box is empty a suggestion types itself out, holds, erases and moves
+ * on — the same rotation the workspace composer draws, from the same engine
+ * (`lib/composer-ghost.ts`), so Tab accepts exactly the sentence on screen. The
+ * clock stops while the tab is hidden and restarts from the first prompt when
+ * it comes back, and under reduced motion the first prompt sits still with no
+ * caret.
+ */
 export function LandingPrompt({ copy }: { copy: LandingPromptCopy }) {
   const [value, setValue] = useState("");
+  const [opening, setOpening] = useState(false);
+  const [retry, setRetry] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const dialogRef = useRef<HTMLElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
+  const leaving = useRef(false);
+  const router = useRouter();
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -55,150 +45,105 @@ export function LandingPrompt({ copy }: { copy: LandingPromptCopy }) {
 
   useEffect(() => {
     if (reduceMotion || value) return;
-    // Restart the cycle from its first character rather than resuming wherever
-    // the clock was left. Without this, a visitor who types and then clears the
-    // box gets one frame of the stale `elapsedMs` — a half-finished sentence
-    // flashing in before the interval's first tick corrects it.
+    // Restart from the first character rather than resuming wherever the clock
+    // was left, so clearing the box never shows a frame of a half-typed sentence.
     setElapsedMs(0);
-    const started = Date.now();
-    // Sampled at the faster of the two per-character durations, not a fixed
-    // 55ms: at 30ms/typed-character and 12ms/deleted-character (ai-ops 108),
-    // a slower poll would skip characters — deletion in particular would jump
-    // several at once instead of reading as "quick" one at a time.
-    const timer = window.setInterval(
-      () => setElapsedMs(Date.now() - started),
-      Math.min(TYPE_MS_PER_CHARACTER, DELETE_MS_PER_CHARACTER),
-    );
-    return () => window.clearInterval(timer);
+    // Bare `setInterval`, like the retry `setTimeout` below: the test harness mocks the
+    // global clock, and jsdom's `window.setInterval` would run on a clock of its own.
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const start = () => {
+      const started = Date.now();
+      // Sampled at the faster of the two per-character durations so deletion
+      // reads as one character at a time rather than several at once.
+      timer = setInterval(
+        () => setElapsedMs(Date.now() - started),
+        Math.min(TYPE_MS_PER_CHARACTER, DELETE_MS_PER_CHARACTER),
+      );
+    };
+    const stop = () => {
+      if (timer !== undefined) clearInterval(timer);
+      timer = undefined;
+    };
+    const onVisibility = () => {
+      stop();
+      if (document.visibilityState !== "hidden") {
+        setElapsedMs(0);
+        start();
+      }
+    };
+    if (document.visibilityState !== "hidden") start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [reduceMotion, value]);
 
   useEffect(() => {
-    if (!dialogOpen) return;
-    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    document.body.classList.add("mj-modal-open");
-    closeRef.current?.focus({ preventScroll: true });
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setDialogOpen(false);
-      if (event.key !== "Tab" || !dialogRef.current) return;
-      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>("a[href], button:not([disabled])"));
-      if (!focusable.length) return;
-      const first = focusable[0]!;
-      const last = focusable.at(-1)!;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.classList.remove("mj-modal-open");
-      previousFocus?.focus({ preventScroll: true });
-    };
-  }, [dialogOpen]);
+    if (!opening) return;
+    const timeout = setTimeout(() => {
+      leaving.current = false;
+      setOpening(false);
+      setRetry(true);
+    }, 8000);
+    return () => clearTimeout(timeout);
+  }, [opening]);
 
-  // `composerGhost`, not a condition written out here: this page used to decide
-  // for itself when the placeholder was visible, and it decided differently
-  // from the workspace. It stopped the interval once the visitor typed but
-  // never unmounted the overlay — and stopping the clock only *freezes*
-  // `elapsedMs` — so a half-typed example stayed painted in the box and the
-  // visitor's own words rendered on top of it (owner, ai-ops 112). The rule
-  // now lives in one place and both composers ask it the same question,
-  // including what to draw under reduced motion.
   const ghost = composerGhost({ elapsedMs, suggestions: copy.prompts, typedValue: value, reduceMotion });
-  // Never `copy.label` here: it used to double as the placeholder fallback,
-  // which put "Describe the quantum circuit you want to build" on screen for
-  // every render before the typing animation had produced its first
-  // character. The label still exists for the screen-reader-only <label>
-  // below; it just never becomes visible text (owner, ai-ops#94).
-  //
-  // And never `ghost?.text || copy.prompts[0]`: `""` is a real, correct frame
-  // — it is what plays during the pause between one prompt deleting and the
-  // next typing in — and `||` treats that empty string as absent, resurrecting
-  // the first prompt as a flash of static text in every single gap. That *was*
-  // the "text that appears in between each rotation" the owner asked to have
-  // removed (ai-ops 108). The fallback below is only for when there is no
-  // ghost animation running at all (reduced motion, or no prompts to show).
-  const placeholder = ghost ? "" : copy.prompts[0];
 
-  // Every visitor gets the same dialog, because a prerendered page cannot know
-  // who is reading it. A visitor who already has a session is not sent the long
-  // way round: `/auth/sign-in` hands them to WorkOS, which recognises the
-  // session and returns them straight to `/run`.
-  function act(event?: FormEvent) {
-    event?.preventDefault();
-    setDialogOpen(true);
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (leaving.current || !value.trim()) return;
+    leaving.current = true;
+    setOpening(true);
+    setRetry(false);
+    writeLandingPromptHandoff(value);
+    try {
+      router.push("/run");
+    } catch {
+      leaving.current = false;
+      setOpening(false);
+      setRetry(true);
+    }
   }
 
   return (
-    <>
-      <form className="mj-landing-prompt" onSubmit={act}>
+    <div className="lq-landing-prompt-section">
+      <form className="mj-landing-prompt" onSubmit={submit} aria-busy={opening}>
         <label className="sr-only" htmlFor="mj-landing-prompt-input">{copy.label}</label>
         <div className="mj-composer-ghost-wrap">
           {ghost ? <ComposerGhostOverlay frame={ghost} /> : null}
           <textarea
+            ref={input}
             id="mj-landing-prompt-input"
             rows={1}
             value={value}
-            placeholder={placeholder}
+            maxLength={4000}
+            // Empty while the ghost draws, so the two never overprint; the
+            // first prompt stands in only when there is no rotation at all.
+            placeholder={ghost ? "" : copy.prompts[0] ?? copy.label}
+            disabled={opening}
             onChange={(event) => setValue(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
                 event.preventDefault();
                 event.currentTarget.form?.requestSubmit();
+                return;
+              }
+              // Tab only steals focus movement while there is a suggestion to
+              // accept and the box is empty, so the box never becomes a trap.
+              if (event.key === "Tab" && !event.shiftKey && !event.nativeEvent.isComposing && !value && ghost) {
+                event.preventDefault();
+                setValue(ghost.suggestion);
               }
             }}
           />
         </div>
-        <div className="mj-landing-prompt-controls">
-          <button className="mj-landing-prompt-icon" type="button" aria-label={copy.attach} title={copy.attach} onClick={() => act()}>
-            <PlusIcon size={20} />
-          </button>
-          <div className="mj-landing-prompt-actions">
-            <button className="mj-landing-prompt-mode" type="button" onClick={() => act()}>
-              <span aria-hidden="true">✦</span>
-              {copy.mode}
-            </button>
-            <button className="mj-landing-prompt-submit" type="submit">
-              {copy.submit}
-              <ChevronIcon size={18} />
-            </button>
-          </div>
-        </div>
+        <button className="mj-landing-prompt-submit" type="submit" aria-label={copy.submit} title={copy.submit} disabled={!value.trim() || opening}>
+          <ArrowLeftIcon className="lq-arrow-forward" size={20} />
+        </button>
       </form>
-
-      {dialogOpen ? (
-        <div className="mj-landing-signup-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setDialogOpen(false); }}>
-          <section
-            ref={dialogRef}
-            className="mj-landing-signup-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="mj-landing-signup-title"
-          >
-            <button ref={closeRef} className="mj-landing-signup-close" type="button" aria-label={copy.close} title={copy.close} onClick={() => setDialogOpen(false)}>×</button>
-            <p className="mj-section-label">{copy.modalLabel}</p>
-            <h2 id="mj-landing-signup-title">{copy.modalTitle}</h2>
-            <p>{copy.modalBody}</p>
-            {value ? <blockquote>{value}</blockquote> : null}
-            {/* The one write point (ai-ops 102): committed only on the click that
-                actually leaves for sign-in, never earlier. Opening this dialog
-                commits nothing, so closing it without clicking through carries
-                nothing forward — which is the correct behaviour for the
-                abandoned case, not a special case of it. */}
-            <a
-              className="mj-primary-button"
-              href={SIGN_IN_HREF}
-              onClick={() => writeLandingPromptHandoff(value)}
-            >
-              {copy.modalPrimary}
-            </a>
-          </section>
-        </div>
-      ) : null}
-    </>
+      {retry ? <p className="mj-page-lede" role="status">{copy.retry}</p> : null}
+    </div>
   );
 }

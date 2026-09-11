@@ -18,6 +18,7 @@ grown since — treat an entry that says "pending" as a floor, not a fact.
 /repository              public Atlas catalog — searchable, classification + verification
 /repository/[slug]       public catalog entry (public, read-only)
 /about /pricing /contact /privacy /terms /open-source   public marketing + legal
+/events/qiskit-fall-fest-2026   Qiskit Fall Fest at Keio (public; registration open)
 /run                     agent home (composer; mode selection)
 /run/[taskId]            live conversation + activity for one run (resumable, SSE)
 /studio                  circuit workspace — editor, preview, inspector, output, versions
@@ -118,3 +119,18 @@ These are the screen-level specifics that the acceptance criteria do not fix.
 - **Screenshot visual-diff (Playwright, ≤ 0.1% tolerance)** over the `ui-visual` stories.
   The axe/a11y half of that gate shipped; the diff half has not. See `components.md`
   §Accessibility harness.
+
+### Public header single row — 2026-09-09
+
+The public header keeps every navigation link, the language and theme controls and the
+workspace action on one row at every width. Compact gaps and icon-only theme buttons keep
+it there; narrow screens scroll the row horizontally, and a focused control is scrolled
+fully into view. There is no collapsed menu. Owner request, first raised in PR 855 and
+landed with the second design pass (`docs/ui/ux-polish-20260909.md`).
+
+### Pricing cards without prices — 2026-09-09
+
+The four original plan cards, feature lists and per-plan actions remain. Amounts, billing
+cadence, TBD labels and the Recommended badge are omitted; the introduction says once
+that pricing is undecided and features may change, and the signed-in upgrade page says
+the same. Cards use a shorter minimum height so no empty price area is left.

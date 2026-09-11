@@ -140,6 +140,7 @@ export const ROUTED_SEGMENTS: readonly string[] = [
   "dashboard",
   "demo",
   "dev",
+  "events",
   "lab",
   "library",
   // `/llms.txt` (ai-ops 133). It sits here and not with `robots.txt` or

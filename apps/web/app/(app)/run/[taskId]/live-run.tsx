@@ -3,7 +3,7 @@
 import type { FormEvent, ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AgentActivity,
   RunOutcome,
@@ -19,6 +19,7 @@ import { QUEUE_POLL_INTERVAL_MS, isWaitingForWorker, queuePositionLabel } from "
 import { archiveChat, loadChatHistory, rememberChat, updateChat, type ChatSummary } from "../../../../lib/chat-history";
 import { displayChatTitle, titleFromPrompt } from "../../../../lib/chat-title";
 import { RunComposer, type ComposerFramework } from "../../../../components/run-composer";
+import { usePromptAttachments } from "../../../../lib/use-prompt-attachments";
 import { hydrateConversationFramework } from "../../../../lib/framework-selection";
 import type { ComposerMode } from "../../../../lib/run-mode";
 import { RUN_FIXTURES } from "./fixtures";
@@ -33,7 +34,6 @@ import {
 } from "../../../../lib/run-activity";
 import { resultVisualizationFromResult } from "../../../../lib/result-visualization";
 import { ThinkingLabel } from "../../../../components/thinking-label";
-import { useSmoothedText } from "../../../../components/use-smoothed-text";
 import type { PublicLocale } from "../../../../lib/public-locale";
 import {
   contextualReviewFollowUps,
@@ -367,18 +367,25 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [streamingText, setStreamingText] = useState("");
   const [reasoningText, setReasoningText] = useState("");
-  const [streaming, setStreaming] = useState(!fixtureEvents || !fixtureIsTerminal);
+  const [streaming, setStreaming] = useState(Boolean(fixtureEvents && !fixtureIsTerminal));
   const [error, setError] = useState<string | null>(null);
   const [stopping, setStopping] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [pending, setPending] = useState(Boolean(fixtureEvents && !fixtureIsTerminal));
+  const [loadingConversation, setLoadingConversation] = useState(!fixtureEvents);
+  const [submitting, setSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
+  const stoppingRef = useRef(false);
+  const retryConnectionRef = useRef<(() => void) | null>(null);
   // Claimable runs ahead of this one, or null for "we are not claiming to know"
   // (ai-ops#91). Null is also what a failed poll sets — see the effect below.
   const [queuePosition, setQueuePosition] = useState<number | null>(null);
   const [liveEvents, setLiveEvents] = useState<WireEvent[]>(
     fixtureEvents ? (fixtureEvents as WireEvent[]) : [],
   );
-  const [attachments, setAttachments] = useState<Array<{ name: string; size: number; content: string }>>([]);
+  const { attachments, reading, isReading, addFiles, removeAttachment, takeAttachments, restoreAttachments } = usePromptAttachments(locale, setError);
   const [existingChat, setExistingChat] = useState<ChatSummary | null>(null);
   const [conversationTitle, setConversationTitle] = useState<string | null>(null);
   // The prompt of a follow-up that has been sent but whose turn has not come
@@ -402,6 +409,9 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const composerInputRef = useRef<HTMLTextAreaElement>(null);
   const shouldAutoScrollRef = useRef(true);
+  const chatContentRef = useRef<HTMLDivElement>(null);
+  const anchoredRunRef = useRef<string | null>(null);
+  const [showLatest, setShowLatest] = useState(false);
 
   /** Move the page onto a run, synchronously for readers inside async callbacks. */
   function followRun(runId: string) {
@@ -429,6 +439,9 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
     conversationIdRef.current = null;
     setConversationId(null);
     setStopping(false);
+    stoppingRef.current = false;
+    submittingRef.current = false;
+    setSubmitting(false);
     frameworkTouched.current = false;
     setFramework("qiskit");
     followRun(taskId);
@@ -436,32 +449,41 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
     // eslint-disable-next-line react-hooks/exhaustive-deps -- followRun is stable by construction
   }, [taskId]);
 
-  // A conversation opens at its end and stays there while it grows.
-  //
-  // The second pin is not superstition: the thread keeps growing after the
-  // render that placed us at the end commits — markdown, highlighted code and
-  // the result panel each settle a beat later, and all of them add height below
-  // the fold, which leaves the reader short of the newest message. A timer
-  // rather than requestAnimationFrame or ResizeObserver deliberately: neither
-  // runs while the tab is hidden, and a conversation left open in a background
-  // tab is exactly where the rest of a turn arrives. `onScroll` still owns the
-  // preference — scroll up and both pins stop.
+  // Follow actual content growth, including diagrams loaded after a render.
+  // Readers who scroll away keep their position; the result is anchored once.
   useEffect(() => {
-    const scrollContainer = chatScrollRef.current;
-    if (!scrollContainer || !shouldAutoScrollRef.current) return;
-    scrollContainer.scrollTop = scrollContainer.scrollHeight;
-    const settle = setTimeout(() => {
-      if (!shouldAutoScrollRef.current) return;
-      scrollContainer.scrollTop = scrollContainer.scrollHeight;
-    }, 120);
-    return () => clearTimeout(settle);
-  }, [taskId, activeRunId, turns, streamingText, reasoningText, liveEvents.length, pending]);
+    const container = chatScrollRef.current;
+    const content = chatContentRef.current;
+    if (!container || !content) return;
+    const settle = () => {
+      if (shouldAutoScrollRef.current) {
+        const result = [...content.querySelectorAll<HTMLElement>("[data-run-final-output]")]
+          .find((element) => element.dataset.runFinalOutput === activeRunIdRef.current);
+        if (result && anchoredRunRef.current !== activeRunIdRef.current) {
+          anchoredRunRef.current = activeRunIdRef.current;
+          container.scrollTop += result.getBoundingClientRect().top - container.getBoundingClientRect().top - 16;
+          shouldAutoScrollRef.current = false;
+        } else {
+          container.scrollTop = container.scrollHeight;
+        }
+      }
+      setShowLatest(container.scrollHeight - container.scrollTop - container.clientHeight > 48);
+    };
+    settle();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(settle);
+    observer?.observe(content);
+    document.addEventListener("visibilitychange", settle);
+    return () => { observer?.disconnect(); document.removeEventListener("visibilitychange", settle); };
+  }, [taskId, activeRunId]);
 
   useEffect(() => {
     if (fixtureEvents) return;
     const followedRunId = activeRunId;
     const controller = new AbortController();
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    let wakeReconnect: (() => void) | null = null;
+    let attempts = 0;
+    setLoadingConversation(!conversationIdRef.current);
     setLiveEvents([]);
     setStreamingText("");
     setReasoningText("");
@@ -480,6 +502,8 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
       // (e.g. the terminal reload racing the initial one) so a stale response can't
       // overwrite fresher turns/pending state.
       if (!controller.signal.aborted && seq === loadSeq.current) {
+        setLoadingConversation(false);
+        setLoadError(null);
         conversationIdRef.current = payload.id;
         setConversationId(payload.id);
         setTurns(turnsFromConversation(payload, locale));
@@ -502,18 +526,22 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
         const follow = runToFollow(payload.turns.map((turn) => turn.run.id), activeRunIdRef.current);
         if (newest && follow === newest.run.id) {
           if (follow !== activeRunIdRef.current) followRun(follow);
-          setPending(
-            !(Boolean(newest.run.finished_at) || hasFinished(newest.events))
-            && !answerFromEvents(newest.events, locale),
-          );
+          const running = !(Boolean(newest.run.finished_at) || hasFinished(newest.events));
+          setPending(running);
+          setStreaming(running);
         }
       }
     }
 
+    const refreshConversation = () => void loadConversation().catch((cause) => {
+      if (controller.signal.aborted) return;
+      setLoadingConversation(false);
+      setLoadError(cause instanceof Error ? cause.message : locale === "ja" ? "会話を読み込めませんでした" : "Conversation could not be loaded");
+    });
+    retryConnectionRef.current = () => { refreshConversation(); wakeReconnect?.(); };
+
     async function consume() {
-      void loadConversation().catch((cause) => {
-        if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : locale === "ja" ? "会話を読み込めませんでした" : "Conversation could not be loaded");
-      });
+      refreshConversation();
 
       while (!controller.signal.aborted) {
         try {
@@ -526,6 +554,7 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
           });
           if (!response.ok) throw new Error(`Response stream failed (${response.status})`);
           if (!response.body) throw new Error("Response stream returned no body");
+          setConnectionError(null);
 
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
@@ -541,6 +570,7 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
               const parsed = parseEvent(block);
               if (!parsed) continue;
               const event = JSON.parse(parsed.data) as WireEvent;
+              attempts = 0;
               if (parsed.id !== null) lastEventId.current = parsed.id;
               if (retainRunEvent(event)) {
                 setLiveEvents((current) => [...current, event]);
@@ -572,6 +602,7 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
                 setStreaming(false);
                 setPending(false);
                 setStopping(false);
+                stoppingRef.current = false;
               }
               if (event.type === "run.error") {
                 // Domain failures belong to the deterministic result/progress model.
@@ -586,35 +617,35 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
                 // re-enabling input.
                 setPending(false);
                 setStopping(false);
+                stoppingRef.current = false;
               }
               if (event.type === "run.finished") {
                 terminal = true;
                 setPending(false);
                 setStreaming(false);
                 setStopping(false);
+                stoppingRef.current = false;
                 const sidebarChat = loadChatHistory({ includeDemo: false, includeArchived: true }).find(
                   (chat) => chat.id === taskId || chat.conversationId === conversationIdRef.current,
                 );
                 if (sidebarChat) {
                   updateChat(sidebarChat.id, { status: event.status === "succeeded" ? "draft" : "failed" });
                 }
-                void loadConversation().catch((cause) => {
-                  if (!controller.signal.aborted) {
-                    setError(cause instanceof Error ? cause.message : locale === "ja" ? "会話を再読み込みできませんでした" : "Conversation could not be reloaded");
-                  }
-                });
+                refreshConversation();
               }
             }
           }
+          await reader.cancel();
           if (terminal) return;
           throw new Error("Response stream ended before the response finished");
         } catch (cause) {
           if (controller.signal.aborted) return;
-          setError(cause instanceof Error ? cause.message : locale === "ja" ? "応答ストリームに失敗しました" : "Response stream failed");
+          setConnectionError(locale === "ja" ? "接続が中断されました。再接続しています…" : "Connection interrupted. Reconnecting…");
           await new Promise<void>((resolve) => {
-            reconnectTimer = setTimeout(resolve, 1000);
+            wakeReconnect = () => { clearTimeout(reconnectTimer); wakeReconnect = null; resolve(); };
+            reconnectTimer = setTimeout(wakeReconnect, Math.min(1000 * 2 ** attempts++, 10000));
           });
-          setError(null);
+          if (!controller.signal.aborted && !conversationIdRef.current) refreshConversation();
         }
       }
     }
@@ -622,7 +653,8 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
     void consume();
     return () => {
       controller.abort();
-      if (reconnectTimer) clearTimeout(reconnectTimer);
+      wakeReconnect?.();
+      retryConnectionRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- taskId is read only for the sidebar row's identity; the stream follows activeRunId
   }, [fixtureEvents, activeRunId, taskId]);
@@ -678,41 +710,9 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
     };
   }, [fixtureEvents, activeRunId]);
 
-  function addFiles(files: File[]) {
-    void (async () => {
-      const candidates: Array<{ name: string; size: number; content: string }> = [];
-      const errors: string[] = [];
-      for (const file of files) {
-        const lowered = file.name.toLowerCase();
-        if (![".py", ".txt", ".md", ".json", ".qasm", ".csv"].some((extension) => lowered.endsWith(extension))) {
-          errors.push(`${file.name} is not a supported text attachment (.py, .txt, .md, .json, .qasm, .csv).`);
-          continue;
-        }
-        if (file.size > 64 * 1024) {
-          errors.push(`${file.name} is larger than 64 KB — paste the relevant part instead.`);
-          continue;
-        }
-        try {
-          candidates.push({ name: file.name, size: file.size, content: await file.text() });
-        } catch {
-          errors.push(locale === "ja" ? `${file.name}を読み取れませんでした。` : `${file.name} could not be read.`);
-        }
-      }
-      const nextByName = new Map(attachments.map((item) => [item.name, item]));
-      for (const candidate of candidates) {
-        if (!nextByName.has(candidate.name) && nextByName.size >= 4) {
-          errors.push(locale === "ja" ? "1メッセージにつき添付は4件までです。" : "Up to 4 attachments per message.");
-          continue;
-        }
-        nextByName.set(candidate.name, candidate);
-      }
-      setAttachments([...nextByName.values()]);
-      setError([...new Set(errors)].join(" ") || null);
-    })();
-  }
-
   async function stopRun() {
-    if (stopping || (!streaming && !pending)) return;
+    if (stoppingRef.current || submittingRef.current || (!streaming && !pending)) return;
+    stoppingRef.current = true;
     setStopping(true);
     setError(null);
     try {
@@ -730,6 +730,7 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : locale === "ja" ? "実行を停止できませんでした" : "Run could not be stopped");
       setStopping(false);
+      stoppingRef.current = false;
     }
   }
 
@@ -739,12 +740,12 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
   }
 
   async function sendFollowup(taskPrompt: string, allowAssumptions: boolean) {
-    if (!taskPrompt) return;
+    if (!taskPrompt || submittingRef.current || isReading()) return;
     // The composer stays editable during a turn — drafting the next question
     // while reading the answer is the normal way to use this — but a turn is a
     // run and runs are sequential. Say so instead of swallowing the keystroke,
     // which is what this did while the box was simply disabled.
-    if (pending) {
+    if (pending || streaming) {
       setError(locale === "ja" ? "一度に実行できる応答は1件です。現在の応答を停止するか、完了までお待ちください。" : "One response at a time. Stop the current one, or wait for it to finish.");
       return;
     }
@@ -753,6 +754,8 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
       return;
     }
     const previousRunId = activeRunIdRef.current;
+    submittingRef.current = true;
+    setSubmitting(true);
     setPending(true);
     setError(null);
     // Show the message immediately and empty the box. Each turn is a new run id,
@@ -764,8 +767,7 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
     // re-read something before writing it.
     shouldAutoScrollRef.current = true;
     setPrompt("");
-    const sentAttachments = attachments;
-    setAttachments([]);
+    const sentAttachments = takeAttachments();
     const attachmentBlocks = sentAttachments.map((attachment) => `\n\n--- Attachment: ${attachment.name} ---\n${attachment.content}`).join("");
     try {
       const response = await fetch("/api/runs", {
@@ -830,10 +832,17 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
       setPending(false);
       // The turn never started, so put the text back rather than losing it.
       setPrompt((current) => current || taskPrompt);
-      setAttachments((current) => (current.length ? current : sentAttachments));
+      restoreAttachments(sentAttachments);
       setPendingPrompt(null);
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   }
+
+  const sendFollowupRef = useRef(sendFollowup);
+  sendFollowupRef.current = sendFollowup;
+  const useAiAssumptions = useCallback((value: string) => void sendFollowupRef.current(value, true), []);
 
   const settledTurn = turns.find((turn) => turn.id === activeRunId);
   // `pendingPrompt` covers the window between send and the first /conversation
@@ -848,11 +857,11 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
     if (settledTurn) setPendingPrompt(null);
   }, [settledTurn]);
 
-  function selectFollowUp(nextPrompt: string) {
+  const selectFollowUp = useCallback((nextPrompt: string) => {
     setPrompt(nextPrompt);
     setError(null);
-    requestAnimationFrame(() => composerInputRef.current?.focus());
-  }
+    composerInputRef.current?.focus();
+  }, []);
 
   return (
     <div className="mj-run-task">
@@ -862,9 +871,10 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
         onScroll={(event) => {
           const { scrollHeight, scrollTop, clientHeight } = event.currentTarget;
           shouldAutoScrollRef.current = scrollHeight - scrollTop - clientHeight < 48;
+          setShowLatest(!shouldAutoScrollRef.current);
         }}
       >
-        <div className="mj-chat-content">
+        <div className="mj-chat-content" ref={chatContentRef}>
           <header className="mj-chat-header">
             <div>
               <h1>{title}</h1>
@@ -891,8 +901,8 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
               ) : null}
             </div>
           </header>
-          {error ? <p className="mj-run-stream-error" role="status">{error}</p> : null}
-          <div className="mj-chat-thread" aria-live="polite">
+          {loadError || connectionError ? <div className="mj-run-connection" role="status"><span>{loadError ?? connectionError}</span><button className="mj-secondary-button" type="button" onClick={() => retryConnectionRef.current?.()}>{locale === "ja" ? "再試行" : "Retry now"}</button></div> : null}
+          <div className="mj-chat-thread">
             {turns.map((turn) => (
               <div className="mj-chat-turn" key={turn.id}>
                 <div className="mj-chat-message mj-chat-message--user">
@@ -903,7 +913,7 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
                     turn={turn}
                     locale={locale}
                     onFollowUp={fixtureEvents ? undefined : selectFollowUp}
-                    onUseAiAssumptions={fixtureEvents ? undefined : (promptText) => void sendFollowup(promptText, true)}
+                    onUseAiAssumptions={fixtureEvents ? undefined : useAiAssumptions}
                   />
                 ) : turn.id === activeRunId && (streamingText || reasoningText || liveEvents.length > 0) ? (
                   <AssistantMessage reasoning={reasoningText} text={streamingText} streaming={streaming} events={liveEvents} turnId={turn.id} locale={locale} />
@@ -924,16 +934,19 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
           </div>
         </div>
       </div>
+      {showLatest ? <div className="mj-run-latest"><button className="mj-secondary-button" type="button" onClick={() => { const container = chatScrollRef.current; if (container) container.scrollTop = container.scrollHeight; shouldAutoScrollRef.current = true; setShowLatest(false); }}>{locale === "ja" ? "最新のメッセージへ" : "Latest message"} ↓</button></div> : null}
       <RunComposer
         value={prompt}
-        pending={pending}
-        error={null}
+        pending={pending || streaming || submitting}
+        disabled={loadingConversation || !conversationId}
+        readingAttachments={reading}
+        error={error}
         onChange={setPrompt}
         inputRef={composerInputRef}
         onSubmit={submitFollowup}
         onFiles={addFiles}
         attachments={attachments.map(({ name, size }) => ({ name, size }))}
-        onRemoveAttachment={(name) => setAttachments((current) => current.filter((item) => item.name !== name))}
+        onRemoveAttachment={removeAttachment}
         mode={mode}
         onModeChange={setMode}
         framework={framework}
@@ -941,7 +954,7 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
           frameworkTouched.current = true;
           setFramework(value);
         }}
-        onStop={fixtureEvents ? undefined : () => void stopRun()}
+        onStop={fixtureEvents || submitting ? undefined : () => void stopRun()}
         stopping={stopping}
         locale={locale}
       />
@@ -949,7 +962,7 @@ export function LiveRun({ taskId, locale = "en" }: { taskId: string; locale?: Pu
   );
 }
 
-export function CompletedAssistant({
+export const CompletedAssistant = memo(function CompletedAssistant({
   turn,
   locale = "en",
   onFollowUp,
@@ -962,9 +975,9 @@ export function CompletedAssistant({
 }) {
   // Failure context and the best produced output are separate concerns. A rejected
   // candidate still remains inspectable after the reason it was rejected.
-  const activity = runActivityFromEvents(turn.events, false, locale);
-  const result = runResultFromEvents(turn.events, turn.verificationSummary, locale);
-  const outcome = runOutcomeFromEvents(turn.events, turn.verificationSummary, locale);
+  const activity = useMemo(() => runActivityFromEvents(turn.events, false, locale), [turn.events, false, locale]);
+  const result = useMemo(() => runResultFromEvents(turn.events, turn.verificationSummary, locale), [turn.events, turn.verificationSummary, locale]);
+  const outcome = useMemo(() => runOutcomeFromEvents(turn.events, turn.verificationSummary, locale), [turn.events, turn.verificationSummary, locale]);
   const outcomeWithoutDuplicateCode = outcome && result
     ? { ...outcome, code: undefined }
     : outcome;
@@ -987,9 +1000,6 @@ export function CompletedAssistant({
     <div className={`mj-chat-message mj-chat-message--assistant${activity || result || outcome ? " mj-chat-message--run" : ""}`}>
       {chatFallbackNotice(turn.events) ? <ChatFallbackNotice locale={locale} /> : null}
       {activity ? <RunActivityBlock activity={activity} events={turn.events} locale={locale} /> : null}
-      {!result && outcomeWithoutDuplicateCode && turn.events.some((event) => event.type === "run.finished" && event.status !== "succeeded") ? (
-        <RunOutcome outcome={outcomeWithoutDuplicateCode} locale={locale} />
-      ) : null}
       {result ? (
         <FinalOutput result={result} events={turn.events} runId={turn.id} locale={locale} />
       ) : outcomeWithoutDuplicateCode ? (
@@ -1023,7 +1033,7 @@ export function CompletedAssistant({
       ) : null}
     </div>
   );
-}
+});
 
 function FollowUpQuestions({
   kind,
@@ -1045,7 +1055,7 @@ function FollowUpQuestions({
       aria-label={locale === "ja" ? "次に試せる質問" : "Suggested follow-up questions"}
     >
       <div className="mj-run-follow-ups-heading">
-        <strong>{locale === "ja" ? "次に試せる質問" : "Suggested Follow-ups"}</strong>
+        <strong>{locale === "ja" ? "次に試せる質問" : "Try next"}</strong>
         <span className="sr-only">{locale === "ja" ? "選ぶと入力欄に入ります" : "Select one to add it to the composer"}</span>
       </div>
       <div className="mj-run-follow-ups-list">
@@ -1074,17 +1084,13 @@ function AssistantMessage({
   turnId?: string | null;
   locale: PublicLocale;
 }) {
-  const activity = runActivityFromEvents(events, streaming, locale);
-  const result = runResultFromEvents(events, null, locale);
-  const outcome = runOutcomeFromEvents(events, null, locale);
+  const activity = useMemo(() => runActivityFromEvents(events, streaming, locale), [events, streaming, locale]);
+  const result = useMemo(() => runResultFromEvents(events, null, locale), [events, null, locale]);
+  const outcome = useMemo(() => runOutcomeFromEvents(events, null, locale), [events, null, locale]);
   const outcomeWithoutDuplicateCode = outcome && result
     ? { ...outcome, code: undefined }
     : outcome;
-  // Both streams are paced rather than painted in the worker's 160-character
-  // lumps. The answer settles when the stream closes; the reasoning settles as
-  // soon as answer text starts, because the model has stopped adding to it.
-  const smoothedText = useSmoothedText(splitAssistantFollowUps(text).answer, !streaming);
-  const smoothedReasoning = useSmoothedText(reasoning, !streaming || Boolean(text));
+  const answer = useMemo(() => splitAssistantFollowUps(text).answer, [text]);
   // null until the reader expresses a preference; see the <details> below.
   const [thoughtOpen, setThoughtOpen] = useState<boolean | null>(null);
   return (
@@ -1100,26 +1106,23 @@ function AssistantMessage({
         <details
           className="mj-chat-thinking"
           open={thoughtOpen ?? (streaming && !text)}
-          onToggle={(event) => setThoughtOpen(event.currentTarget.open)}
+          onToggle={(event) => { if (event.currentTarget.open !== (thoughtOpen ?? (streaming && !text))) setThoughtOpen(event.currentTarget.open); }}
         >
           <summary>
             {streaming && !text
               ? <ThinkingLabel turnId={turnId} className="mj-chat-thinking-label" locale={locale} />
               : <span className="mj-chat-thinking-word">{locale === "ja" ? "少し考えました" : "Thought for a moment"}</span>}
           </summary>
-          <ChatMarkdown source={smoothedReasoning} />
+          {(thoughtOpen ?? (streaming && !text)) ? <ChatMarkdown source={reasoning} /> : null}
         </details>
       ) : null}
       {activity ? <RunActivityBlock activity={activity} events={events} locale={locale} /> : null}
-      {!result && outcomeWithoutDuplicateCode && events.some((event) => event.type === "run.finished" && event.status !== "succeeded") ? (
-        <RunOutcome outcome={outcomeWithoutDuplicateCode} locale={locale} />
-      ) : null}
       {result ? (
         <FinalOutput result={result} events={events} runId={turnId} locale={locale} />
       ) : outcomeWithoutDuplicateCode ? (
         <RunOutcome outcome={outcomeWithoutDuplicateCode} action={<ArtifactLink events={events} locale={locale} />} locale={locale} />
       ) : text ? (
-        <ChatMarkdown source={smoothedText} />
+        <ChatMarkdown source={answer} />
       ) : activity ? null : (
         <ThinkingLabel turnId={turnId} className="mj-chat-message--loading mj-chat-thinking-label" locale={locale} />
       )}
@@ -1144,7 +1147,7 @@ function FinalOutput({
     (event) => event.type === "run.finished" && event.status === "succeeded",
   );
   const heading = accepted
-    ? locale === "ja" ? "最終出力" : "Final Output"
+    ? locale === "ja" ? "最終出力" : "Final output"
     : locale === "ja" ? "利用可能な最良結果" : "Best available result";
   const [open, setOpen] = useState(true);
   return (
@@ -1915,29 +1918,33 @@ function RunActivityBlock({
  */
 function ArtifactLink({ events, locale }: { events: WireEvent[]; locale: PublicLocale }) {
   const artifactId = artifactIdFromEvents(events);
+  return artifactId ? <ArtifactKeep key={artifactId} artifactId={artifactId} locale={locale} /> : null;
+}
+
+function ArtifactKeep({ artifactId, locale }: { artifactId: string; locale: PublicLocale }) {
   const [kept, setKept] = useState<boolean | null>(null);
   const [keeping, setKeeping] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [lookupFailed, setLookupFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const keepingRef = useRef(false);
 
   useEffect(() => {
-    if (!artifactId) return;
-    let active = true;
+    const controller = new AbortController();
     setKept(null);
-    fetch(`/api/artifacts/${artifactId}`, { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
+    setLookupFailed(false);
+    fetch(`/api/artifacts/${encodeURIComponent(artifactId)}`, { cache: "no-store", signal: controller.signal })
+      .then((response) => { if (!response.ok) throw new Error("Status unavailable"); return response.json(); })
       .then((payload: { kept_at?: string | null } | null) => {
-        if (!active) return;
-        // A failed lookup leaves this null and renders nothing: the artifact is
-        // safe either way, and a wrong button is worse than no button.
-        if (payload) setKept(Boolean(payload.kept_at));
+        if (controller.signal.aborted) return;
+        if (!payload || !("kept_at" in payload)) throw new Error("Status unavailable");
+        setKept(Boolean(payload.kept_at));
       })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, [artifactId]);
+      .catch(() => { if (!controller.signal.aborted) setLookupFailed(true); });
+    return () => controller.abort();
+  }, [artifactId, attempt]);
 
-  if (!artifactId || kept === null) return null;
+  if (kept === null) return <span className="mj-run-keep" role="status">{lookupFailed ? <><small>{locale === "ja" ? "保存状態を確認できませんでした。" : "Could not check whether this result is kept."}</small><button className="mj-secondary-button" type="button" onClick={() => setAttempt((value) => value + 1)}>{locale === "ja" ? "再試行" : "Retry"}</button></> : <small>{locale === "ja" ? "保存状態を確認中…" : "Checking saved status…"}</small>}</span>;
 
   if (kept) {
     return (
@@ -1948,17 +1955,19 @@ function ArtifactLink({ events, locale }: { events: WireEvent[]; locale: PublicL
   }
 
   async function keep() {
-    if (keeping) return;
+    if (keepingRef.current) return;
+    keepingRef.current = true;
     setKeeping(true);
     setFailed(false);
     try {
-      const response = await fetch(`/api/artifacts/${artifactId}/keep`, { method: "POST" });
+      const response = await fetch(`/api/artifacts/${encodeURIComponent(artifactId)}/keep`, { method: "POST" });
       if (!response.ok) throw new Error("keep failed");
       setKept(true);
     } catch {
       setFailed(true);
     } finally {
       setKeeping(false);
+      keepingRef.current = false;
     }
   }
 

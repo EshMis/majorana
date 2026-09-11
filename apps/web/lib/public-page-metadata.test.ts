@@ -113,7 +113,7 @@ test("pricing: locale actually selects PRICING_COPY.ja / the japanese nav label"
   const en = pricingMetadataCopy("en");
   const ja = pricingMetadataCopy("ja");
   assert.equal(en.title, "Pricing");
-  assert.equal(en.description, "Early-access Leona Quantum plans for individual researchers and teams.");
+  assert.equal(en.description, PRICING_COPY.en.hero.body);
   assert.equal(ja.title, PUBLIC_SHELL_COPY.ja.nav.pricing);
   assert.equal(ja.description, PRICING_COPY.ja.hero.body);
   assert.ok(JAPANESE_CHARACTER.test(ja.title ?? "") && JAPANESE_CHARACTER.test(ja.description ?? ""));

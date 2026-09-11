@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { thinkingSeed, thinkingWord, type ThinkingLocale } from "../lib/thinking-words.ts";
+import type { ThinkingLocale } from "../lib/thinking-words.ts";
 
 /**
  * The word shown while a turn is being worked on.
@@ -19,25 +18,15 @@ import { thinkingSeed, thinkingWord, type ThinkingLocale } from "../lib/thinking
  */
 export function ThinkingLabel({
   locale = "en",
-  turnId,
   className = "mj-chat-thinking-label",
 }: {
   locale?: ThinkingLocale;
   turnId?: string | null;
   className?: string;
 }) {
-  const [elapsedMs, setElapsedMs] = useState(0);
-
-  useEffect(() => {
-    setElapsedMs(0);
-    const started = Date.now();
-    const timer = window.setInterval(() => setElapsedMs(Date.now() - started), 900);
-    return () => window.clearInterval(timer);
-  }, [turnId]);
-
   return (
     <span className={className}>
-      <span className="mj-chat-thinking-word">{thinkingWord(elapsedMs, locale, thinkingSeed(turnId))}</span>
+      <span className="mj-chat-thinking-word">{locale === "ja" ? "処理中…" : "Working…"}</span>
       {/* The dots keep their own wrapper because their stagger is written as
           :nth-child, and putting the word first in the same box would shift
           every delay onto the wrong dot. */}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PublicSite } from "../../../../components/public-site";
 import { getPublicLocale } from "../../../../lib/public-locale-server";
 import { safeReturnTo } from "../../../../lib/return-to";
@@ -21,16 +22,16 @@ export const metadata: Metadata = {
 const COPY = {
   en: {
     title: "Sign-in did not start.",
-    unavailable: "The authentication service did not answer. This is usually temporary.",
-    notConfigured: "Authentication is not available on this deployment.",
+    unavailable: "We could not connect to sign-in. Please try again.",
+    notConfigured: "Sign-in is temporarily unavailable. Please contact us if you need help.",
     retry: "Try again",
     contact: "Contact Leona Quantum",
     reference: "Support reference",
   },
   ja: {
     title: "サインインを開始できませんでした。",
-    unavailable: "認証サービスから応答がありませんでした。一時的な可能性があります。",
-    notConfigured: "この環境では認証が設定されていません。",
+    unavailable: "サインインに接続できませんでした。もう一度お試しください。",
+    notConfigured: "現在サインインを利用できません。サポートが必要な場合はお問い合わせください。",
     retry: "もう一度試す",
     contact: "Leona Quantumに問い合わせる",
     reference: "サポート参照ID",
@@ -54,14 +55,14 @@ export default async function SignInErrorPage({
   const requestId = first(query.requestId)?.slice(0, 64);
 
   return (
-    <PublicSite className="mj-legal-site" locale={locale}>
+    <PublicSite className="mj-legal-site" locale={locale} chrome="static">
       <section className="mj-legal-hero">
         <h1>{copy.title}</h1>
         <p>{reason === "not_configured" ? copy.notConfigured : copy.unavailable}</p>
         {requestId ? <span>{copy.reference}: {requestId}</span> : null}
         <div className="mj-public-actions">
           <a className="mj-primary-button" href={majoranaSignInPath(returnTo)}>{copy.retry}</a>
-          <a className="mj-secondary-button" href="/contact">{copy.contact}</a>
+          <Link className="mj-secondary-button" href="/contact">{copy.contact}</Link>
         </div>
       </section>
     </PublicSite>

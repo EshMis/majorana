@@ -2,49 +2,40 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 
-/**
- * Scroll-reveal wrapper for the public marketing surface. Content is visible by
- * default (no-JS and reduced-motion safe): the hidden state is only applied
- * after mount by the observer, and only while the element is outside the
- * viewport, so reveals replay on the way back up as well as on the way down
- * (Owner Inbox 2026-07-17). CSS drops the transition entirely under
- * prefers-reduced-motion.
- */
+/** A single, gentle entrance; content never depends on JavaScript to be visible. */
 export function Reveal({
   children,
   className = "",
-  delay,
+  delay = 0,
 }: {
   children: ReactNode;
   className?: string;
   delay?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    // Toggle rather than disconnect after the first pass: hidden exactly while
-    // out of view, so the rise replays in both scroll directions. The first
-    // async callback also replaces the old mount-time rect check — elements
-    // already in view get a no-op, elements below the fold get hidden before
-    // they can be seen.
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          node.classList.toggle("mj-reveal--pending", !entry.isIntersecting);
-        }
-      },
-      { rootMargin: "0px 0px -10% 0px" },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
+    const element = ref.current;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (!element || media.matches || !element.animate || !window.IntersectionObserver) return;
+    let animation: Animation | undefined;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry?.isIntersecting) return;
+      observer.disconnect();
+      if (media.matches) return;
+      animation = element.animate(
+        [{ transform: "translateY(8px)" }, { transform: "none" }],
+        // fill: "backwards" holds the first keyframe through the delay; without it a
+        // delayed element sat at rest and then dropped 8px before settling.
+        { duration: 360, delay: Math.min(delay, 180), easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" },
+      );
+    }, { threshold: .08 });
+    const stop = () => { if (media.matches) animation?.cancel(); };
+    observer.observe(element);
+    media.addEventListener("change", stop);
+    return () => { observer.disconnect(); animation?.cancel(); media.removeEventListener("change", stop); };
+  }, [delay]);
   return (
-    <div ref={ref} className={`mj-reveal ${className}`.trim()} style={delay ? { transitionDelay: `${delay}ms` } : undefined}>
+    <div ref={ref} className={`mj-reveal ${className}`.trim()}>
       {children}
     </div>
   );

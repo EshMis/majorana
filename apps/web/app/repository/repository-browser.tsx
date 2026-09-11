@@ -18,14 +18,14 @@ import type { PublicLocale } from "../../lib/public-locale";
 import { VerificationTierBadge } from "../../components/repository-verification";
 import { StarIcon } from "../../components/icons";
 import { loadStarredRepositorySlugs, toggleRepositoryStar } from "../../lib/repository-stars";
-import { RepositoryExportAction, RepositoryNotebookAction } from "./repository-export";
+import { RepositoryExportAction } from "./repository-export";
 import type { RepositoryEstimateSummary } from "../../lib/repository/estimate";
 import { isProfileOrder, PROFILE_ORDERS, type BrowseOrder } from "../../lib/repository/browse-order";
 import { DEFAULT_ROW_LIMIT, type RowLimit } from "../../lib/repository/browse-page";
 import type { ResolvedBrowseParams } from "../../lib/repository/browse-params";
 import type { RepositoryBrowseView, BrowseRow } from "../../lib/repository/browse-view";
 import { PIPELINE_STANCES, type InterfaceStance } from "../../lib/repository/interface";
-import { roleOf, TOPICS_BY_ID, type TopicId } from "../../lib/repository/topics";
+import { TOPICS_BY_ID, type TopicId } from "../../lib/repository/topics";
 
 const COPY = {
   en: {
@@ -76,6 +76,7 @@ const COPY = {
     removeFilter: "Remove",
     clearAll: "Clear all",
     view: "View",
+    groupIndex: "Jump to a group",
     gateExpand: "Expand into basic gates",
     gateCollapse: "Collapse to single gate",
     gateAtomic: "Basic gate",
@@ -175,6 +176,7 @@ const COPY = {
     removeFilter: "解除",
     clearAll: "すべて解除",
     view: "詳細",
+    groupIndex: "グループへ移動",
     gateExpand: "基本ゲートに展開",
     gateCollapse: "元のゲート表示に戻す",
     gateAtomic: "基本ゲート",
@@ -400,6 +402,7 @@ export function RepositoryBrowser({
       clearTimeout(searchDebounceRef.current);
       searchDebounceRef.current = null;
     }
+    requestedQueryRef.current = new URL(href, "https://leonaqt.com").searchParams.get("q") ?? "";
     startTransition(() => {
       router.replace(href, { scroll: false });
     });
@@ -467,7 +470,11 @@ export function RepositoryBrowser({
    */
   const [query, setQuery] = useState(params.query);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestedQueryRef = useRef<string | null>(null);
   useEffect(() => {
+    // An older response may arrive after a newer debounce has already fired.
+    if (requestedQueryRef.current !== null && params.query !== requestedQueryRef.current) return;
+    requestedQueryRef.current = null;
     if (!searchDebounceRef.current) setQuery(params.query);
   }, [params.query]);
   useEffect(
@@ -626,6 +633,9 @@ export function RepositoryBrowser({
    * on another would be worse than either.
    */
   function renderCostChip(slug: string) {
+    // Only while the list is ranked on cost: the chip is the number the order
+    // is made of, and on an unranked list it was one more figure on every card.
+    if (params.order === "catalog" || isProfileOrder(params.order)) return null;
     const row = costBySlug.get(slug);
     if (!row || row.basis === "no_circuit") return null;
     if (row.basis === "refused") {
@@ -649,44 +659,33 @@ export function RepositoryBrowser({
     );
   }
 
+  /**
+   * One entry, as a reader scrolling past sees it (owner, 2026-09-10: previews
+   * carry far less). The verification glyph, the family, the title and two
+   * lines of the description; a star and the way into Studio. The category,
+   * role, qubit count, cost, date, tags and the second link live on the entry
+   * page, one click away — the title is that link.
+   */
   function renderRepoCard(entry: PublicRepositoryListEntry, extraHead?: ReactNode) {
     const title = locale === "ja" ? entry.titleJa : entry.title;
     const description = locale === "ja" ? entry.descriptionJa : entry.description;
-    const qubits = entry.resources.find((resource) => resource.label === "Qubits")?.value;
-    const roleId = roleOf(entry.topics ?? []);
-    const role = roleId ? TOPICS_BY_ID.get(roleId) : undefined;
     return (
       <article className="mj-repo-card">
         {extraHead}
         <div className="mj-repo-card-top">
           <VerificationTierBadge methods={entryVerificationMethods(entry)} locale={locale} />
-          <span>{locale === "ja" ? entry.categoryLabelJa : entry.categoryLabel}</span>
-          {/* The role, beside the family, because it is what stops a domain
-              filter from over-promising: the ten entries under "Optimization"
-              are mostly width-scaled MaxCut ring benchmarks, and this is where
-              a reader sees that without opening one. The category above says
-              "Algorithms" for all of them; the role distinguishes the 112
-              benchmark circuits from the 70 algorithm references. */}
-          {role ? <span className="mj-repo-card-role">{locale === "ja" ? role.labelJa : role.label}</span> : null}
           <span>{familyLabel(entry.algorithmFamily, locale)}</span>
-          {qubits ? <span className="mj-repo-card-qubits">{qubits} q</span> : null}
           {renderCostChip(entry.slug)}
-          <time dateTime={entry.updatedAt}>{entry.updatedAt}</time>
         </div>
         <h3><a href={`/repository/${entry.slug}`}>{title}</a></h3>
         <p>{description}</p>
         <div className="mj-repo-card-foot">
-          <div className="mj-repository-tags" aria-label={locale === "ja" ? "タグ" : "Tags"}>
-            {entry.tags.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}
-          </div>
           <div className="mj-repo-card-links">
             <button className={`mj-star-toggle${starredSlugs.has(entry.slug) ? " is-starred" : ""}`} type="button" aria-pressed={starredSlugs.has(entry.slug)} title={starredSlugs.has(entry.slug) ? copy.unstar : copy.star} onClick={() => handleStar(entry.slug)}>
               <StarIcon size={14} filled={starredSlugs.has(entry.slug)} />
               {starredSlugs.has(entry.slug) ? copy.unstar : copy.star}
             </button>
             <RepositoryExportAction slug={entry.slug} title={title} isSignedIn={isSignedIn} signInHref={signInHref} locale={locale} />
-            <RepositoryNotebookAction slug={entry.slug} locale={locale} />
-            <a className="mj-text-link" href={`/repository/${entry.slug}`}>{copy.view} ↗</a>
           </div>
         </div>
       </article>
@@ -926,7 +925,7 @@ export function RepositoryBrowser({
     );
   }
 
-  function FacetRail() {
+  function renderFacetRail() {
     return (
       <div className="mj-facet-rail">
         {/* Always visible, open or closed. See property 2 above. */}
@@ -1153,12 +1152,19 @@ export function RepositoryBrowser({
             onChange={(event) => {
               const next = event.target.value;
               setQuery(next);
+              requestedQueryRef.current = next;
               if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
               searchDebounceRef.current = setTimeout(() => {
                 navigate(browseHref({ query: next }));
               }, SEARCH_DEBOUNCE_MS);
             }}
             placeholder={copy.placeholder}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                navigate(browseHref({ query }));
+              }
+            }}
             type="search"
           />
         </label>
@@ -1194,7 +1200,7 @@ export function RepositoryBrowser({
             as a promise the way a bare "Optimization" can, and on this corpus
             that matters — those ten are eight width-scaled MaxCut ring
             benchmarks. */}
-        <FacetRail />
+        {renderFacetRail()}
       </div>
 
       {/* The assumption set is stated wherever the ordering it justifies is
@@ -1224,7 +1230,7 @@ export function RepositoryBrowser({
           <a
             className={params.category === option.value ? "is-active" : ""}
             key={option.value}
-            href={option.value === "all" ? "/repository" : `/repository?category=${option.value}`}
+            href={browseHref({ category: option.value })}
             aria-current={params.category === option.value ? "page" : undefined}
             title={locale === "ja" ? option.labelJa : option.label}
             onClick={(event) => {
@@ -1263,6 +1269,9 @@ export function RepositoryBrowser({
             : `${view.structureFilteredCount} public ${view.structureFilteredCount === 1 ? copy.entry : copy.entries}`}
       </p>
       <p className="mj-repository-star-note">{copy.starNote}</p>
+      <p className="mj-repository-search-status" role="status" aria-live="polite">
+        {isPending ? locale === "ja" ? "検索結果を更新中…" : "Updating results…" : ""}
+      </p>
 
       {!view.structureFilteredCount ? (
         <div className="mj-repository-empty">
@@ -1355,16 +1364,27 @@ export function RepositoryBrowser({
           </div>
         </div>
       ) : params.category === "algorithms" ? (
-        // Algorithms grouped into clickable disclosure groups by family.
+        // Algorithms grouped by METHOD — the technique a reader thinks in —
+        // with an index at the top that jumps to a group (owner, 2026-09-10:
+        // the family grouping was 57 headings, 33 of them over one entry).
+        // Every group is open; the index is the navigation.
         <div className="mj-repo-groups">
-          {view.algorithmGroups.map((group, index) => (
-            <details className="mj-repo-group" key={group.familyKey} open={index === 0}>
-              <summary>
-                <span>{familyLabel(group.familyKey, locale)}</span>
+          <nav className="mj-repo-group-index" aria-label={copy.groupIndex}>
+            {view.algorithmGroups.map((group) => (
+              <a key={group.key} href={`#atlas-group-${group.key}`}>
+                <span>{locale === "ja" ? group.labelJa : group.label}</span>
                 <span className="mj-repo-group-count">{group.rows.length}</span>
-              </summary>
+              </a>
+            ))}
+          </nav>
+          {view.algorithmGroups.map((group) => (
+            <section className="mj-repo-group" key={group.key} id={`atlas-group-${group.key}`} aria-labelledby={`atlas-group-${group.key}-heading`}>
+              <h2 id={`atlas-group-${group.key}-heading`}>
+                <span>{locale === "ja" ? group.labelJa : group.label}</span>
+                <span className="mj-repo-group-count">{group.rows.length}</span>
+              </h2>
               <div className="mj-repo-list">{group.rows.map((row) => renderRow(row, listIsRanked))}</div>
-            </details>
+            </section>
           ))}
         </div>
       ) : (

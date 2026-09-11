@@ -10,6 +10,7 @@ import type { LayerGraph } from "./repository/layers.ts";
 import type { PaperRegister } from "./repository/papers.ts";
 import type { StateVocabulary } from "./repository/states.ts";
 import {
+  groupPapersByYear,
   paperIndexCensus,
   paperPageFor,
   paperPages,
@@ -198,4 +199,61 @@ test("the trace on a page is the same object the map census counted", () => {
   const pages = paperPages(REGISTER, GRAPH, CORPUS, VOCABULARY);
   assert.equal(paperPageFor(pages, "arxiv:1")?.trace?.shape, "contiguous");
   assert.equal(paperPageFor(pages, "arxiv:2")?.trace?.shape, "point");
+});
+
+test("papers group by year, newest first", () => {
+  // REGISTER's three papers are 2020, 2021, 2022 — see the fixture above.
+  const pages = paperPages(REGISTER, GRAPH, CORPUS, VOCABULARY);
+  const groups = groupPapersByYear(pages);
+  assert.deepEqual(
+    groups.map((group) => group.year),
+    ["2022", "2021", "2020"],
+  );
+});
+
+test("every paper lands in exactly one group, and the group sizes sum to the register", () => {
+  const pages = paperPages(REGISTER, GRAPH, CORPUS, VOCABULARY);
+  const groups = groupPapersByYear(pages);
+  assert.equal(
+    groups.reduce((total, group) => total + group.pages.length, 0),
+    pages.length,
+  );
+  const seen = new Set<string>();
+  for (const group of groups) {
+    for (const page of group.pages) {
+      assert.ok(!seen.has(page.paper.id), `${page.paper.id} appeared in more than one group`);
+      seen.add(page.paper.id);
+    }
+  }
+  assert.equal(seen.size, pages.length);
+});
+
+test("two papers in the same year share one group, in register order", () => {
+  const register: PaperRegister = {
+    papers: [
+      { id: "arxiv:1", title: "One", authors: "A", year: "2020", url: "https://arxiv.org/abs/1" },
+      { id: "arxiv:2", title: "Two", authors: "B", year: "2020", url: "https://arxiv.org/abs/2" },
+    ],
+  };
+  const groups = groupPapersByYear(paperPages(register, GRAPH, [], VOCABULARY));
+  assert.equal(groups.length, 1);
+  assert.deepEqual(
+    groups[0].pages.map((page) => page.paper.id),
+    ["arxiv:1", "arxiv:2"],
+  );
+});
+
+test("a paper with no year lands in a trailing null-year group rather than being dropped", () => {
+  const register: PaperRegister = {
+    papers: [...REGISTER.papers, { id: "arxiv:4", title: "Four", authors: "D", year: "", url: "https://arxiv.org/abs/4" }],
+  };
+  const groups = groupPapersByYear(paperPages(register, GRAPH, CORPUS, VOCABULARY));
+  assert.deepEqual(
+    groups.map((group) => group.year),
+    ["2022", "2021", "2020", null],
+  );
+  assert.deepEqual(
+    groups.at(-1)?.pages.map((page) => page.paper.id),
+    ["arxiv:4"],
+  );
 });

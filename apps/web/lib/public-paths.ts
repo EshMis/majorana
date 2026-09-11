@@ -60,6 +60,8 @@ export const PUBLIC_PATHS: readonly string[] = [
   // reason: a page that explains why sign-in failed cannot require sign-in.
   "/auth/sign-in",
   "/about",
+  // Static event information; no attendee data or account access.
+  "/events/qiskit-fall-fest-2026",
   "/pricing",
   "/repository",
   "/workspace",

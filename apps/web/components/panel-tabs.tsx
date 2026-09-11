@@ -44,8 +44,22 @@ export function PanelTabs({
           id={`${idPrefix}-tab-${panel}`}
           aria-selected={panel === active}
           aria-controls={`${idPrefix}-panel-${panel}`}
+          tabIndex={panel === active ? 0 : -1}
           key={panel}
           onClick={() => onSelect(panel)}
+          onKeyDown={(event) => {
+            const index = panels.indexOf(panel);
+            const nextIndex = event.key === "ArrowRight" ? (index + 1) % panels.length
+              : event.key === "ArrowLeft" ? (index - 1 + panels.length) % panels.length
+                : event.key === "Home" ? 0
+                  : event.key === "End" ? panels.length - 1 : null;
+            if (nextIndex === null) return;
+            event.preventDefault();
+            const next = panels[nextIndex];
+            if (!next) return;
+            onSelect(next);
+            document.getElementById(`${idPrefix}-tab-${next}`)?.focus();
+          }}
         >
           {labelFor(panel)}
         </button>

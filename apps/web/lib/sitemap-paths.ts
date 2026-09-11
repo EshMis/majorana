@@ -26,6 +26,7 @@
 export const PUBLIC_STATIC_PATHS: readonly string[] = [
   "/",
   "/about",
+  "/events/qiskit-fall-fest-2026",
   "/pricing",
   "/workspace",
   "/contact",
