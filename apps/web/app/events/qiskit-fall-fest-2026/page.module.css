@@ -140,7 +140,12 @@
 .speakerDays {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sp-16);
+  column-gap: var(--sp-16);
+}
+.speakerDay {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
 }
 .speakerDate {
   display: flex;
@@ -396,6 +401,7 @@
   grid-template-columns: 1fr;
   gap: var(--sp-3);
   padding: var(--sp-8) 0;
+  align-content: start;
   border-bottom: 1px solid var(--qff-line);
 }
 .affiliation {
@@ -647,7 +653,7 @@
   .header { flex-wrap: wrap; }
   .header nav { order: 3; width: 100%; justify-content: center; }
   .languageToggle { margin-left: auto; }
-  .speakerDays { gap: var(--sp-8); }
+  .speakerDays { column-gap: var(--sp-8); }
   .hero {
     gap: var(--sp-6);
   }
@@ -673,7 +679,8 @@
   }
 }
 @media (max-width: 767px) {
-  .speakerDays { grid-template-columns: 1fr; }
+  .speakerDays { grid-template-columns: 1fr; row-gap: var(--sp-8); }
+  .speakerDay { display: block; grid-row: auto; }
   .header {
     gap: var(--sp-3);
     padding-block: var(--sp-3);
