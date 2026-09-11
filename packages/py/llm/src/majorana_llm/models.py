@@ -36,15 +36,17 @@ _DEFAULTS: dict[str, dict[str, str]] = {
         # model.py) specifically to give harder/VQE-scale tasks more headroom
         # before hitting the exact failure bench-14 found.
         "generate": "deepseek-v4-pro",
-        # A small independent pass audits only complex planner-authored classical
-        # references before code generation. This wants a DIFFERENT served model
-        # from "generate", so one arithmetic transcription is not both proposition
-        # and proof. It is deliberately not one today: the provider stopped serving
-        # deepseek-v4-flash on 2026-09-10, every run reaching audit failed, and the
-        # owner ruled "point audit at deepseek-v4-pro for now" (ai-ops 288). That
-        # makes audit and generate the same model, so the audit pass currently
-        # shares the generator's blind spots. Restore a distinct served model when
-        # one is available; ai-ops 290 tracks it.
+        # A small pass audits only complex planner-authored classical references
+        # before code generation. It used to run on a different served model
+        # (deepseek-v4-flash) so one arithmetic transcription was not both
+        # proposition and proof. The provider stopped serving flash on 2026-09-10,
+        # the owner pointed audit at deepseek-v4-pro (ai-ops 288), and then ruled
+        # that this is the STANDING state, not a stopgap (ai-ops 290, option 1:
+        # "a same-model audit still catches formatting and obvious-arithmetic
+        # errors, and the independence was a nice-to-have"). So audit sharing
+        # generate's model is intended. Do not restore a distinct model on your
+        # own initiative when the provider's list changes — that reopens a
+        # decided question and costs more per call; ask the owner first.
         "audit": "deepseek-v4-pro",
         "verify": "deepseek-v4-pro",
         "analyze": "deepseek-v4-pro",
