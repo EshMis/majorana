@@ -4,6 +4,15 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    jose:
+      specifier: 6.2.10
+      version: 6.2.10
+    katex:
+      specifier: 0.18.4
+      version: 0.18.4
+
 overrides:
   fast-uri: 3.1.6
   isomorphic-dompurify>jsdom: 26.1.0
@@ -13,7 +22,7 @@ overrides:
   nanoid: 3.3.18
   brace-expansion@^2.0.0: 2.1.4
   brace-expansion@^5.0.0: 5.0.9
-  katex: 0.18.4
+  katex@^0.16.0: 0.18.4
   jose@^5.0.0: 6.2.10
 
 importers:
@@ -51,7 +60,7 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0(supports-color@10.2.2)
       katex:
-        specifier: 0.18.4
+        specifier: 'catalog:'
         version: 0.18.4
       next:
         specifier: ^16.3.4
@@ -97,7 +106,7 @@ importers:
         specifier: ^0.28.2
         version: 0.28.2
       jose:
-        specifier: 6.2.10
+        specifier: 'catalog:'
         version: 6.2.10
       jsdom:
         specifier: ^30.0.1

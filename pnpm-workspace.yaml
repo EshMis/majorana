@@ -15,6 +15,34 @@ minimumReleaseAge: 1440
 packages:
   - "apps/*"
   - "packages/ts/*"
+
+# Versions that must be the SAME number in two places — a direct dependency in
+# a workspace package AND an override below that forces the transitive copies up
+# to it. Each is written once, here; `apps/web/package.json` says `"catalog:"`
+# and the override says `"catalog:"`, so there is no second number to forget.
+#
+# Why this exists: Dependabot reads `package.json`, not the overrides, so every
+# routine bump moved one half of a pair and left the other behind. That happened
+# three times before this block:
+#   - jose 6.2.5 -> 6.2.8 in apps/web, override left at 6.2.5 (caught by the
+#     same-copy assertion in `apps/web/lib/session-jwt-crypto.test.ts`);
+#   - jose 6.2.10 -> 6.2.12, PR 859, the same split again, caught the same way;
+#   - katex ^0.18.4 -> ^0.18.5, PR 820 — NOT caught by anything. The then
+#     unscoped `katex` override also rewrote the direct dependency, so apps/web
+#     kept resolving 0.18.4 while its package.json said ^0.18.5. The lockfile
+#     recorded the direct specifier as `0.18.4`, the bump shipped as a no-op, and
+#     PR 859 would have repeated it at ^0.18.7.
+#     `scripts/check-override-shadowing.mjs` now fails on that shape for any
+#     package: a lockfile importer specifier that differs from what the
+#     package.json it came from actually says.
+# Dependabot updates catalog entries directly (GA since 2025-02), so a bump now
+# moves both halves in one edit. pnpm resolves `"catalog:"` inside `overrides`
+# as of the pinned 11.10.0 — checked in a scratch workspace by bumping the
+# catalog entry and watching the override line in the lockfile follow it.
+catalog:
+  jose: 6.2.10
+  katex: 0.18.4
+
 overrides:
   # THIRD advisory round on this package, and the pin has now walked
   # 3.1.4 -> 3.1.5 -> 3.1.6. Four advisories published against 3.1.5, all CVSS
@@ -164,9 +192,14 @@ overrides:
   # AIKIDO-2026-293837 (MEDIUM): katex < 0.18.2 is vulnerable. rehype-katex@7.0.1
   # and micromark-extension-math@3.1.0 both declare `katex@^0.16.0` and neither
   # has a release that bumps to ^0.18.x, so a parent bump cannot fix this path.
-  # Pin the whole tree to 0.18.4 (the version already resolved for the direct dep
-  # in apps/web) so both transitive consumers get the patched release.
-  katex: 0.18.4
+  # Lift those 0.16-range consumers to the catalog's katex, which apps/web's direct
+  # dependency also names, so they get the patched release and cannot drift from
+  # it. Selector-scoped to ^0.16.0, like jose below: this used to be an unscoped
+  # `katex:` line, and an unscoped override rewrites the DIRECT dependency too,
+  # which is how PR 820's bump of apps/web to ^0.18.5 resolved 0.18.4 anyway
+  # (see the catalog block above). Scoped, the direct dep resolves through the
+  # catalog on its own and the lockfile records its specifier as `catalog:`.
+  katex@^0.16.0: "catalog:"
   # AIKIDO-2026-584205 (LOW): jose cryptographic timing side-channel. Patched at
   # 6.2.5. The only consumer on the tree is @workos-inc/authkit-nextjs, which
   # pins jose@^5.10.0 across all published releases (4.3.1, the one we are on,
@@ -202,15 +235,14 @@ overrides:
   # per-domain.
   #
   # THIS VERSION AND `apps/web`'s `jose` DEVDEPENDENCY MUST MOVE TOGETHER. They
-  # are two halves of one control and they live in two different files, so a bump
-  # that reads either file alone splits them. That is not hypothetical: Dependabot
-  # opened a PR raising the devDependency 6.2.5 -> 6.2.8 and left this line at
-  # 6.2.5, which resolved apps/web to one copy of jose and authkit to another and
-  # reopened the advisory on the signed-in path while every other assertion in the
-  # suite stayed green. The same-copy assertion in `session-jwt-crypto.test.ts`
-  # caught it, which is the whole reason that assertion exists — but it catches
-  # the split after the fact, so raise both numbers in the same commit.
-  jose@^5.0.0: 6.2.10
+  # are two halves of one control. They used to be two numbers in two files, and
+  # Dependabot split them twice (6.2.5 -> 6.2.8, then PR 859's 6.2.10 -> 6.2.12),
+  # each time resolving apps/web to one copy of jose and authkit to another and
+  # reopening the advisory on the signed-in path while every other assertion in
+  # the suite stayed green. Both now read the single `jose` entry in the catalog
+  # block above. The same-copy assertion in `session-jwt-crypto.test.ts` stays:
+  # it is what fails if someone writes a literal version back into either half.
+  jose@^5.0.0: "catalog:"
   # NOT `minimatch@^5 -> 10`, though that is the tempting way to collapse the
   # two lines above into one. minimatch 10 moved from a callable default export
   # to named exports, and @redocly/openapi-core (the only minimatch@5 consumer
