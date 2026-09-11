@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: event.title,
     description: eventText(locale, "2026年10月17日・18日、慶應義塾大学AICで開催。講演、Qiskitハンズオン、チームで取り組むミニハッカソン。初心者歓迎。"),
-    ...canonicalMetadata(event.path),
+    ...canonicalMetadata("/events/qiskit-fall-fest-2026"),
     robots: { index: true, follow: true },
   };
 }
