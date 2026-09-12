@@ -81,6 +81,9 @@ export const SCOPED_STORAGE_KEYS = [
  */
 export const DEVICE_STORAGE_KEYS = [
   "majorana.theme.v1",
+  // The workspace accent (moss or plum, owner 2026-09-12): a device preference
+  // on the same terms as the theme, read by the same inline script.
+  "majorana.accent.v1",
   "majorana.sidebar-collapsed.v1",
   // Whether recent chats sit above or below the folders. A layout choice about
   // this rail on this screen, exactly like the collapse state above it —

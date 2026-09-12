@@ -43,7 +43,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Instrument_Sans, Instrument_Serif, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
-import { DARK_PUBLIC_PATHS, THEME_STORAGE_KEY } from "../lib/theme";
+import { DARK_PUBLIC_PATHS, ACCENT_STORAGE_KEY, THEME_STORAGE_KEY } from "../lib/theme";
 import { ThemeController } from "./theme-controller";
 import { SIDEBAR_STORAGE_KEY } from "../lib/sidebar-layout";
 import { AUTH_HINT_COOKIE, AUTH_HINT_SIGNED_IN } from "../lib/auth-hint";
@@ -58,15 +58,23 @@ import "../styles/ux-workspace.css";
 import "../styles/ux-atlas.css";
 import "../styles/ux-polish.css";
 
+// Mirrors resolveTheme/resolveAccent in lib/theme.ts, inlined so the first paint
+// already carries the visitor's choice: a saved theme wins everywhere, public pages
+// open dark otherwise, the workspace follows the OS; the accent choice applies only
+// off the public site (theme.test.tsx pins both against the library).
 const themeScript = `(() => {
   try {
     const saved = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
+    const path = location.pathname.replace(/^\\/(en|ja)(?=\\/|$)/, "").replace(/\\/$/, "") || "/";
+    const darkByDefault = ${JSON.stringify(DARK_PUBLIC_PATHS)}.includes(path) || path.startsWith("/repository/");
+    const publicSite = darkByDefault || path === "/events" || path.startsWith("/events/");
     const theme = saved === "light" || saved === "dark"
       ? saved
-      : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    const path = location.pathname.replace(/^\\/(en|ja)(?=\\/|$)/, "").replace(/\\/$/, "") || "/";
-    const publicSite = ${JSON.stringify(DARK_PUBLIC_PATHS)}.includes(path) || path.startsWith("/repository/");
-    document.documentElement.dataset.theme = publicSite ? "dark" : theme;
+      : darkByDefault ? "dark" : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    document.documentElement.dataset.theme = theme;
+    const accent = localStorage.getItem(${JSON.stringify(ACCENT_STORAGE_KEY)});
+    if (!publicSite && accent === "plum") document.documentElement.dataset.accent = "plum";
+    else delete document.documentElement.dataset.accent;
     document.documentElement.dataset.sidebarCollapsed = localStorage.getItem(${JSON.stringify(SIDEBAR_STORAGE_KEY)}) === "true" ? "true" : "false";
   } catch {}
 })();`;

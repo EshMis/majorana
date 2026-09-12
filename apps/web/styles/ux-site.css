@@ -13,12 +13,12 @@
   scrollbar-width: thin;
   scrollbar-color: var(--border-0) transparent;
   scroll-padding-inline: var(--sp-3);
-  /* A shorter bar with taller controls (owner, 2026-09-10): the same 8px above and below,
-     where the bottom used to carry 20px, and every control in the row at --sp-12 (48px)
-     rather than the 44px marketing CTA height. The variable is scoped to the header so the
-     hero and pricing buttons keep --control-h-cta. */
-  --header-control-h: var(--sp-12);
-  padding: var(--sp-2) var(--sp-1);
+  /* A shorter bar with smaller controls (owner, 2026-09-12; it was 8px + 48px + 8px after
+     the 2026-09-10 pass): 4px above and below and every control in the row at 36px, so the
+     bar is 45px with its hairline. The variable is scoped to the header so the hero and
+     pricing buttons keep --control-h-cta. */
+  --header-control-h: calc(var(--sp-8) + var(--sp-1));
+  padding: var(--sp-1) var(--sp-1);
   border-bottom: var(--border-hairline) solid var(--border-0);
 }
 .mj-public-header .mj-public-brand { display: inline-flex; align-items: center; flex: 0 0 auto; min-height: var(--header-control-h); }
@@ -40,7 +40,7 @@
   padding: 0 var(--sp-2);
 }
 .lq-public-auth { flex: 0 0 auto; }
-.mj-public-site .mj-public-nav-primary { min-height: var(--header-control-h); }
+.mj-public-site .mj-public-nav-primary { min-height: var(--header-control-h); padding-block: 0; padding-inline: var(--sp-3); font-size: var(--fs-13); }
 .mj-public-site .mj-public-nav-signout { display: inline-flex; align-items: center; min-height: var(--header-control-h); }
 /* The toggle groups carry 2px of padding and a 1px border of their own; the buttons give
    that back so the group, not the button, is the 48px control. */
@@ -257,3 +257,36 @@
   .mj-public-site .mj-company-final-cta .mj-public-actions { width: 100%; }
   .mj-public-site .mj-company-final-cta .mj-public-actions a { flex: 1 1 auto; }
 }
+/* About, where we are going (owner, 2026-09-12): a heading and lede, six numbered
+   ambitions in two columns with plum indices, and a closing line, in place of two
+   long paragraphs under a bare label. */
+.lq-about-vision { margin-top: var(--sp-16); }
+.lq-about-vision .lq-site-section-heading > p:last-child { max-width: 64ch; color: var(--text-1); font-size: var(--fs-16); line-height: 1.6; text-wrap: pretty; }
+.lq-about-vision-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-6) var(--sp-8); margin: var(--sp-8) 0 0; padding: 0; list-style: none; }
+.lq-about-vision-list li { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--sp-3); align-items: baseline; }
+.lq-about-vision-index { grid-row: 1 / span 2; color: var(--accent-2); font-family: var(--font-mono); font-size: var(--fs-12); }
+.lq-about-vision-list h3 { margin: 0 0 var(--sp-2); font-size: var(--fs-16); font-weight: 500; }
+.lq-about-vision-list p { grid-column: 2; margin: 0; color: var(--text-1); font-size: var(--fs-14); line-height: 1.6; text-wrap: pretty; }
+.lq-about-vision-close { max-width: 60ch; margin: var(--sp-8) 0 0; color: var(--text-1); text-wrap: pretty; }
+/* Plum highlights across the public site (owner, 2026-09-12): the second hue lives in
+   the small things — kickers, the active nav item, plain-link hovers, a wash behind the
+   cover — so the page reads as less monochrome without moving the moss primary. */
+.mj-public-site .mj-section-label { color: var(--accent-2); }
+.mj-public-site .mj-public-nav a[aria-current="page"] { box-shadow: inset 0 -2px 0 var(--accent-2); }
+.mj-public-site :is(p, li, dd, figcaption) > a:not([class]):hover { color: var(--accent-2); }
+.lq-site-home .lq-site-hero::before {
+  content: "";
+  position: absolute;
+  inset: -20% 10% auto;
+  z-index: -1;
+  height: 70%;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--accent-2-tint) 70%, transparent), transparent 62%);
+}
+.lq-site-home .lq-site-principles article { border-left-color: var(--accent-2); }
+.mj-public-site .lq-site-frameworks span { color: var(--accent-2); }
+/* Line breaks that do not strand a word (owner, 2026-09-12): headings balance their
+   lines and running text avoids a one-word last line, across the public site. Both are
+   no-ops in engines without the property. */
+.mj-public-site :is(h1, h2, h3) { text-wrap: balance; }
+.mj-public-site :is(p, li, dd, figcaption) { text-wrap: pretty; }

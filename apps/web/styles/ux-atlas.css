@@ -34,3 +34,52 @@
   .mj-repo-card-links :is(a, button), .mj-facet-chip, .mj-facet-option { min-height: var(--sp-10); }
   .mj-facet-groups { grid-template-columns: minmax(0, 1fr); }
 }
+/* Atlas list (owner, 2026-09-12): the legend above the search, the filters as
+   three menus, the categories set off from the search card, and the star note
+   after the entries. The lede keeps to one line where the width allows. */
+.mj-repository-legend-slot { margin-bottom: var(--sp-4); }
+.mj-repository-legend-slot .mj-vlegend { margin: 0; }
+.mj-repository-category-nav { margin-top: var(--sp-5); }
+.mj-repository-star-note { margin-top: var(--sp-8); }
+.mj-atlas-overview > p { max-width: none; text-wrap: pretty; }
+.mj-facet-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.mj-facet-menu { position: relative; }
+.mj-facet-menu > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--sp-8);
+  padding: 0 var(--sp-3);
+  border: var(--border-hairline) solid var(--border-0);
+  border-radius: var(--radius-control);
+  background: var(--bg-0);
+  color: var(--text-1);
+  font-size: var(--fs-13);
+  list-style: none;
+  cursor: pointer;
+}
+.mj-facet-menu > summary::-webkit-details-marker { display: none; }
+.mj-facet-menu > summary::after { content: "▾"; color: var(--text-2); font-size: var(--fs-12); }
+.mj-facet-menu[open] > summary, .mj-facet-menu > summary:hover { border-color: var(--text-2); color: var(--text-0); }
+.mj-facet-menu-value { color: var(--text-0); font-weight: 500; }
+.mj-facet-menu-panel {
+  position: absolute;
+  top: calc(100% + var(--sp-1));
+  left: 0;
+  z-index: 30;
+  min-width: 260px;
+  max-height: 60vh;
+  overflow: auto;
+  padding: var(--sp-3);
+  border: var(--border-hairline) solid var(--border-0);
+  border-radius: var(--radius-card);
+  background: var(--bg-1);
+  box-shadow: var(--shadow-popover);
+}
+.mj-facet-menu--wide .mj-facet-menu-panel { width: min(90vw, 720px); }
+.mj-facet-menu-panel .mj-facet-groups { margin: 0; padding: 0; border: 0; }
+.mj-facet-menu:not(.mj-facet-menu--wide) .mj-facet-menu-panel .mj-facet-groups { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 720px) {
+  .mj-facet-menu { position: static; }
+  .mj-facet-menu-panel { position: static; width: auto; max-height: none; margin-top: var(--sp-2); box-shadow: none; }
+}
