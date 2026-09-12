@@ -5,6 +5,7 @@ import { majoranaSignInPath } from "../lib/sign-in";
 import { PUBLIC_SHELL_COPY, type PublicLocale } from "../lib/public-locale";
 import { getPublicLocale } from "../lib/public-locale-server";
 import { LanguageToggle } from "./language-toggle";
+import { ThemeToggle } from "./theme-toggle";
 import { LeonaWordmark } from "./leona-wordmark";
 import { AuthStatus } from "./auth-status";
 import { PublicNavigation } from "./public-navigation";
@@ -47,7 +48,8 @@ export async function PublicSite({
    * comes from a cookie read on the server, so both still apply. A surface
    * asking for `"none"` supplies its own language control —
    * `/repository/layers` puts it in the information box's footer.
-   * The public website uses a fixed dark theme throughout.
+   * The public website opens dark and keeps whichever theme the visitor picks in
+   * the header (the toggle came back 2026-09-12; PR 865 had removed it).
    *
    * `"static"` is the full chrome with no per-visitor part IN THE SERVER
    * RENDER: it never calls `getMajoranaAuth()`, which reaches a Dynamic API and
@@ -143,6 +145,7 @@ export async function PublicSite({
             <LeonaWordmark className="lq-wordmark--public-header" />
           </Link>
           <PublicNavigation items={publicNav} activePath={activePath} locale={resolvedLocale}>
+            <ThemeToggle locale={resolvedLocale} />
             {showLanguageToggle ? <LanguageToggle locale={resolvedLocale} label={resolvedLocale === "ja" ? "言語" : "Language"} /> : null}
           </PublicNavigation>
           <div className="lq-public-auth">

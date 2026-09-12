@@ -2,16 +2,24 @@
 
 import { useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
-import { applyTheme, isDarkPublicPath, preferredTheme, THEME_STORAGE_KEY } from "../lib/theme";
+import { ACCENT_STORAGE_KEY, applyAccent, applyTheme, resolveAccent, resolveTheme, THEME_STORAGE_KEY } from "../lib/theme";
 
-/** Locale navigation replaces the root HTML attributes without rerunning Next Script. */
+/**
+ * Locale navigation replaces the root HTML attributes without rerunning Next
+ * Script, so the theme and the workspace accent are re-resolved here on every
+ * path change, on a storage change from another tab, on page restore, and when
+ * the OS scheme flips.
+ */
 export function ThemeController({ locale }: { locale: string }) {
   const pathname = usePathname();
   useLayoutEffect(() => {
-    const sync = () => applyTheme(isDarkPublicPath(pathname) ? "dark" : preferredTheme());
+    const sync = () => {
+      applyTheme(resolveTheme(pathname));
+      applyAccent(resolveAccent(pathname));
+    };
     sync();
     const onStorage = (event: StorageEvent) => {
-      if (event.key === THEME_STORAGE_KEY || event.key === null) sync();
+      if (event.key === THEME_STORAGE_KEY || event.key === ACCENT_STORAGE_KEY || event.key === null) sync();
     };
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     window.addEventListener("storage", onStorage);

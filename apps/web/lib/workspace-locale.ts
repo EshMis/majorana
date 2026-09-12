@@ -2372,6 +2372,10 @@ export const ACCOUNT_COPY: Record<PublicLocale, {
   preferences: string;
   language: string;
   languageHelp: string;
+  theme: string;
+  themeHelp: string;
+  accent: string;
+  accentHelp: string;
   identity: string;
   /** The Profile pane's label and heading. */
   profile: string;
@@ -2586,6 +2590,10 @@ export const ACCOUNT_COPY: Record<PublicLocale, {
     preferences: "Preferences",
     language: "Language",
     languageHelp: "Choose the language used for shared navigation and account settings.",
+    theme: "Theme",
+    themeHelp: "Light or dark, for the workspace and the public site alike.",
+    accent: "Colour",
+    accentHelp: "The one colour the workspace uses for links, buttons and the lioness.",
     identity: "Identity",
     profile: "Profile",
     retry: "Try again",
@@ -2784,6 +2792,10 @@ export const ACCOUNT_COPY: Record<PublicLocale, {
     preferences: "表示設定",
     language: "言語",
     languageHelp: "共通ナビゲーションとアカウント設定で使用する言語を選択します。",
+    theme: "テーマ",
+    themeHelp: "ライトかダークか。ワークスペースと公開サイトの両方に適用されます。",
+    accent: "カラー",
+    accentHelp: "リンク、ボタン、ライオネスに使うワークスペースの基調色です。",
     identity: "本人情報",
     profile: "プロフィール",
     retry: "再試行",

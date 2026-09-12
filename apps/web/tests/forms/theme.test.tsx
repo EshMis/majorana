@@ -3,11 +3,12 @@ import { afterEach, beforeEach, test } from "node:test";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { ThemeController } from "../../components/theme-controller";
 import { ThemeToggle } from "../../components/theme-toggle";
-import { THEME_STORAGE_KEY } from "../../lib/theme";
+import { AccentPicker } from "../../components/accent-picker";
+import { ACCENT_STORAGE_KEY, THEME_STORAGE_KEY } from "../../lib/theme";
 
 beforeEach(() => { window.history.replaceState(null, "", "/run"); });
 
-afterEach(() => { cleanup(); window.localStorage.clear(); delete document.documentElement.dataset.theme; });
+afterEach(() => { cleanup(); window.localStorage.clear(); delete document.documentElement.dataset.theme; delete document.documentElement.dataset.accent; });
 
 function installMedia() {
   const media = { matches: true, addEventListener() {}, removeEventListener() {} };
@@ -48,20 +49,64 @@ test("a theme change from another tab updates the page and controls", () => {
 });
 
 
-test("public navigation stays dark without overwriting the workspace preference", () => {
+test("a saved theme is kept on public pages too, and nothing is written back", () => {
   installMedia();
   window.localStorage.setItem(THEME_STORAGE_KEY, "light");
   const view = render(<ThemeController locale="en" />);
   assert.equal(document.documentElement.dataset.theme, "light");
-  for (const path of ["/", "/workspace", "/repository", "/repository/layers", "/about", "/pricing", "/contact", "/ja/about"]) {
+  for (const path of ["/", "/workspace", "/repository", "/repository/layers", "/about", "/pricing", "/contact", "/ja/about", "/run", "/events/qiskit-fall-fest-2026"]) {
+    window.history.replaceState(null, "", path);
+    view.rerender(<ThemeController locale="en" />);
+    assert.equal(document.documentElement.dataset.theme, "light", path);
+    assert.equal(window.localStorage.getItem(THEME_STORAGE_KEY), "light");
+  }
+});
+
+test("with nothing saved, public pages open dark and the workspace follows the OS", () => {
+  const media = { matches: false, addEventListener() {}, removeEventListener() {} };
+  Object.defineProperty(window, "matchMedia", { configurable: true, value: () => media });
+  const view = render(<ThemeController locale="en" />);
+  for (const path of ["/", "/repository", "/repository/layers", "/about", "/ja/pricing"]) {
     window.history.replaceState(null, "", path);
     view.rerender(<ThemeController locale="en" />);
     assert.equal(document.documentElement.dataset.theme, "dark", path);
-    assert.equal(window.localStorage.getItem(THEME_STORAGE_KEY), "light");
   }
-  for (const path of ["/run", "/events/qiskit-fall-fest-2026"]) {
+  for (const path of ["/run", "/account", "/events/qiskit-fall-fest-2026"]) {
     window.history.replaceState(null, "", path);
     view.rerender(<ThemeController locale="en" />);
     assert.equal(document.documentElement.dataset.theme, "light", path);
   }
+  assert.equal(window.localStorage.getItem(THEME_STORAGE_KEY), null, "resolving a default never persists it");
+});
+
+test("the plum accent applies in the workspace only and moss is the absence of the attribute", () => {
+  installMedia();
+  window.localStorage.setItem(ACCENT_STORAGE_KEY, "plum");
+  const view = render(<ThemeController locale="en" />);
+  assert.equal(document.documentElement.dataset.accent, "plum", "/run");
+  for (const path of ["/", "/repository", "/about", "/events/qiskit-fall-fest-2026", "/ja/pricing"]) {
+    window.history.replaceState(null, "", path);
+    view.rerender(<ThemeController locale="en" />);
+    assert.equal(document.documentElement.dataset.accent, undefined, path);
+  }
+  window.history.replaceState(null, "", "/account");
+  view.rerender(<ThemeController locale="en" />);
+  assert.equal(document.documentElement.dataset.accent, "plum", "/account");
+  act(() => {
+    window.localStorage.setItem(ACCENT_STORAGE_KEY, "moss");
+    window.dispatchEvent(new window.StorageEvent("storage", { key: ACCENT_STORAGE_KEY, newValue: "moss" }));
+  });
+  assert.equal(document.documentElement.dataset.accent, undefined, "moss after a change from another tab");
+});
+
+test("the accent picker applies plum at once, keeps it, and moss clears the attribute", () => {
+  installMedia();
+  const view = render(<><ThemeController locale="en" /><AccentPicker locale="en" /></>);
+  fireEvent.click(view.getByRole("radio", { name: "Use plum" }));
+  assert.equal(document.documentElement.dataset.accent, "plum");
+  assert.equal(window.localStorage.getItem(ACCENT_STORAGE_KEY), "plum");
+  assert.equal(view.getByRole("radio", { name: "Use plum" }).getAttribute("aria-checked"), "true");
+  fireEvent.click(view.getByRole("radio", { name: "Use moss" }));
+  assert.equal(document.documentElement.dataset.accent, undefined);
+  assert.equal(window.localStorage.getItem(ACCENT_STORAGE_KEY), "moss");
 });

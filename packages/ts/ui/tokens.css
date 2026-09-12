@@ -33,6 +33,17 @@
   --text-2: #736b5e; /* placeholders, disabled */
   --accent: #48682e; /* links, focus, primary buttons — moss green (AA on bg-0..bg-2) */
   --accent-press: #405d29;
+  /* Second hue, owner directive 2026-09-12: the public site carries #382659 plum as
+     highlights — kickers, marks, hover lines, soft washes — so it reads as less
+     monochrome. Text-safe on every light ground (12.6:1 / 11.7:1 / 10.5:1). */
+  --accent-2: #382659;
+  --accent-2-press: #2d1e48;
+  --accent-2-tint: #ece6f5; /* plum as a surface wash or glow — never text */
+  /* The two workspace accents by name, for the swatches in Preferences: each swatch
+     must show its own colour whichever one is currently chosen. */
+  --accent-moss: #48682e;
+  --accent-plum: #382659;
+  --accent-plum-press: #2d1e48;
   --ok: #1e7c4d; /* verified / pass — emerald (paired with ✓ glyph) */
   --warn: #8a5c0a; /* lossy / partial — amber (paired with glyph) */
   --err: #b03a33; /* failed / unsupported (paired with ✕ glyph) */
@@ -117,9 +128,10 @@
   --shadow-popover: 0 8px 24px rgb(0 0 0 / 0.28);
 }
 
-/* Public website pages keep their dark palette even before hydration. */
-:root[data-theme="dark"],
-:root:has(.mj-public-site) {
+/* Dark. The public site used to be pinned here with `:root:has(.mj-public-site)`;
+ * since 2026-09-12 it follows the same choice as the workspace (dark until a
+ * visitor picks light), so the pin is gone and the theme script decides. */
+:root[data-theme="dark"] {
   color-scheme: dark;
 
   /* color — warm-gray neutrals (low chroma), one earthy-green accent, verdict signals */
@@ -132,6 +144,14 @@
   --text-2: #91897d; /* tertiary text and placeholders; AA on all dark surfaces */
   --accent: #7ba05b; /* links, focus, primary buttons, running-stage — moss green */
   --accent-press: #688a4a;
+  /* Plum, lifted for dark grounds: 7.0:1 on bg-0, 6.6:1 on bg-1, 5.8:1 on bg-2. The
+     owner's #382659 itself is the wash. */
+  --accent-2: #a994d1;
+  --accent-2-press: #9e85cb;
+  --accent-2-tint: #382659;
+  --accent-moss: #7ba05b;
+  --accent-plum: #a994d1;
+  --accent-plum-press: #9e85cb;
   --ok: #34c077; /* verified / pass — emerald (paired with ✓ glyph) */
   --warn: #e5a83b; /* lossy / skipped-with-reason / partial — amber (paired with glyph) */
   --err: #e5564f; /* failed / unsupported (paired with ✕ glyph) */
@@ -184,11 +204,29 @@
     --text-2: #91897d;
     --accent: #7ba05b;
     --accent-press: #688a4a;
+    --accent-2: #a994d1;
+    --accent-2-press: #9e85cb;
+    --accent-2-tint: #382659;
+    --accent-moss: #7ba05b;
+    --accent-plum: #a994d1;
+    --accent-plum-press: #9e85cb;
     --ok: #34c077;
     --warn: #e5a83b;
     --err: #e5564f;
     --mono-tint: #bdb4a4;
   }
+}
+
+/* Workspace accent choice (owner, 2026-09-12): the shell stays one colour, and the
+ * person picks which — moss (default) or plum. `data-accent` is set by the theme
+ * script from localStorage["majorana.accent.v1"] on workspace paths only, so the
+ * public site keeps moss as its primary and plum as its highlight. The values are
+ * the per-theme `--accent-plum` tokens above (same AA figures as `--accent-2`),
+ * referenced rather than repeated so the literal `--accent:` declarations the
+ * OG-image and 404 tests parse stay the light/dark pair. */
+:root[data-accent="plum"] {
+  --accent: var(--accent-plum);
+  --accent-press: var(--accent-plum-press);
 }
 
 /* Qiskit Fall Fest: owner-requested event poster surface (2026-09-08).
