@@ -290,10 +290,12 @@
 .mj-public-site .lq-site-frameworks span { color: var(--accent-2); }
 /* Purple and green as equals (owner, 2026-09-12). The light plum now sits at the moss's
    own lightness, and the two hues meet wherever the page splits: each section opens on a
-   short rule that runs moss into plum ahead of its plum kicker; the hairlines that divide
-   the home's sections run moss into plum and fade, instead of reading as grey; the cover
-   carries a moss glow at its foot under the plum wash; a moss button wears a plum halo
-   while hovered; and selected text sits on the plum tint. */
+   short rule that runs moss into plum ahead of its plum kicker; the footer's top rule runs
+   moss into plum and fades instead of reading as grey (the home's sections carry no
+   hairline of their own since the polish pass, so the kicker rule is their split); the
+   cover carries a moss glow at its foot under the plum wash; a moss button wears a plum
+   halo while hovered; and selected text sits on the plum tint. Longhands, because a later
+   `border:` shorthand would reset a `border-image` set here. */
 .mj-public-site {
   --lq-duo: linear-gradient(90deg, var(--accent), var(--accent-2));
   --lq-duo-fade: linear-gradient(90deg, var(--accent) 0, var(--accent-2) 55%, transparent 100%);
@@ -308,10 +310,9 @@
   border-radius: 1px;
   background: var(--lq-duo);
 }
-.lq-site-products,
-.lq-site-evidence,
-.mj-public-site .mj-company-final-cta {
-  border-image: var(--lq-duo-fade) 1;
+.mj-public-site .mj-public-footer {
+  border-image-source: var(--lq-duo-fade);
+  border-image-slice: 1;
 }
 .lq-site-home .lq-site-hero::after {
   content: "";
