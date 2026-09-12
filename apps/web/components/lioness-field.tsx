@@ -4,7 +4,7 @@ import { useEffect, useRef, type RefObject } from "react";
 import { LIONESS_EYE_SHARD, LIONESS_SHARDS, LIONESS_SHARD_ASPECT, LIONESS_SHARD_GROUPS } from "./lioness-shards";
 
 /**
- * The lioness, assembled from pieces, and now able to move.
+ * The lioness, assembled from pieces, standing above the composer.
  *
  * Every shard of the silhouette (`lioness-shards.ts`, a triangle mosaic of the
  * owner's reference art) starts scattered around the figure, turned and shrunk,
@@ -13,41 +13,38 @@ import { LIONESS_EYE_SHARD, LIONESS_SHARDS, LIONESS_SHARD_ASPECT, LIONESS_SHARD_
  * placeholder (`standRef`) is; a soft light passes across the mosaic every few
  * seconds and the eye stays a shade brighter than the rest.
  *
- * When the person starts typing she walks over to the composer (`restRef`) —
- * a few strides, legs swinging from the hips and shoulders, body rising and
- * falling with each step — and lies down along its top edge, hind legs folded
- * under, one paw and the tail hanging over the border into the composer's
- * padding, never over the text. She breathes there. When the composer is
- * cleared and left she gets up and walks back. Each shard belongs to a rig
- * group (body, head, tail, four legs, the near paw) and every pose is a rigid
+ * She notices the pointer. Bring it over her and the tail flicks — a quick lift
+ * with a small settle-back, the way a resting cat's tail answers a hand — the
+ * head lifts a degree or two toward the pointer, and the pieces brighten as
+ * they do while the composer is engaged. While the pointer stays she flicks
+ * again every few seconds, never on a fixed beat. Each shard belongs to a rig
+ * group (body, head, tail, four legs, the near paw) and every move is a rigid
  * transform per group, so the pieces stay pieces while she moves.
+ *
+ * The walk to the composer and the lie-down that shipped in PR 868 were taken
+ * out on owner direction (2026-09-12); the rig they were built on stays for the
+ * hover, and that commit has the poses if they are ever wanted back.
  *
  * Colours are read from the theme at draw time (`--accent`, `--bg-0`,
  * `--text-0`), so it follows light and dark without a prop. Drawing stops
  * while the canvas is off screen or the tab is hidden, and under reduced
  * motion the assembled figure is painted once, standing, with no sweep and no
- * walk.
+ * hover motion. The canvas takes no pointer events; the hover is read from the
+ * page's pointer position against the figure's own box.
  */
 export function LionessField({
   engaged = false,
-  typing = false,
   standRef,
-  restRef,
   className = "",
 }: {
   engaged?: boolean;
-  typing?: boolean;
   /** Where she stands: the figure is letterboxed into this element's box. */
   standRef?: RefObject<HTMLElement | null>;
-  /** Where she lies down: along the top edge of this element, at its right end. */
-  restRef?: RefObject<HTMLElement | null>;
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engagedRef = useRef(engaged);
   engagedRef.current = engaged;
-  const typingRef = useRef(typing);
-  typingRef.current = typing;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -88,27 +85,25 @@ export function LionessField({
 
     const ASSEMBLE_MS = 2100;
     const SWEEP_MS = 6500;
-    const STRIDE_MS = 880;
-    const SETTLE_MS = 950;
-    const RISE_MS = 700;
-    const LEAVE_AFTER_MS = 1500;
+    const FLICK_MS = 1100;
     const easeOut = (x: number) => 1 - Math.pow(1 - x, 3);
-    const smooth = (x: number) => x * x * (3 - 2 * x);
     let raf = 0;
     let started = 0;
+    let lastFrame = 0;
     let visible = document.visibilityState !== "hidden";
     let onScreen = true;
     let width = 0;
     let height = 0;
 
-    // Where she is and what she is doing.
-    let mode: "stand" | "walk" | "settle" | "rest" | "rise" | "return" = "stand";
-    let modeStart = 0;
-    let facing: 1 | -1 = 1;
-    let from: Spot = { x: 0, y: 0, w: 1 };
-    let to: Spot = { x: 0, y: 0, w: 1 };
-    let walkMs = STRIDE_MS * 3;
-    let idleSince = 0;
+    // The pointer relative to the canvas (null once it has left the page), and
+    // what she makes of it.
+    let pointer: { x: number; y: number } | null = null;
+    let hovering = false;
+    let flickStart = -1;
+    let flickAmplitude = 1;
+    let nextFlickAt = 0;
+    let headLift = 0;
+    let attention = 0;
     const pose = clonePose(STAND);
 
     function colors() {
@@ -159,104 +154,67 @@ export function LionessField({
       return fit(box);
     }
 
-    /**
-     * Lying along the top edge of the composer, tucked into its right corner
-     * at about three fifths her standing size: small enough to clear the
-     * heading centred above the box, and to keep the paw and tail that hang
-     * over the border inside the composer's padding, never over the text.
-     */
-    function restSpot(stand: Spot): Spot | null {
-      const box = boxOf(restRef?.current);
-      if (!box) return null;
-      const w = Math.min(stand.w * 0.62, box.width * 0.26);
-      const h = w / LIONESS_SHARD_ASPECT;
-      return { x: box.right - w - Math.min(16, box.width * 0.03), y: box.top - h + 1, w };
+    function beginFlick(now: number) {
+      flickStart = now;
+      flickAmplitude = 0.75 + random() * 0.35;
+      // The next unprompted flick, if the pointer stays: a few seconds, varied.
+      nextFlickAt = now + FLICK_MS + 1800 + random() * 2400;
     }
 
     function draw(now: number) {
       if (!started) started = now;
+      const dt = lastFrame ? Math.min(64, now - lastFrame) : 16;
+      lastFrame = now;
       const elapsed = now - started;
       const progress = reduceMotion ? 1 : Math.min(1, elapsed / ASSEMBLE_MS);
       const { accent, ground, ink } = colors();
-      const stand = standSpot();
-      const typing = typingRef.current;
-      const engaged = engagedRef.current;
-
-      // Advance the little state machine.
-      let spot = stand;
-      copyPose(STAND, pose);
-      let stepAmplitude = 0;
-      if (!reduceMotion) {
-        if (mode === "stand" && typing && progress >= 1) {
-          const rest = restSpot(stand);
-          if (rest) {
-            mode = "walk";
-            modeStart = now;
-            from = stand;
-            to = rest;
-            facing = to.x + to.w / 2 >= from.x + from.w / 2 ? 1 : -1;
-            walkMs = Math.max(2, Math.round(Math.hypot(to.x - from.x, to.y - from.y) / (0.42 * from.w))) * STRIDE_MS;
-          }
-        }
-        if (mode === "walk" || mode === "return") {
-          const u = Math.min(1, (now - modeStart) / walkMs);
-          spot = lerpSpot(from, to, smooth(u));
-          // Strides fade in and out at the ends of the walk.
-          stepAmplitude = Math.min(1, Math.min(u, 1 - u) * 6);
-          walkPose((now - modeStart) / STRIDE_MS, stepAmplitude, pose);
-          if (u >= 1) {
-            if (mode === "walk") {
-              mode = "settle";
-              modeStart = now;
-            } else {
-              mode = "stand";
-              facing = 1;
-            }
-          }
-        } else if (mode === "settle" || mode === "rise") {
-          const rest = restSpot(stand) ?? to;
-          spot = rest;
-          const u = Math.min(1, (now - modeStart) / (mode === "settle" ? SETTLE_MS : RISE_MS));
-          settlePose(mode === "settle" ? u : 1 - u, pose);
-          if (u >= 1) {
-            if (mode === "settle") {
-              mode = "rest";
-              idleSince = 0;
-            } else {
-              mode = "return";
-              modeStart = now;
-              from = rest;
-              to = stand;
-              facing = to.x + to.w / 2 >= from.x + from.w / 2 ? 1 : -1;
-              walkMs = Math.max(2, Math.round(Math.hypot(to.x - from.x, to.y - from.y) / (0.42 * from.w))) * STRIDE_MS;
-            }
-          }
-        } else if (mode === "rest") {
-          spot = restSpot(stand) ?? to;
-          copyPose(REST, pose);
-          // Breathing: the body rises and falls a hair, the tail tip stirs.
-          pose[ROOT]![2] += 0.004 * Math.sin(now / 1300);
-          pose[2]![0] += 0.03 * Math.sin(now / 2100);
-          if (!typing && !engaged) {
-            if (!idleSince) idleSince = now;
-            else if (now - idleSince > LEAVE_AFTER_MS) {
-              mode = "rise";
-              modeStart = now;
-              idleSince = 0;
-            }
-          } else {
-            idleSince = 0;
-          }
-        }
-      }
-
+      const spot = standSpot();
       const boxW = spot.w;
       const boxH = boxW / LIONESS_SHARD_ASPECT;
+      const engaged = engagedRef.current;
+
+      // Is the pointer over her? Her box, with a little margin so the paws and
+      // the tail tip count. Only once she is assembled.
+      if (!reduceMotion) {
+        const margin = boxH * 0.08;
+        const over =
+          pointer !== null &&
+          progress >= 1 &&
+          pointer.x >= spot.x - margin &&
+          pointer.x <= spot.x + boxW + margin &&
+          pointer.y >= spot.y - margin &&
+          pointer.y <= spot.y + boxH + margin;
+        if (over && !hovering) {
+          hovering = true;
+          if (flickStart < 0) beginFlick(now);
+        } else if (!over && hovering) {
+          hovering = false;
+        }
+        if (hovering && flickStart < 0 && now >= nextFlickAt) beginFlick(now);
+      }
+
+      // The pose for this frame: standing, plus whatever the hover adds.
+      copyPose(STAND, pose);
+      if (flickStart >= 0) {
+        const t = (now - flickStart) / FLICK_MS;
+        if (t >= 1) flickStart = -1;
+        else pose[2]![0] = tailFlick(t) * flickAmplitude;
+      }
+      // The head follows the pointer's height a little: up to five degrees
+      // either way, eased so it reads as attention rather than tracking.
+      const headTarget =
+        hovering && pointer ? clamp((spot.y + PIVOTS[1]![1] * boxH - pointer.y) / boxH, -1, 1) * rad(5) : 0;
+      const ease = 1 - Math.exp(-dt / 140);
+      headLift += (headTarget - headLift) * ease;
+      if (Math.abs(headLift) > 1e-4) pose[1]![0] = -headLift;
+      attention += ((hovering ? 1 : 0) - attention) * ease;
+      const posed = flickStart >= 0 || Math.abs(headLift) > 1e-4;
+
       const originX = spot.x;
       const originY = spot.y;
       const sweep = reduceMotion || progress < 1 ? -1 : ((elapsed - ASSEMBLE_MS) % SWEEP_MS) / SWEEP_MS;
       const sweepX = sweep < 0 ? -1 : -0.25 + sweep * 1.5;
-      const lift = engaged || mode === "rest" ? 1 : 0.86;
+      const lift = 0.86 + 0.14 * Math.max(engaged ? 1 : 0, attention);
 
       ctx!.clearRect(0, 0, width, height);
       ctx!.lineJoin = "round";
@@ -276,8 +234,8 @@ export function LionessField({
           const ry = (part.tri[v * 2 + 1]! - part.cy) * scale;
           let x = part.cx + offX + rx * cos - ry * sin;
           let y = part.cy + offY + rx * sin + ry * cos;
-          if (mode !== "stand") [x, y] = posedVertex(x, y, part.group, pose);
-          const px = originX + (facing === 1 ? x : 1 - x) * boxW;
+          if (posed) [x, y] = posedVertex(x, y, part.group, pose);
+          const px = originX + x * boxW;
           const py = originY + y * boxH;
           if (v === 0) ctx!.moveTo(px, py);
           else ctx!.lineTo(px, py);
@@ -297,7 +255,7 @@ export function LionessField({
       }
       ctx!.globalAlpha = 1;
       canvas!.dataset.drawing = String(!reduceMotion && visible && onScreen);
-      canvas!.dataset.pose = mode;
+      canvas!.dataset.pose = hovering ? "hover" : "stand";
       if (!reduceMotion && visible && onScreen) raf = window.requestAnimationFrame(draw);
     }
 
@@ -307,6 +265,7 @@ export function LionessField({
         draw(performance.now());
         return;
       }
+      lastFrame = 0;
       if (visible && onScreen) raf = window.requestAnimationFrame(draw);
       else canvas!.dataset.drawing = "false";
     }
@@ -330,6 +289,20 @@ export function LionessField({
       });
       intersection.observe(parent);
     }
+    // The pointer, read from the page: the canvas itself takes no pointer
+    // events, so nothing underneath her stops working.
+    const onPointerMove = (event: PointerEvent) => {
+      const base = canvas!.getBoundingClientRect();
+      pointer = { x: event.clientX - base.left, y: event.clientY - base.top };
+    };
+    const onPointerGone = () => {
+      pointer = null;
+    };
+    if (!reduceMotion) {
+      window.addEventListener("pointermove", onPointerMove, { passive: true });
+      document.documentElement.addEventListener("mouseleave", onPointerGone);
+      window.addEventListener("blur", onPointerGone);
+    }
     start();
 
     return () => {
@@ -337,18 +310,17 @@ export function LionessField({
       resizeObserver.disconnect();
       intersection?.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pointermove", onPointerMove);
+      document.documentElement.removeEventListener("mouseleave", onPointerGone);
+      window.removeEventListener("blur", onPointerGone);
     };
-  }, [standRef, restRef]);
+  }, [standRef]);
 
   return <canvas ref={canvasRef} className={className} aria-hidden="true" style={{ width: "100%", height: "100%", display: "block" }} />;
 }
 
 /** The figure's box on the canvas: top-left corner and width; the height follows the aspect. */
 type Spot = { x: number; y: number; w: number };
-
-function lerpSpot(a: Spot, b: Spot, t: number): Spot {
-  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, w: a.w + (b.w - a.w) * t };
-}
 
 /** One rigid move per rig group: turn about the pivot, then shift, scaled about the pivot. */
 type Part = [rot: number, dx: number, dy: number, scale: number];
@@ -368,37 +340,19 @@ const PIVOTS: ReadonlyArray<readonly [number, number]> = [
 ];
 const PARENT: ReadonlyArray<number> = [-1, -1, -1, -1, -1, -1, -1, 6];
 const rad = (deg: number) => (deg * Math.PI) / 180;
+const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 const identity = (): Part => [0, 0, 0, 1];
 const STAND: Pose = Array.from({ length: 9 }, identity);
+
 /**
- * Lying down: the root drops the body to the ground line, the hind legs fold
- * under (turned forward and tucked), the far fore leg lies along the ground,
- * the near fore leg reaches forward with the paw hanging over the edge, and
- * the tail hangs beside it. The head stays up. Tuned on the rendered mosaic.
+ * A tail flick over `t` in [0, 1): a damped swing about the root. A positive
+ * turn lifts the tip (it hangs down and back, so clockwise on screen is up).
+ * The first lobe is the whip, about twenty-three degrees a quarter of the way
+ * in; the second, about five degrees the other way, is the settle-back.
  */
-const REST: Pose = [
-  identity(),
-  [rad(-8), 0, 0, 1],
-  [rad(18), 0, 0, 1],
-  [rad(-100), 0.05, -0.04, 0.6],
-  [rad(-96), 0.04, -0.03, 0.65],
-  [rad(-82), 0.01, -0.01, 1],
-  [rad(-60), 0, 0, 1],
-  [rad(70), 0, 0, 1],
-  [0, 0, 0.4, 1],
-];
-/** Lying down happens rump first: hind legs and body over the first part, fore legs and head after. */
-const SETTLE_WINDOW: ReadonlyArray<readonly [number, number]> = [
-  [0, 0.65], // body
-  [0.3, 1], // head
-  [0.2, 0.9], // tail
-  [0, 0.65], // hind far
-  [0.05, 0.7], // hind near
-  [0.35, 1], // fore far
-  [0.4, 1], // fore near
-  [0.45, 1], // paw
-  [0, 0.65], // root
-];
+function tailFlick(t: number): number {
+  return rad(48) * Math.sin(t * Math.PI * 2.2) * Math.exp(-3.2 * t);
+}
 
 function clonePose(source: Pose): Pose {
   return source.map((part) => [...part] as Part);
@@ -412,45 +366,6 @@ function copyPose(source: Pose, into: Pose) {
     d[1] = s[1];
     d[2] = s[2];
     d[3] = s[3];
-  }
-}
-
-function setPart(pose: Pose, group: number, rot: number, dx: number, dy: number, scale: number) {
-  const part = pose[group]!;
-  part[0] = rot;
-  part[1] = dx;
-  part[2] = dy;
-  part[3] = scale;
-}
-
-/**
- * A walk cycle at `phase` strides: a lateral sequence, each leg a quarter
- * stride behind the last, the body bobbing twice per stride, the tail swaying
- * and the head nodding a little. `amplitude` scales it so strides can fade in.
- */
-function walkPose(phase: number, amplitude: number, into: Pose) {
-  const two = Math.PI * 2;
-  const swing = (offset: number, deg: number) => rad(deg) * amplitude * Math.sin(two * (phase + offset));
-  setPart(into, 0, 0, 0, 0, 1);
-  setPart(into, 1, rad(2) * amplitude * Math.sin(two * 2 * phase), 0, 0.005 * amplitude * Math.sin(two * 2 * phase), 1);
-  setPart(into, 2, swing(0, 8), 0, 0, 1);
-  setPart(into, 3, swing(0.5, 20), 0, 0, 1);
-  setPart(into, 4, swing(0, 20), 0, 0, 1);
-  setPart(into, 5, swing(0.75, 24), 0, 0, 1);
-  setPart(into, 6, swing(0.25, 24), 0, 0, 1);
-  setPart(into, 7, swing(0.25, -9), 0, 0, 1);
-  setPart(into, ROOT, 0, 0, 0.012 * amplitude * Math.sin(two * 2 * phase + 1), 1);
-}
-
-/** Between standing (u = 0) and lying (u = 1), each group on its own window. */
-function settlePose(u: number, into: Pose) {
-  for (let g = 0; g < REST.length; g += 1) {
-    const [start, end] = SETTLE_WINDOW[g]!;
-    const local = Math.min(1, Math.max(0, (u - start) / (end - start)));
-    const t = local * local * (3 - 2 * local);
-    const a = STAND[g]!;
-    const b = REST[g]!;
-    setPart(into, g, a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t);
   }
 }
 

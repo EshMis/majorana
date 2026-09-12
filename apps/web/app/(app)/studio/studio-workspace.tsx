@@ -1581,7 +1581,6 @@ export function CircuitBuilder({ seed, framework, selectedGate, onSelectGate, on
     <StudioPanelSurface
       className="mj-studio-canvas"
       label={copy.canvasLabel}
-      eyebrow={copy.canvasLabel}
       heading={copy.generatedPreview}
       meta={(
         <span className="mj-mono-muted">
@@ -1948,7 +1947,6 @@ function CodeEditor({
     <StudioPanelSurface
       className="mj-studio-code-panel"
       label={copy.sourceEditor}
-      eyebrow={copy.sourceEditor}
       heading={heading}
       popout={popout}
       onTogglePopout={onTogglePopout}
@@ -1995,7 +1993,7 @@ function CodeEditor({
 }
 
 /**
- * The chrome every Studio tab shares: eyebrow, heading, its own controls, and a
+ * The chrome every Studio tab shares: a heading, its own controls, and a
  * popout.
  *
  * The tabs had drifted into four different header shapes — one with a button on
@@ -2009,7 +2007,6 @@ function CodeEditor({
 function StudioPanelSurface({
   className,
   label,
-  eyebrow,
   heading,
   meta,
   controls,
@@ -2022,7 +2019,6 @@ function StudioPanelSurface({
 }: {
   className: string;
   label: string;
-  eyebrow: string;
   heading: string;
   meta?: ReactNode;
   controls?: ReactNode;
@@ -2050,9 +2046,10 @@ function StudioPanelSurface({
       hidden={hidden}
       {...region}
     >
+      {/* One title per card: the tab strip above already names the section, so the
+          head says only what the tab does not — which framework, which circuit. */}
       <div className="mj-studio-surface-head">
         <div>
-          <span className="mj-section-label">{eyebrow}</span>
           <h2>{heading}</h2>
         </div>
         <div className="mj-studio-surface-controls">
@@ -2129,7 +2126,6 @@ function SimulationPanel({
     <section className="mj-studio-surface mj-studio-simulation-panel" aria-label={copy.simulation} {...panelRegion("studio", "simulation")}>
       <div className="mj-studio-surface-head">
         <div>
-          <span className="mj-section-label">{copy.computeLanes}</span>
           <h2>{copy.simulation}</h2>
         </div>
         <div className="mj-studio-surface-controls">
@@ -2555,7 +2551,6 @@ function SummaryPanel({
     <section className="mj-studio-surface mj-studio-version-panel" aria-label={copy.summary} {...panelRegion("studio", "summary")}>
       <div className="mj-studio-surface-head">
         <div>
-          <span className="mj-section-label">{copy.summary}</span>
           <h2>{artifact ? artifact.title : copy.newDraftSource}</h2>
         </div>
         <span className="mj-mono-muted">{artifact?.framework ?? ""}</span>

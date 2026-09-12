@@ -56,7 +56,7 @@ export async function AccountContent() {
               <strong>{copy.language}</strong>
               <p>{copy.languageHelp}</p>
             </div>
-            <LanguageToggle locale={locale} label={copy.language} />
+            <LanguageToggle locale={locale} label={copy.language} mode="refresh" />
           </div>
           {/* Theme and colour (owner, 2026-09-12): the same light/dark control the
               rail and the public header carry, and the workspace's accent. */}
