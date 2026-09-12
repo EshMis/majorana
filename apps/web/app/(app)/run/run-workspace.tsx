@@ -33,7 +33,6 @@ export function RunWorkspace({ demoMode = false, locale = "en" }: { demoMode?: b
   const [pending, setPending] = useState(false);
   const [composerEngaged, setComposerEngaged] = useState(false);
   const lionessStandRef = useRef<HTMLSpanElement>(null);
-  const composerStageRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [contextArtifact, setContextArtifact] = useState<LibraryArtifact | null>(null);
   const { attachments, reading, isReading, addFiles, removeAttachment } = usePromptAttachments(locale, setError);
@@ -216,16 +215,10 @@ export function RunWorkspace({ demoMode = false, locale = "en" }: { demoMode?: b
       <div className="mj-run-home-scroll">
         <div className="mj-run-home-content mj-run-home-content--centered">
           {/* The lioness, assembled from pieces, drawn on one canvas over the
-              whole block so she can walk from her spot above the heading to
-              the composer once someone starts typing, and lie down along its
-              top edge. Back by owner request (2026-09-10); walks (2026-09-12). */}
-          <LionessField
-            className="mj-run-lioness-canvas"
-            engaged={composerEngaged}
-            typing={prompt.trim().length > 0}
-            standRef={lionessStandRef}
-            restRef={composerStageRef}
-          />
+              whole block; she stands above the heading and answers the pointer
+              with a tail flick. Back by owner request (2026-09-10); the walk to
+              the composer came and went on 2026-09-12. */}
+          <LionessField className="mj-run-lioness-canvas" engaged={composerEngaged} standRef={lionessStandRef} />
           <header className="mj-run-home-heading mj-run-home-hero">
             <span ref={lionessStandRef} className={`mj-run-hero-lioness${composerEngaged ? " is-engaged" : ""}`} aria-hidden="true" />
             <h1>{locale === "ja" ? "何を作りたいですか？" : "What would you like to build?"}</h1>
@@ -238,7 +231,6 @@ export function RunWorkspace({ demoMode = false, locale = "en" }: { demoMode?: b
           </header>
 
           <div
-            ref={composerStageRef}
             className="mj-run-composer-stage"
             onFocusCapture={() => setComposerEngaged(true)}
             onBlurCapture={(event) => {

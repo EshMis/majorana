@@ -52,6 +52,9 @@
   outline: 2px solid var(--accent);
   outline-offset: var(--sp-1);
 }
+/* Inside the landing composer the accent rings and border (globals.css) are the focus
+   indicator; the textarea draws no second box around the typed words (owner, 2026-09-12). */
+.mj-public-site .mj-landing-prompt textarea:focus-visible { outline: none; }
 .mj-public-site .mj-reveal { opacity: 1; transform: none; transition: none; }
 .mj-public-site :is(.mj-primary-button, .mj-secondary-button) { transition: transform var(--dur-hover) var(--ease-out-ui); }
 .mj-public-site :is(.mj-primary-button, .mj-secondary-button):active { transform: translateY(1px); }
