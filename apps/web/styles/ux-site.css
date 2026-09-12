@@ -288,6 +288,42 @@
 }
 .lq-site-home .lq-site-principles article { border-left-color: var(--accent-2); }
 .mj-public-site .lq-site-frameworks span { color: var(--accent-2); }
+/* Purple and green as equals (owner, 2026-09-12). The light plum now sits at the moss's
+   own lightness, and the two hues meet wherever the page splits: each section opens on a
+   short rule that runs moss into plum ahead of its plum kicker; the hairlines that divide
+   the home's sections run moss into plum and fade, instead of reading as grey; the cover
+   carries a moss glow at its foot under the plum wash; a moss button wears a plum halo
+   while hovered; and selected text sits on the plum tint. */
+.mj-public-site {
+  --lq-duo: linear-gradient(90deg, var(--accent), var(--accent-2));
+  --lq-duo-fade: linear-gradient(90deg, var(--accent) 0, var(--accent-2) 55%, transparent 100%);
+}
+.mj-public-site .lq-site-section-heading .mj-section-label::before {
+  content: "";
+  display: inline-block;
+  width: var(--sp-5);
+  height: 2px;
+  margin-right: var(--sp-2);
+  vertical-align: middle;
+  border-radius: 1px;
+  background: var(--lq-duo);
+}
+.lq-site-products,
+.lq-site-evidence,
+.mj-public-site .mj-company-final-cta {
+  border-image: var(--lq-duo-fade) 1;
+}
+.lq-site-home .lq-site-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 18% -12%;
+  z-index: -1;
+  height: 42%;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 64%);
+}
+.mj-public-site .mj-primary-button:hover { box-shadow: 0 0 0 3px var(--accent-2-tint); }
+.mj-public-site ::selection { background: var(--accent-2-tint); color: var(--text-0); }
 /* Line breaks that do not strand a word (owner, 2026-09-12): headings balance their
    lines and running text avoids a one-word last line, across the public site. Both are
    no-ops in engines without the property. */

@@ -2731,6 +2731,11 @@ html[lang="ja"] .mj-company-hero-title-line {
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
+/* The contract details close the Summary; inset like the sections above them
+   rather than flush against the card's edge (2026-09-12). */
+.mj-studio-version-panel > .mj-sim-details {
+  padding: var(--sp-4);
+}
 /* Holds the verdict chip's width open on the one tab that does not show it, so
    the action row does not reflow on a tab change. `visibility` rather than
    `display`: the box stays, the element leaves hit testing and the tab order. */
@@ -2793,6 +2798,12 @@ html[lang="ja"] .mj-company-hero-title-line {
    heading, a zero counter and a band of its own. */
 .mj-studio-simulation-records[data-empty="true"] {
   padding-top: var(--sp-1);
+}
+/* The fallback box is two sentences and a button; they sit one step apart
+   instead of the sentences touching and the button hanging below (2026-09-12). */
+.mj-studio-simulation-unavailable {
+  display: grid;
+  gap: var(--sp-2);
 }
 
 /* ── 6. Shared project page ───────────────────────────────────────────────

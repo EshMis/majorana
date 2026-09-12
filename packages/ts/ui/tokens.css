@@ -33,17 +33,20 @@
   --text-2: #736b5e; /* placeholders, disabled */
   --accent: #48682e; /* links, focus, primary buttons — moss green (AA on bg-0..bg-2) */
   --accent-press: #405d29;
-  /* Second hue, owner directive 2026-09-12: the public site carries #382659 plum as
+  /* Second hue, owner directive 2026-09-12: the public site carries plum as
      highlights — kickers, marks, hover lines, soft washes — so it reads as less
-     monochrome. Text-safe on every light ground (12.6:1 / 11.7:1 / 10.5:1). */
-  --accent-2: #382659;
-  --accent-2-press: #2d1e48;
+     monochrome. The owner's #382659 sits at L* 20 and read as black on paper, so on
+     light grounds plum is lifted to #6b4fa3: the same lightness as the moss (L* 40)
+     and the same contrast on every light ground (6.1:1 / 5.7:1 / 5.1:1), so the two
+     hues are equals. #382659 stays the dark theme's wash (`--accent-2-tint` there). */
+  --accent-2: #6b4fa3;
+  --accent-2-press: #5d4292;
   --accent-2-tint: #ece6f5; /* plum as a surface wash or glow — never text */
   /* The two workspace accents by name, for the swatches in Preferences: each swatch
      must show its own colour whichever one is currently chosen. */
   --accent-moss: #48682e;
-  --accent-plum: #382659;
-  --accent-plum-press: #2d1e48;
+  --accent-plum: #6b4fa3;
+  --accent-plum-press: #5d4292;
   --ok: #1e7c4d; /* verified / pass — emerald (paired with ✓ glyph) */
   --warn: #8a5c0a; /* lossy / partial — amber (paired with glyph) */
   --err: #b03a33; /* failed / unsupported (paired with ✕ glyph) */
