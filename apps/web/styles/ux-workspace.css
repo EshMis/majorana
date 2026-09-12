@@ -147,3 +147,4 @@
 .mj-accent-picker i { width: var(--sp-4); height: var(--sp-4); border-radius: 50%; }
 .mj-accent-picker [data-accent-option="moss"] i { background: var(--accent-moss); }
 .mj-accent-picker [data-accent-option="plum"] i { background: var(--accent-plum); }
+.mj-language-preference-panel .mj-language-preference + .mj-language-preference { margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: var(--border-hairline) solid var(--border-0); }
